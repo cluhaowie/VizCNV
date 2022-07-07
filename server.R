@@ -137,7 +137,10 @@ server <- function(input, output,session) {
   observeEvent(input$local_pr_snv_file,{ 
     if(is.integer(input$local_pr_snv_file)){cat("no file\n")}else{
       values$snp_gvcf_file <- parseFilePaths(volumes, input$local_pr_snv_file)
-      Rsamtools::indexTabix(values$snp_gvcf_file$datapath,format = "vcf")
+      index.file <- paste0(values$snp_gvcf_file$datapath,".tbi")
+      if(!file.exists(index.file)){
+        Rsamtools::indexTabix(values$snp_gvcf_file$datapath,format = "vcf")
+      }
       showModal(modalDialog(
         title = "File upload",
         "The joint called SNP file has been indexed"
@@ -283,8 +286,8 @@ server <- function(input, output,session) {
       InhFrom <- unique(plots$snp_chr$InhFrom)
       if(length(InhFrom)==3){
         names(plots$SNPcols) <- InhFrom
-        plots$SNPcols[names(plots$SNPcols)!="Notphased"] <- c("#ff0000","#00ff00")
-        plots$SNPcols["Notphased"] <- c("#BEBEBE")
+        plots$SNPcols[names(plots$SNPcols)!="Notphased"] <- SNPCOLOR2
+        plots$SNPcols["Notphased"] <- c("#BABABA")
       }
       w$hide()
     }
