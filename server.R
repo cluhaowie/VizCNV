@@ -25,9 +25,13 @@ server <- function(input, output,session) {
   plots$f_seg <- data.frame(stringsAsFactors = F)
   plots$snp_chr <- data.frame(stringsAsFactors = F)
   plots$xlabel <- character()
+  plots$SNPcols <- vector(length = 3) ## placeholder for color in SNP plot
   
   plots$plot1 <- list()
   plots$plot2 <- list()
+  toListen <- reactive({
+    list(values$data,values$pr_rd)
+  })
   
   volumes <- c(Home="~/Downloads/test","R installation" = R.home(),shinyFiles::getVolumes()())
   shinyFileChoose(input, "local_sv_file", roots = volumes, session = session)
@@ -47,13 +51,13 @@ server <- function(input, output,session) {
         radioButtons(inputId = "ref",label = h3("Choose one reference genome"),choices = list("GRCh37"="GRCh37","GRCh38"="GRCh38"),inline = T,selected = "GRCh38"),
         h5(strong("Select local sv file:")),
         shinyFilesButton(id = "local_sv_file", label = "Browse...", title = "Please select a file", multiple = F, viewtype = "detail"),
-        h5(strong("Select local proband read depth file:")),
+        h5(strong("Select local proband read depth file (required)")),
         shinyFilesButton(id = "local_pr_rd_file", label = "Browse...", title = "Please select a file", multiple = F, viewtype = "detail"),
-        h5(strong("Select local mom's read depth file")),
+        h5(strong("Select local mom's read depth file (optional)")),
         shinyFilesButton(id = "local_m_rd_file", label = "Browse...", title = "Please select a file", multiple = F, viewtype = "detail"),
-        h5(strong("Select local dad's read depth file")),
+        h5(strong("Select local dad's read depth file (optional)")),
         shinyFilesButton(id = "local_f_rd_file", label = "Browse...", title = "Please select a file", multiple = F, viewtype = "detail"),
-        h5(strong("Select local proband snv file")),
+        h5(strong("Select local proband snv file (optional)")),
         shinyFilesButton(id = "local_pr_snv_file", label = "Browse...", title = "Please select a file", multiple = F, viewtype = "detail")
       )
       
@@ -62,9 +66,9 @@ server <- function(input, output,session) {
   output$file_source_ui2 <- renderUI({
     if(input$file_source=="FALSE"){
       tagList(
-        fileInput("pr_rd_file",label = "Proband's read depth files",accept=c("*.bed","*.bed.gz"),multiple = F,buttonLabel = "Browse..."),
-        fileInput("m_rd_file",label = "Mom's read depth files",accept=c("*.bed","*.bed.gz"),multiple = F,buttonLabel = "Browse..."),
-        fileInput("f_rd_file",label = "Dad's read depth files",accept=c("*.bed","*.bed.gz"),multiple = F,buttonLabel = "Browse...")
+        fileInput("pr_rd_file",label = "Proband's read depth files (required)",accept=c("*.bed","*.bed.gz"),multiple = F,buttonLabel = "Browse..."),
+        fileInput("m_rd_file",label = "Mom's read depth files (optional)",accept=c("*.bed","*.bed.gz"),multiple = F,buttonLabel = "Browse..."),
+        fileInput("f_rd_file",label = "Dad's read depth files (optional)",accept=c("*.bed","*.bed.gz"),multiple = F,buttonLabel = "Browse...")
       )
     }else{
       verbatimTextOutput("filepaths")
@@ -133,7 +137,10 @@ server <- function(input, output,session) {
   observeEvent(input$local_pr_snv_file,{ 
     if(is.integer(input$local_pr_snv_file)){cat("no file\n")}else{
       values$snp_gvcf_file <- parseFilePaths(volumes, input$local_pr_snv_file)
-      Rsamtools::indexTabix(values$snp_gvcf_file$datapath,format = "vcf")
+      index.file <- paste0(values$snp_gvcf_file$datapath,".tbi")
+      if(!file.exists(index.file)){
+        Rsamtools::indexTabix(values$snp_gvcf_file$datapath,format = "vcf")
+      }
       showModal(modalDialog(
         title = "File upload",
         "The joint called SNP file has been indexed"
@@ -202,10 +209,16 @@ server <- function(input, output,session) {
     updateSelectizeInput(session, "type", choices = ALTs, server = TRUE)
   })
   
-  observeEvent(values$data,{
-    data <- values$data
-    chroms <- unique(data$CHROM)
-    updateSelectizeInput(session, "chr", choices = chroms, server = TRUE)
+  observeEvent(toListen(),{
+    if(nrow(values$data)!=0){
+      data <- values$data
+      chroms <- unique(data$CHROM)
+      updateSelectizeInput(session, "chr", choices = chroms, server = TRUE)
+    }else{
+      data <- values$pr_rd
+      chroms <- unique(data$V1)
+      updateSelectizeInput(session, "chr", choices = chroms, server = TRUE)
+    }
     
   })
   
@@ -222,7 +235,7 @@ server <- function(input, output,session) {
   
   # button to filter range---------
   
-
+  
   output$filter_sv_table <- DT::renderDataTable({ 
     values$work_data
   },
@@ -270,9 +283,16 @@ server <- function(input, output,session) {
       loc.end <- hg38.info%>%filter(chrom==chr)%>%dplyr::select(seqlengths)%>%unlist
       range.gr <- GenomicRanges::GRanges(chr,ranges = IRanges(loc.start,loc.end))
       plots$snp_chr <- ReadGVCF(snp_gvcf_file$datapath,ref_genome=input$ref,param = range.gr)%>%as.data.frame()
+      InhFrom <- unique(plots$snp_chr$InhFrom)
+      if(length(InhFrom)==3){
+        names(plots$SNPcols) <- InhFrom
+        plots$SNPcols[names(plots$SNPcols)!="Notphased"] <- SNPCOLOR2
+        plots$SNPcols["Notphased"] <- c("#BABABA")
+      }
       w$hide()
     }
   })
+  
   
   ext1 <- eventReactive(input$btn_plot,{
     # from input
@@ -281,14 +301,14 @@ server <- function(input, output,session) {
     }
     include_seg <- input$include_seg
     df <- rbindlist(list(plots$pr_seg,plots$m_seg,plots$f_seg))%>%filter(ID%in%include_seg)
-    work_data <- values$work_data
-    values <- rep(c(-2.8,-2.5),nrow(work_data)/2)[1:nrow(work_data)]
-    work_data <- work_data %>% mutate(value=values)
+    #work_data <- values$work_data
+    #values <- rep(c(-2.8,-2.5),nrow(work_data)/2)[1:nrow(work_data)]
+    #work_data <- work_data %>% mutate(value=values)
     plots$xlabel=unique(df$chrom)[1]
     ggplot(plots$pr_rd, aes(V2, log2(ratio+0.00001))) +
       geom_point(shape=".")+
       geom_segment(data = df,aes(x=loc.start,y=seg.mean,xend=loc.end,yend=seg.mean,color=ID),size=1)+
-      geom_segment(data=work_data,aes(x=POS,xend=END,y=value,yend=value,color=ALT),size=2,alpha=0.5)+
+      #geom_segment(data=work_data,aes(x=POS,xend=END,y=value,yend=value,color=ALT),size=2,alpha=0.5)+
       ylim(-4,4)+xlab(plots$xlabel)+
       scale_rd+style_rd
     
@@ -298,14 +318,16 @@ server <- function(input, output,session) {
       return(NULL)
     }
     df <- plots$snp_chr
+    cols <- plots$SNPcols
     xlabel=unique(df$chrom)[1]
-    df %>% ggplot(aes(x=start,y=pr_ALT_Freq,color=InhFrom))+
+    df %>% ggplot(aes(x=start,y=pr_ALT_Freq,col=InhFrom))+
       geom_point(shape=".")+
       geom_point(data = subset(df, likelyDN == "TRUE"),aes(x=start,y=pr_ALT_Freq,fill="dnSNV"),size = 2,shape=8,color="red")+
       scale_fill_manual("LikelyDN",limits=c("dnSNV"),values = "red")+
       xlab(xlabel)+
       scale_snp+
       style_snp+
+      scale_colour_manual(values = cols)+
       guides(color = guide_legend(override.aes = list(size = 4)))
   })
   
@@ -334,11 +356,16 @@ server <- function(input, output,session) {
     if (!is.null(brush)) {
       ranges$x <- c(brush$xmin, brush$xmax)
       ranges$y <- c(brush$ymin, brush$ymax)
-      values$work_data <- values$data%>%filter(CHROM==chr)%>%filter(POS>=brush$xmin,POS < brush$xmax)
+      if(nrow(values$data)!=0){
+        values$work_data <- values$data%>%filter(CHROM==chr)%>%filter(POS>=brush$xmin,POS < brush$xmax)
+      }
+      
     } else {
       ranges$x <- NULL
       ranges$y <- NULL
-      values$work_data <- values$data%>%filter(CHROM==chr)
+      if(nrow(values$data)!=0){
+        values$work_data <- values$data%>%filter(CHROM==chr)
+      }
     }
   })
   observeEvent(input$plot2_dblclick, {
@@ -363,7 +390,7 @@ server <- function(input, output,session) {
       downloadButton("dl_plt", "Download")
     }
   })
-
+  
   
   ## Download handler
   output$dl_plt <- downloadHandler(
