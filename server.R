@@ -287,7 +287,7 @@ server <- function(input, output,session) {
       if(length(InhFrom)==3){
         names(plots$SNPcols) <- InhFrom
         plots$SNPcols[names(plots$SNPcols)!="Notphased"] <- SNPCOLOR2
-        plots$SNPcols["Notphased"] <- c("#BABABA")
+        plots$SNPcols["Notphased"] <- c("#999999")
       }
       w$hide()
     }
@@ -317,12 +317,12 @@ server <- function(input, output,session) {
     if(nrow(plots$snp_chr) == 0){
       return(NULL)
     }
-    df <- plots$snp_chr
+    df <- plots$snp_chr%>%filter(likelyDN%in%c(input$include_dnSNV,"FALSE"))
     cols <- plots$SNPcols
     xlabel=unique(df$chrom)[1]
     df %>% ggplot(aes(x=start,y=pr_ALT_Freq,col=InhFrom))+
       geom_point(shape=".")+
-      geom_point(data = subset(df, likelyDN == "TRUE"),aes(x=start,y=pr_ALT_Freq,fill="dnSNV"),size = 2,shape=8,color="red")+
+      geom_point(data = subset(df, likelyDN %in%c("TRUE")),size = 2,shape=8,color="red")+
       scale_fill_manual("LikelyDN",limits=c("dnSNV"),values = "red")+
       xlab(xlabel)+
       scale_snp+

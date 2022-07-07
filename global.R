@@ -273,6 +273,6 @@ scale_snp <- scale_y_continuous(name="B-allele frequency",
                                            round(2/5,2),
                                            round(3/5,2)
                                 ))
-SNPCOLOR2 <- c("#CA0020","#4DAC26")
+SNPCOLOR2 <- c("#E69F00","#0072B2")
 
 
