@@ -95,9 +95,9 @@ ui <- dashboardPage(
                   box(title = "Table",width = 12,solidHeader = T, status = "success",collapsible = T,
                       DT::dataTableOutput("filter_sv_table"),
                       fluidRow(
-                        column(1,actionButton("btn_remove","Remove Record")),
                         column(1,uiOutput("ui_dlbtn_tbl"))
-                      ))),
+                      ),
+                      DT::dataTableOutput("Select_table"))),
                 fluidRow(
                   box(title ="Plot",width = 12,solidHeader = T, status = "success",collapsible = T,
                       fluidRow(                                     
@@ -115,7 +115,8 @@ ui <- dashboardPage(
                           brush = brushOpts(id = "plot2_brush",direction = "x",
                                             resetOnNew = TRUE))),
                       fluidRow(
-                        column(1,uiOutput("ui_dlbtn_plt"))
+                        column(1,uiOutput("ui_dlbtn_plt")),
+                        column(1,uiOutput("ui_clbtn_plt"))
                       )
                   )),
         ),

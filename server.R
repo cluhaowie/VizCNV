@@ -15,6 +15,7 @@ server <- function(input, output,session) {
                                                "Mom's read depth file",
                                                "Dad's read depth file",
                                                "Joint SNP vcf file"),datapath=rep("None",5),stringsAsFactors = F)
+  values$selected_record <- data.frame(stringsAsFactors = F)
   
   plots <- reactiveValues()
   plots$pr_rd <- data.frame(stringsAsFactors = F)
@@ -49,7 +50,7 @@ server <- function(input, output,session) {
     }else{
       tagList(
         radioButtons(inputId = "ref",label = h3("Choose one reference genome"),choices = list("GRCh37"="GRCh37","GRCh38"="GRCh38"),inline = T,selected = "GRCh38"),
-        h5(strong("Select local sv file:")),
+        h5(strong("Select local sv file (optional):")),
         shinyFilesButton(id = "local_sv_file", label = "Browse...", title = "Please select a file", multiple = F, viewtype = "detail"),
         h5(strong("Select local proband read depth file (required)")),
         shinyFilesButton(id = "local_pr_rd_file", label = "Browse...", title = "Please select a file", multiple = F, viewtype = "detail"),
@@ -241,10 +242,21 @@ server <- function(input, output,session) {
   },
   extensions=c("Responsive","Buttons"),
   server = T,editable = TRUE,filter = list(position = 'top', clear = T),options = list(dom = 'Bfrtip',buttons = c('txt','csv', 'excel')))
-  w <- Waiter$new(html = spin_3(), 
+  w <- waiter::Waiter$new(html = spin_3(), 
                   color = transparent(.5))
+  output$Select_table <- DT::renderDataTable({
+    values$selected_record
+  })
+  ## keep the selected record when click the btl_select
+  observeEvent(input$btl_select,{
+    rows_selected <- input$filter_sv_table_rows_selected
+    if(length(rows_selected)){
+      values$selected_record <- rbind(values$selected_record,values$work_data[rows_selected,])%>%
+        distinct(across(everything()))
+    }
+  })
+  
   observeEvent(input$btn_filter,{
-    
     seg_option <- input$seg_option
     chr <- input$chr
     if(nrow(values$pr_rd)==0){return(NULL)
@@ -301,17 +313,13 @@ server <- function(input, output,session) {
     }
     include_seg <- input$include_seg
     df <- rbindlist(list(plots$pr_seg,plots$m_seg,plots$f_seg))%>%filter(ID%in%include_seg)
-    #work_data <- values$work_data
-    #values <- rep(c(-2.8,-2.5),nrow(work_data)/2)[1:nrow(work_data)]
-    #work_data <- work_data %>% mutate(value=values)
     plots$xlabel=unique(df$chrom)[1]
     ggplot(plots$pr_rd, aes(V2, log2(ratio+0.00001))) +
       geom_point(shape=".")+
       geom_segment(data = df,aes(x=loc.start,y=seg.mean,xend=loc.end,yend=seg.mean,color=ID),size=1)+
       #geom_segment(data=work_data,aes(x=POS,xend=END,y=value,yend=value,color=ALT),size=2,alpha=0.5)+
       ylim(-4,4)+xlab(plots$xlabel)+
-      scale_rd+style_rd
-    
+      scale_rd+style_rd+scale_x_continuous(labels = scales::label_number())
   },ignoreInit = T)
   ext2 <- eventReactive(input$btn_plot,{
     if(nrow(plots$snp_chr) == 0){
@@ -328,7 +336,7 @@ server <- function(input, output,session) {
       scale_snp+
       style_snp+
       scale_colour_manual(values = cols)+
-      guides(color = guide_legend(override.aes = list(size = 4)))
+      guides(color = guide_legend(override.aes = list(size = 4)))+scale_x_continuous(labels = scales::label_number())
   })
   
   # interactive plot regions-------
@@ -382,7 +390,7 @@ server <- function(input, output,session) {
   ## buttons 
   output$ui_dlbtn_tbl <- renderUI({
     if(nrow(values$data) > 0){
-      downloadButton("dl_data", "Download")
+      actionButton("btl_select", "Select Record")
     }
   })
   output$ui_dlbtn_plt <- renderUI({
@@ -390,8 +398,15 @@ server <- function(input, output,session) {
       downloadButton("dl_plt", "Download")
     }
   })
-  
-  
+  output$ui_clbtn_plt <- renderUI({
+    if(length(plots$plot1) > 0){
+      shiny::actionButton("cl_btn","Clear plot",icon("trash"))
+    }
+  })
+  observeEvent(input$cl_btn,{
+    plots$snp_chr <- data.frame(stringsAsFactors = F)
+    plots$pr_rd <- data.frame(stringsAsFactors = F)
+  })
   ## Download handler
   output$dl_plt <- downloadHandler(
     filename = function(){

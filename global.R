@@ -9,6 +9,8 @@ options(timeout = 6000)
 options(shiny.maxRequestSize=2*1024^3) ## max file size 1 Gb
 options(shiny.autoreload=TRUE)
 options(shiny.reactlog=TRUE) 
+library(BiocManager)
+options(repos = BiocManager::repositories())
 
 # Packages ----------------------------------------------------------------
 # Install missing packages from CRAN
