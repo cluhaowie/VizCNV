@@ -319,7 +319,7 @@ server <- function(input, output,session) {
       geom_segment(data = df,aes(x=loc.start,y=seg.mean,xend=loc.end,yend=seg.mean,color=ID),size=1)+
       #geom_segment(data=work_data,aes(x=POS,xend=END,y=value,yend=value,color=ALT),size=2,alpha=0.5)+
       ylim(-4,4)+xlab(plots$xlabel)+
-      scale_rd+style_rd
+      scale_rd+style_rd+scale_x_continuous(labels = scales::label_number())
   },ignoreInit = T)
   ext2 <- eventReactive(input$btn_plot,{
     if(nrow(plots$snp_chr) == 0){
@@ -336,7 +336,7 @@ server <- function(input, output,session) {
       scale_snp+
       style_snp+
       scale_colour_manual(values = cols)+
-      guides(color = guide_legend(override.aes = list(size = 4)))
+      guides(color = guide_legend(override.aes = list(size = 4)))+scale_x_continuous(labels = scales::label_number())
   })
   
   # interactive plot regions-------
@@ -398,8 +398,15 @@ server <- function(input, output,session) {
       downloadButton("dl_plt", "Download")
     }
   })
-  
-  
+  output$ui_clbtn_plt <- renderUI({
+    if(length(plots$plot1) > 0){
+      shiny::actionButton("cl_btn","Clear plot",icon("trash"))
+    }
+  })
+  observeEvent(input$cl_btn,{
+    plots$snp_chr <- data.frame(stringsAsFactors = F)
+    plots$pr_rd <- data.frame(stringsAsFactors = F)
+  })
   ## Download handler
   output$dl_plt <- downloadHandler(
     filename = function(){

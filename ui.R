@@ -115,7 +115,8 @@ ui <- dashboardPage(
                           brush = brushOpts(id = "plot2_brush",direction = "x",
                                             resetOnNew = TRUE))),
                       fluidRow(
-                        column(1,uiOutput("ui_dlbtn_plt"))
+                        column(1,uiOutput("ui_dlbtn_plt")),
+                        column(1,uiOutput("ui_clbtn_plt"))
                       )
                   )),
         ),
