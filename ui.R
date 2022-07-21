@@ -116,7 +116,8 @@ ui <- dashboardPage(
                                             resetOnNew = TRUE))),
                       fluidRow(
                         column(1,uiOutput("ui_dlbtn_plt")),
-                        column(1,uiOutput("ui_clbtn_plt"))
+                        column(1,uiOutput("ui_clbtn_plt")),
+                        column(1,uiOutput("ui_dlbtn_dnsnv"))
                       )
                   )),
         ),

@@ -255,6 +255,9 @@ server <- function(input, output,session) {
         distinct(across(everything()))
     }
   })
+  observeEvent(input$btl_select2,{
+    values$selected_record <- data.frame(stringsAsFactors = F)
+  })
   
   observeEvent(input$btn_filter,{
     seg_option <- input$seg_option
@@ -390,7 +393,8 @@ server <- function(input, output,session) {
   ## buttons 
   output$ui_dlbtn_tbl <- renderUI({
     if(nrow(values$data) > 0){
-      actionButton("btl_select", "Select Record")
+      tagList(shiny::actionButton("btl_select", "Select",icon("check")),
+              shiny::actionButton("btl_select2", "Clear",icon("trash")))
     }
   })
   output$ui_dlbtn_plt <- renderUI({
@@ -403,10 +407,16 @@ server <- function(input, output,session) {
       shiny::actionButton("cl_btn","Clear plot",icon("trash"))
     }
   })
+  output$ui_dlbtn_dnsnv <- renderUI({
+    if(length(plots$plot2) > 0){
+      shiny::downloadButton("dl_btn_dnsnv","Download dnSNV")
+    }
+  })
   observeEvent(input$cl_btn,{
     plots$snp_chr <- data.frame(stringsAsFactors = F)
     plots$pr_rd <- data.frame(stringsAsFactors = F)
   })
+
   ## Download handler
   output$dl_plt <- downloadHandler(
     filename = function(){
@@ -415,6 +425,13 @@ server <- function(input, output,session) {
     content = function(file){
       p <- cowplot::plot_grid(plots$plot1,plots$plot2,ncol = 1)
       ggplot2::ggsave(filename =file, plot = p,device = "pdf",width =12 ,height = 8,units = "in")
+    }
+  )
+  output$dl_btn_dnsnv <- downloadHandler(
+    filename = function(){paste("dnSNV_",input$chr,".csv")},
+    content = function(file){
+      df <- plots$snp_chr%>%filter(likelyDN%in%c(input$include_dnSNV))
+      write.csv(df,file,row.names = F)
     }
   )
   
