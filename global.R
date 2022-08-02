@@ -15,7 +15,7 @@ options(repos = BiocManager::repositories())
 # Packages ----------------------------------------------------------------
 # Install missing packages from CRAN
 list.of.packages <- c("dplyr", "data.table", "knitr", "testthat", "shiny", "shinydashboard",
-                      "tippy","DT","ggplot2","RSQLite","shinyWidgets","shinyFiles","waiter")
+                      "tippy","DT","ggplot2","RSQLite","shinyWidgets","shinyFiles","waiter","scattermore")
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
 if(length(new.packages)) install.packages(new.packages)
 
@@ -68,6 +68,7 @@ library(RSQLite)
 library(Rsamtools)
 library(VariantAnnotation)
 library(BSgenome.Hsapiens.UCSC.hg38)
+library(scattermore)
 
 # set up local database -------
 
@@ -183,6 +184,8 @@ hg38.info <- seqinfo(BSgenome.Hsapiens.UCSC.hg38::Hsapiens)%>%as.data.frame()
 hg38.info <- hg38.info %>% mutate(chrom=rownames(hg38.info))
 hg19.info <- seqinfo(BSgenome.Hsapiens.UCSC.hg19::Hsapiens)%>%as.data.frame()
 hg19.info <- hg19.info %>% mutate(chrom=rownames(hg19.info))
+blacklist <- data.table::fread("GRCh38_unified_blacklist.bed.gz")%>%
+  regioneR::toGRanges()
 ReadGVCF <- function(path_to_gVCF,ref_genome=ref_genome,param = param){
   print("scaning the region")
   vcf<- VariantAnnotation::readVcf(file = path_to_gVCF,genome = ref_genome,param = param)

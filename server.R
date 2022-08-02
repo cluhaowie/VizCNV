@@ -114,7 +114,12 @@ server <- function(input, output,session) {
   observeEvent(input$local_pr_rd_file,{ 
     if(is.integer(input$local_pr_rd_file)){cat("no file\n")}else{
       local_pr_rd_file <- parseFilePaths(volumes, input$local_pr_rd_file)
-      values$pr_rd <- data.table::fread(local_pr_rd_file$datapath,header = F)%>%mutate(V1=ifelse(!V1%like%"chr",paste0("chr",V1),V1))
+      values$pr_rd <- data.table::fread(local_pr_rd_file$datapath,header = F)%>%
+        mutate(V1=ifelse(!V1%like%"chr",paste0("chr",V1),V1))%>%regioneR::toGRanges()
+      values$pr_rd <- values$pr_rd[!values$pr_rd%over%blacklist,]%>%
+        as.data.table()%>%
+        dplyr::select(-c("strand","width"))
+      setnames(values$pr_rd,c("seqnames","start","end"),c("V1","V2","V3"))
       showModal(modalDialog(title = "File upload",
                             "The proband read depth file has been uploaded"))
     }
@@ -231,7 +236,15 @@ server <- function(input, output,session) {
       values$work_data <- values$data%>%filter(CHROM==chr)
       return(values$work_data)
     }
-    
+  })
+  observeEvent(input$ref,{
+    if(input$ref=="GRCh38"){
+      blacklist <- data.table::fread("GRCh38_unified_blacklist.bed.gz")%>%
+        regioneR::toGRanges()
+    }else{
+      blacklist <- data.table::fread("ENCFF001TDO.bed.gz")%>%
+        regioneR::toGRanges()
+    }
   })
   
   # button to filter range---------
@@ -297,6 +310,7 @@ server <- function(input, output,session) {
       loc.start <- 0
       loc.end <- hg38.info%>%filter(chrom==chr)%>%dplyr::select(seqlengths)%>%unlist
       range.gr <- GenomicRanges::GRanges(chr,ranges = IRanges(loc.start,loc.end))
+      range.gr <- GenomicRanges::setdiff(range.gr, blacklist)
       plots$snp_chr <- ReadGVCF(snp_gvcf_file$datapath,ref_genome=input$ref,param = range.gr)%>%as.data.frame()
       InhFrom <- unique(plots$snp_chr$InhFrom)
       if(length(InhFrom)==3){
@@ -318,7 +332,7 @@ server <- function(input, output,session) {
     df <- rbindlist(list(plots$pr_seg,plots$m_seg,plots$f_seg))%>%filter(ID%in%include_seg)
     plots$xlabel=unique(df$chrom)[1]
     ggplot(plots$pr_rd, aes(V2, log2(ratio+0.00001))) +
-      geom_point(shape=".")+
+      scattermore::geom_scattermore(shape=".",pixels=c(1024,1024))+
       geom_segment(data = df,aes(x=loc.start,y=seg.mean,xend=loc.end,yend=seg.mean,color=ID),size=1)+
       #geom_segment(data=work_data,aes(x=POS,xend=END,y=value,yend=value,color=ALT),size=2,alpha=0.5)+
       ylim(-4,4)+xlab(plots$xlabel)+
@@ -332,8 +346,8 @@ server <- function(input, output,session) {
     cols <- plots$SNPcols
     xlabel=unique(df$chrom)[1]
     df %>% ggplot(aes(x=start,y=pr_ALT_Freq,col=InhFrom))+
-      geom_point(shape=".")+
-      geom_point(data = subset(df, likelyDN %in%c("TRUE")),size = 2,shape=8,color="red")+
+      scattermore::geom_scattermore(shape=".",pixels=c(1024,1024))+
+      scattermore::geom_scattermore(data = subset(df, likelyDN %in%c("TRUE")),size = 2,shape=8,color="red",pixels=c(1024,1024))+
       scale_fill_manual("LikelyDN",limits=c("dnSNV"),values = "red")+
       xlab(xlabel)+
       scale_snp+
