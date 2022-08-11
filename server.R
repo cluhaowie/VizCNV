@@ -34,7 +34,7 @@ server <- function(input, output,session) {
     list(values$data,values$pr_rd)
   })
   
-  volumes <- c(Home="~/Downloads/BG1368","R installation" = R.home(),shinyFiles::getVolumes()())
+  volumes <- c(Home="~/Downloads/","R installation" = R.home(),shinyFiles::getVolumes()())
   shinyFileChoose(input, "local_sv_file", roots = volumes, session = session)
   shinyFileChoose(input, "local_pr_rd_file", roots = volumes, session = session)
   shinyFileChoose(input, "local_m_rd_file", roots = volumes, session = session)
