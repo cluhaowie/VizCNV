@@ -34,7 +34,7 @@ server <- function(input, output,session) {
     list(values$data,values$pr_rd)
   })
   
-  volumes <- c(Home="~/Downloads/test","R installation" = R.home(),shinyFiles::getVolumes()())
+  volumes <- c(Home="~/Downloads/BG1368","R installation" = R.home(),shinyFiles::getVolumes()())
   shinyFileChoose(input, "local_sv_file", roots = volumes, session = session)
   shinyFileChoose(input, "local_pr_rd_file", roots = volumes, session = session)
   shinyFileChoose(input, "local_m_rd_file", roots = volumes, session = session)
@@ -311,7 +311,8 @@ server <- function(input, output,session) {
       loc.end <- hg38.info%>%filter(chrom==chr)%>%dplyr::select(seqlengths)%>%unlist
       range.gr <- GenomicRanges::GRanges(chr,ranges = IRanges(loc.start,loc.end))
       range.gr <- GenomicRanges::setdiff(range.gr, blacklist)
-      plots$snp_chr <- ReadGVCF(snp_gvcf_file$datapath,ref_genome=input$ref,param = range.gr)%>%as.data.frame()
+      plots$snp_chr <- ReadGVCF(snp_gvcf_file$datapath,ref_genome=input$ref,param = range.gr)%>%
+        as.data.frame()
       InhFrom <- unique(plots$snp_chr$InhFrom)
       if(length(InhFrom)==3){
         names(plots$SNPcols) <- InhFrom
@@ -332,7 +333,8 @@ server <- function(input, output,session) {
     df <- rbindlist(list(plots$pr_seg,plots$m_seg,plots$f_seg))%>%filter(ID%in%include_seg)
     plots$xlabel=unique(df$chrom)[1]
     ggplot(plots$pr_rd, aes(V2, log2(ratio+0.00001))) +
-      scattermore::geom_scattermore(shape=".",pixels=c(1024,1024))+
+      geom_point(shape=".")+
+      #scattermore::geom_scattermore(shape=".",pixels=c(1024,1024))+
       geom_segment(data = df,aes(x=loc.start,y=seg.mean,xend=loc.end,yend=seg.mean,color=ID),size=1)+
       #geom_segment(data=work_data,aes(x=POS,xend=END,y=value,yend=value,color=ALT),size=2,alpha=0.5)+
       ylim(-4,4)+xlab(plots$xlabel)+
@@ -346,8 +348,9 @@ server <- function(input, output,session) {
     cols <- plots$SNPcols
     xlabel=unique(df$chrom)[1]
     df %>% ggplot(aes(x=start,y=pr_ALT_Freq,col=InhFrom))+
-      scattermore::geom_scattermore(shape=".",pixels=c(1024,1024))+
-      scattermore::geom_scattermore(data = subset(df, likelyDN %in%c("TRUE")),size = 2,shape=8,color="red",pixels=c(1024,1024))+
+      geom_point(shape=".")+
+      #scattermore::geom_scattermore(shape=".",pixels=c(1024,1024))+
+      geom_point(data = subset(df, likelyDN %in%c("TRUE")),size = 2,shape=8,color="red")+
       scale_fill_manual("LikelyDN",limits=c("dnSNV"),values = "red")+
       xlab(xlabel)+
       scale_snp+
@@ -362,7 +365,9 @@ server <- function(input, output,session) {
     if(nrow(plots$pr_rd) == 0){
       return(NULL)
     }
-    plots$plot1 <- ext1()+coord_cartesian(xlim = ranges$x, ylim = ranges$y, expand = FALSE)+
+    plots$plot1 <- ext1()+
+      coord_cartesian(xlim = ranges$x, ylim = ranges$y, expand = FALSE)+
+      geom_vline(xintercept=values$selected_record$POS, color="orange", size=1)+ 
       ggtitle(paste0(plots$xlabel,":",paste0(round(as.numeric(ranges$x)),collapse = "-")))
     plots$plot1
   })
@@ -397,7 +402,7 @@ server <- function(input, output,session) {
     brush <- input$plot2_brush
     if (!is.null(brush)) {
       ranges$x <- c(brush$xmin, brush$xmax)
-      ranges$y <- c(brush$ymin, brush$ymax)
+     # ranges$y <- c(brush$ymin, brush$ymax)
     } else {
       ranges$x <- NULL
       ranges$y <- NULL
@@ -429,6 +434,7 @@ server <- function(input, output,session) {
   observeEvent(input$cl_btn,{
     plots$snp_chr <- data.frame(stringsAsFactors = F)
     plots$pr_rd <- data.frame(stringsAsFactors = F)
+    input$filter_sv_table_rows_selected <- NULL
   })
 
   ## Download handler
