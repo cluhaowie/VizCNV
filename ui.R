@@ -100,6 +100,9 @@ ui <- dashboardPage(
                       DT::dataTableOutput("Select_table"))),
                 fluidRow(
                   box(title ="Plot",width = 12,solidHeader = T, status = "success",collapsible = T,
+                      fluidRow(
+                        column(1,uiOutput("ui_dlbtn_goto"))
+                      ),
                       fluidRow(                                     
                         plotOutput(
                           "plot1",
