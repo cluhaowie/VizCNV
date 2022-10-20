@@ -34,7 +34,7 @@ server <- function(input, output,session) {
     list(values$data,values$pr_rd)
   })
   
-  volumes <- c(Home="~/Downloads/test","R installation" = R.home(),shinyFiles::getVolumes()())
+  volumes <- c(Home="~/Downloads/","R installation" = R.home(),shinyFiles::getVolumes()())
   shinyFileChoose(input, "local_sv_file", roots = volumes, session = session)
   shinyFileChoose(input, "local_pr_rd_file", roots = volumes, session = session)
   shinyFileChoose(input, "local_m_rd_file", roots = volumes, session = session)
@@ -114,7 +114,12 @@ server <- function(input, output,session) {
   observeEvent(input$local_pr_rd_file,{ 
     if(is.integer(input$local_pr_rd_file)){cat("no file\n")}else{
       local_pr_rd_file <- parseFilePaths(volumes, input$local_pr_rd_file)
-      values$pr_rd <- data.table::fread(local_pr_rd_file$datapath,header = F)%>%mutate(V1=ifelse(!V1%like%"chr",paste0("chr",V1),V1))
+      values$pr_rd <- data.table::fread(local_pr_rd_file$datapath,header = F)%>%
+        mutate(V1=ifelse(!V1%like%"chr",paste0("chr",V1),V1))%>%regioneR::toGRanges()
+      values$pr_rd <- values$pr_rd[!values$pr_rd%over%blacklist,]%>%
+        as.data.table()%>%
+        dplyr::select(-c("strand","width"))
+      setnames(values$pr_rd,c("seqnames","start","end"),c("V1","V2","V3"))
       showModal(modalDialog(title = "File upload",
                             "The proband read depth file has been uploaded"))
     }
@@ -231,7 +236,15 @@ server <- function(input, output,session) {
       values$work_data <- values$data%>%filter(CHROM==chr)
       return(values$work_data)
     }
-    
+  })
+  observeEvent(input$ref,{
+    if(input$ref=="GRCh38"){
+      blacklist <- data.table::fread("GRCh38_unified_blacklist.bed.gz")%>%
+        regioneR::toGRanges()
+    }else{
+      blacklist <- data.table::fread("ENCFF001TDO.bed.gz")%>%
+        regioneR::toGRanges()
+    }
   })
   
   # button to filter range---------
@@ -297,7 +310,9 @@ server <- function(input, output,session) {
       loc.start <- 0
       loc.end <- hg38.info%>%filter(chrom==chr)%>%dplyr::select(seqlengths)%>%unlist
       range.gr <- GenomicRanges::GRanges(chr,ranges = IRanges(loc.start,loc.end))
-      plots$snp_chr <- ReadGVCF(snp_gvcf_file$datapath,ref_genome=input$ref,param = range.gr)%>%as.data.frame()
+      range.gr <- GenomicRanges::setdiff(range.gr, blacklist)
+      plots$snp_chr <- ReadGVCF(snp_gvcf_file$datapath,ref_genome=input$ref,param = range.gr)%>%
+        as.data.frame()
       InhFrom <- unique(plots$snp_chr$InhFrom)
       if(length(InhFrom)==3){
         names(plots$SNPcols) <- InhFrom
@@ -319,6 +334,7 @@ server <- function(input, output,session) {
     plots$xlabel=unique(df$chrom)[1]
     ggplot(plots$pr_rd, aes(V2, log2(ratio+0.00001))) +
       geom_point(shape=".")+
+      #scattermore::geom_scattermore(shape=".",pixels=c(1024,1024))+
       geom_point(data = subset(plots$pr_rd, ratio < 0.7),aes(V2,log2(ratio+0.00001)),shape=".",color="green")+
       geom_point(data = subset(plots$pr_rd, ratio > 1.3),aes(V2,log2(ratio+0.00001)),shape=".",color="red")+
       geom_segment(data = df,aes(x=loc.start,y=seg.mean,xend=loc.end,yend=seg.mean,color=ID),size=1)+
@@ -335,6 +351,7 @@ server <- function(input, output,session) {
     xlabel=unique(df$chrom)[1]
     df %>% ggplot(aes(x=start,y=pr_ALT_Freq,col=InhFrom))+
       geom_point(shape=".")+
+      #scattermore::geom_scattermore(shape=".",pixels=c(1024,1024))+
       geom_point(data = subset(df, likelyDN %in%c("TRUE")),size = 2,shape=8,color="red")+
       scale_fill_manual("LikelyDN",limits=c("dnSNV"),values = "red")+
       xlab(xlabel)+
@@ -350,7 +367,9 @@ server <- function(input, output,session) {
     if(nrow(plots$pr_rd) == 0){
       return(NULL)
     }
-    plots$plot1 <- ext1()+coord_cartesian(xlim = ranges$x, ylim = ranges$y, expand = FALSE)+
+    plots$plot1 <- ext1()+
+      coord_cartesian(xlim = ranges$x, ylim = ranges$y, expand = FALSE)+
+      geom_vline(xintercept=values$selected_record$POS, color="orange", size=1)+ 
       ggtitle(paste0(plots$xlabel,":",paste0(round(as.numeric(ranges$x)),collapse = "-")))
     plots$plot1
   })
@@ -385,7 +404,7 @@ server <- function(input, output,session) {
     brush <- input$plot2_brush
     if (!is.null(brush)) {
       ranges$x <- c(brush$xmin, brush$xmax)
-      ranges$y <- c(brush$ymin, brush$ymax)
+     # ranges$y <- c(brush$ymin, brush$ymax)
     } else {
       ranges$x <- NULL
       ranges$y <- NULL
@@ -417,6 +436,7 @@ server <- function(input, output,session) {
   observeEvent(input$cl_btn,{
     plots$snp_chr <- data.frame(stringsAsFactors = F)
     plots$pr_rd <- data.frame(stringsAsFactors = F)
+    input$filter_sv_table_rows_selected <- NULL
   })
 
   ## Download handler
