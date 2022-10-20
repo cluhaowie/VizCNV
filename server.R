@@ -276,14 +276,14 @@ server <- function(input, output,session) {
       plots$m_rd <- values$m_rd%>%
         filter(V1==chr)%>%
         mutate(ratio=V4/median(V4+0.00001))
-      plots$m_seg <- SegNormRD(plots$m_rd,id="parent1",seg.method = seg_option)
+      plots$m_seg <- SegNormRD(plots$m_rd,id="Mother",seg.method = seg_option)
     }
     if(nrow(values$f_rd)==0){return(NULL)
     }else{
       plots$f_rd <- values$f_rd%>%
         filter(V1==chr)%>%
         mutate(ratio=V4/median(V4+0.00001))
-      plots$f_seg <- SegNormRD(plots$f_rd,id="parent2",seg.method = seg_option)
+      plots$f_seg <- SegNormRD(plots$f_rd,id="Father",seg.method = seg_option)
     }
   })
   observeEvent(input$btn_filter,{
