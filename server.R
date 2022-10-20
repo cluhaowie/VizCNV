@@ -268,7 +268,7 @@ server <- function(input, output,session) {
       plots$pr_rd <- values$pr_rd%>%
         filter(V1==chr)%>%
         mutate(ratio=V4/median(V4+0.00001))
-      plots$pr_seg <- SegNormRD(plots$pr_rd,id="index",seg.method = seg_option)
+      plots$pr_seg <- SegNormRD(plots$pr_rd,id="proband",seg.method = seg_option)
       w$hide()
     }
     if(nrow(values$m_rd)==0){return(NULL)
@@ -276,14 +276,14 @@ server <- function(input, output,session) {
       plots$m_rd <- values$m_rd%>%
         filter(V1==chr)%>%
         mutate(ratio=V4/median(V4+0.00001))
-      plots$m_seg <- SegNormRD(plots$m_rd,id="m",seg.method = seg_option)
+      plots$m_seg <- SegNormRD(plots$m_rd,id="parent1",seg.method = seg_option)
     }
     if(nrow(values$f_rd)==0){return(NULL)
     }else{
       plots$f_rd <- values$f_rd%>%
         filter(V1==chr)%>%
         mutate(ratio=V4/median(V4+0.00001))
-      plots$f_seg <- SegNormRD(plots$f_rd,id="f",seg.method = seg_option)
+      plots$f_seg <- SegNormRD(plots$f_rd,id="parent2",seg.method = seg_option)
     }
   })
   observeEvent(input$btn_filter,{
