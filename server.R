@@ -281,7 +281,7 @@ server <- function(input, output,session) {
       plots$pr_rd <- values$pr_rd%>%
         filter(V1==chr)%>%
         mutate(ratio=V4/median(V4+0.00001))
-      plots$pr_seg <- SegNormRD(plots$pr_rd,id="index",seg.method = seg_option)
+      plots$pr_seg <- SegNormRD(plots$pr_rd,id="proband",seg.method = seg_option)
       w$hide()
     }
     if(nrow(values$m_rd)==0){return(NULL)
@@ -289,14 +289,14 @@ server <- function(input, output,session) {
       plots$m_rd <- values$m_rd%>%
         filter(V1==chr)%>%
         mutate(ratio=V4/median(V4+0.00001))
-      plots$m_seg <- SegNormRD(plots$m_rd,id="m",seg.method = seg_option)
+      plots$m_seg <- SegNormRD(plots$m_rd,id="Mother",seg.method = seg_option)
     }
     if(nrow(values$f_rd)==0){return(NULL)
     }else{
       plots$f_rd <- values$f_rd%>%
         filter(V1==chr)%>%
         mutate(ratio=V4/median(V4+0.00001))
-      plots$f_seg <- SegNormRD(plots$f_rd,id="f",seg.method = seg_option)
+      plots$f_seg <- SegNormRD(plots$f_rd,id="Father",seg.method = seg_option)
     }
   })
   observeEvent(input$btn_filter,{
@@ -335,6 +335,8 @@ server <- function(input, output,session) {
     ggplot(plots$pr_rd, aes(V2, log2(ratio+0.00001))) +
       geom_point(shape=".")+
       #scattermore::geom_scattermore(shape=".",pixels=c(1024,1024))+
+      geom_point(data = subset(plots$pr_rd, ratio < 0.7),aes(V2,log2(ratio+0.00001)),shape=".",color="green")+
+      geom_point(data = subset(plots$pr_rd, ratio > 1.3),aes(V2,log2(ratio+0.00001)),shape=".",color="red")+
       geom_segment(data = df,aes(x=loc.start,y=seg.mean,xend=loc.end,yend=seg.mean,color=ID),size=1)+
       #geom_segment(data=work_data,aes(x=POS,xend=END,y=value,yend=value,color=ALT),size=2,alpha=0.5)+
       ylim(-4,4)+xlab(plots$xlabel)+
