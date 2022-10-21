@@ -15,7 +15,7 @@ options(repos = BiocManager::repositories())
 # Packages ----------------------------------------------------------------
 # Install missing packages from CRAN
 list.of.packages <- c("dplyr", "data.table", "knitr", "testthat", "shiny", "shinydashboard",
-                      "tippy","DT","ggplot2","RSQLite","shinyWidgets","shinyFiles","waiter","scattermore","cowplot")
+                      "tippy","DT","ggplot2","RSQLite","shinyWidgets","shinyFiles","waiter","scattermore","cowplot","devtools")
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
 if(length(new.packages)) install.packages(new.packages)
 
@@ -25,10 +25,10 @@ new.biocLitePackage <- biocLitePackages[!(biocLitePackages %in% installed.packag
 if (!require("BiocManager", quietly = TRUE))
   install.packages("BiocManager")
 if(length(new.biocLitePackage)) BiocManager::install(new.biocLitePackage)
-# Install SLMSeg package from local
+# Install SLMSeg package from github
 local.packages <- c("SLMSeg")
 add.packages <- local.packages[!local.packages%in% installed.packages()[,"Package"]]
-if(length(add.packages)) install.packages("SLMSeg_1.0.tar.gz",type = " source ", repos = NULL)
+if(length(add.packages)) devtools::install_github("cluhaowie/VizCNV",subdir = "SLMSeg")
 #Cleaning ----
 detach_all <- function() {
   basic.pkg <- c("package:stats", "package:graphics", "package:grDevices",
