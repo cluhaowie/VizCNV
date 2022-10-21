@@ -169,7 +169,8 @@ server <- function(input, output,session) {
     pr_rd_file=input$pr_rd_file
     if(is.null(pr_rd_file)){return(NULL)}
     req(pr_rd_file)
-    values$pr_rd <- data.table::fread(pr_rd_file$datapath,header = F)%>%mutate(V1=ifelse(!V1%like%"chr",paste0("chr",V1),V1))
+    values$pr_rd <- data.table::fread(pr_rd_file$datapath,header = F)%>%
+      mutate(V1=ifelse(!V1%like%"chr",paste0("chr",V1),V1))
     #saveData(values$pr_rd,"pr_rd_file")
     showModal(modalDialog(
       title = "File upload",
@@ -281,7 +282,7 @@ server <- function(input, output,session) {
       plots$pr_rd <- values$pr_rd%>%
         filter(V1==chr)%>%
         mutate(ratio=V4/median(V4+0.00001))
-      plots$pr_seg <- SegNormRD(plots$pr_rd,id="proband",seg.method = seg_option)
+      plots$pr_seg <- SegNormRD(plots$pr_rd,id="Proband",seg.method = seg_option)
       w$hide()
     }
     if(nrow(values$m_rd)==0){return(NULL)
@@ -330,15 +331,17 @@ server <- function(input, output,session) {
       return(NULL)
     }
     include_seg <- input$include_seg
-    df <- rbindlist(list(plots$pr_seg,plots$m_seg,plots$f_seg))%>%filter(ID%in%include_seg)
+    df <- rbindlist(list(plots$pr_seg,plots$m_seg,plots$f_seg))%>%
+      filter(ID%in%include_seg)%>%
+      mutate(ID=as.factor(ID))
     plots$xlabel=unique(df$chrom)[1]
-    ggplot(plots$pr_rd, aes(V2, log2(ratio+0.00001))) +
+    ggplot(plots$pr_rd, aes(x=V2, y=log2(ratio+0.00001))) +
       geom_point(shape=".")+
       #scattermore::geom_scattermore(shape=".",pixels=c(1024,1024))+
       geom_point(data = subset(plots$pr_rd, ratio < 0.7),aes(V2,log2(ratio+0.00001)),shape=".",color="green")+
       geom_point(data = subset(plots$pr_rd, ratio > 1.3),aes(V2,log2(ratio+0.00001)),shape=".",color="red")+
-      geom_segment(data = df,aes(x=loc.start,y=seg.mean,xend=loc.end,yend=seg.mean,color=ID),size=1)+
-      #geom_segment(data=work_data,aes(x=POS,xend=END,y=value,yend=value,color=ALT),size=2,alpha=0.5)+
+      geom_segment(data = df,aes(x=loc.start,y=seg.mean,xend=loc.end,yend=seg.mean,color=factor(ID)),size=1)+
+      scale_color_manual(name="Segment",values = c("Proband"="blue","Mother"="#E69F00","Father"="#39918C"),)+
       ylim(-4,4)+xlab(plots$xlabel)+
       scale_rd+style_rd+scale_x_continuous(labels = scales::label_number())
   },ignoreInit = T)
@@ -358,7 +361,8 @@ server <- function(input, output,session) {
       scale_snp+
       style_snp+
       scale_colour_manual(values = cols)+
-      guides(color = guide_legend(override.aes = list(size = 4)))+scale_x_continuous(labels = scales::label_number())
+      guides(color = guide_legend(override.aes = list(size = 4)))+
+      scale_x_continuous(labels = scales::label_number())
   })
   
   # interactive plot regions-------
@@ -367,9 +371,31 @@ server <- function(input, output,session) {
     if(nrow(plots$pr_rd) == 0){
       return(NULL)
     }
+    if(nrow(values$selected_record)==0){
+      dup.df <- data.frame()
+      del.df <- data.frame()
+      trp.df <- data.frame()
+      cpx.df <- data.frame()
+    }else{
+      dup.df <- subset(values$selected_record, ALT%in%c("<DUP>","DUP"))
+      del.df <- subset(values$selected_record, ALT%in%c("<DEL>","DEL"))
+      trp.df <- subset(values$selected_record, ALT%in%c("<TRP>","TRP"))
+      cpx.df <- subset(values$selected_record, ALT%in%c("<CPX>","CPX"))
+      dup.df$rowidx <- as.numeric(rownames(dup.df))
+      del.df$rowidx <- as.numeric(rownames(del.df))
+      trp.df$rowidx <- as.numeric(rownames(trp.df))
+      cpx.df$rowidx <- as.numeric(rownames(cpx.df))
+    }
     plots$plot1 <- ext1()+
       coord_cartesian(xlim = ranges$x, ylim = ranges$y, expand = FALSE)+
-      geom_vline(xintercept=values$selected_record$POS, color="orange", size=1)+ 
+      ## pointer to the selected CNV call(suppressed)
+      #annotate("point",x=ifelse(is.null(values$selected_record$POS),-100,values$selected_record$POS),y=rep(1.8,length(values$selected_record$POS)),shape=25,fill="orange",size=2)+ 
+      geom_hline(yintercept=-2.5,col="black")+
+      annotate("text",x=ifelse(is.null(ranges$x),-100000,sum(ranges$x)/2),y=-2.3,label="SVTYPE")+
+      annotate("rect",xmin=dup.df$POS,xmax=dup.df$END,ymin=dup.df$rowidx%%4*0.1-3,ymax=(dup.df$rowidx%%4+1)*0.1-3,fill = CNVCOLOR6["DUP"])+
+      annotate("rect",xmin=del.df$POS,xmax=del.df$END,ymin=del.df$rowidx%%4*0.1-3,ymax=(del.df$rowidx%%4+1)*0.1-3,fill = CNVCOLOR6["DEL"])+
+      annotate("rect",xmin=trp.df$POS,xmax=trp.df$END,ymin=trp.df$rowidx%%4*0.1-3,ymax=(trp.df$rowidx%%4+1)*0.1-3,fill = CNVCOLOR6["TRP"])+
+      annotate("rect",xmin=cpx.df$POS,xmax=cpx.df$END,ymin=cpx.df$rowidx%%4*0.1-3,ymax=(cpx.df$rowidx%%4+1)*0.1-3,fill = CNVCOLOR6["CPX"])+
       ggtitle(paste0(plots$xlabel,":",paste0(round(as.numeric(ranges$x)),collapse = "-")))
     plots$plot1
   })

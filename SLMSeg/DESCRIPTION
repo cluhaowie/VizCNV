@@ -1,0 +1,11 @@
+Package: SLMSeg
+Type: Package
+Title: Segmentation profiling library
+Version: 1.0
+Date: 2016-04-05
+Author: Alberto Magi <alberto.magi@gmail.com>
+Maintainer: Valerio Orlandini <valeriorlandini@gmail.com>
+Description: This library performs segmentation analysis on a given set of log2ratio values.
+License: GPL-3
+NeedsCompilation: yes
+Packaged: 2016-04-13 10:27:37 UTC; valerio

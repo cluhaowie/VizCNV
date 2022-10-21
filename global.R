@@ -281,7 +281,9 @@ scale_snp <- scale_y_continuous(name="B-allele frequency",
                                            round(3/4,2),
                                            round(2/5,2),
                                            round(3/5,2)
+                                
                                 ))
-SNPCOLOR2 <- c("#E69F00","#0072B2")
-
-
+SNPCOLOR2 <- c("#E69F00","#39918C")
+CNVCOLOR6 <- c("#00468b","#00468b","#8b0000","#8b0000","#008b46","#008b46")
+names(CNVCOLOR6) <- c("<TRP>","TRP","<DUP>","DUP","<DEL>","DEL")
+scale_SVType <- scale_fill_manual(CNVCOLOR6)
