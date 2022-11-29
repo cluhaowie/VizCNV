@@ -6,7 +6,7 @@
 #    
 #  ------------------------------------------------------------------------
 options(timeout = 6000)
-options(shiny.maxRequestSize=2*1024^3) ## max file size 1 Gb
+options(shiny.maxRequestSize=3*1024^3) ## max file size 3 Gb
 options(shiny.autoreload=TRUE)
 options(shiny.reactlog=TRUE) 
 library(BiocManager)
