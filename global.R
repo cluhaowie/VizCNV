@@ -12,6 +12,7 @@ options(shiny.reactlog=TRUE)
 library(BiocManager)
 options(repos = BiocManager::repositories())
 
+
 # Packages ----------------------------------------------------------------
 # Install missing packages from CRAN
 list.of.packages <- c("dplyr", "data.table", "knitr", "testthat", "shiny", "shinydashboard",
@@ -184,7 +185,7 @@ SegNormRD <- function(df, id, seg.method = "cbs") {
 #hg38.info <- hg38.info %>% mutate(chrom=rownames(hg38.info))
 hg38.info <- data.table::fread("hg38.info.txt")
 #write.table(hg38.info,file = "hg38.info.txt",quote = F,row.names = F,col.names = T)
-hg19.info <- data.table::fread("hg38.info.txt")
+hg19.info <- data.table::fread("hg19.info.txt")
 #hg19.info <- hg19.info %>% mutate(chrom=rownames(hg19.info))
 #write.table(hg19.info,file = "hg19.info.txt",quote = F,row.names = F,col.names = T)
 blacklist <- data.table::fread("GRCh38_unified_blacklist.bed.gz")%>%

@@ -76,7 +76,7 @@ ui <- dashboardPage(
                                                                                                                                                        label = NULL,
                                                                                                                                                        c("index case"="Proband",
                                                                                                                                                          "Mom"="Mother",
-                                                                                                                                                         "Dad"="Father"),selected = "proband"),
+                                                                                                                                                         "Dad"="Father"),selected = "Proband"),
                                  tippy::tippy_this(elementId = "info_include",tooltip = "Choose to show segment from either or both parents",placement = "right")
                                ))
                       ),

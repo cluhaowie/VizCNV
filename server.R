@@ -16,6 +16,8 @@ server <- function(input, output,session) {
                                                "Dad's read depth file",
                                                "Joint SNP vcf file"),datapath=rep("None",5),stringsAsFactors = F)
   values$selected_record <- data.frame(stringsAsFactors = F)
+  values$snp_gvcf_file_ref <- vector()
+  values$ref_info <- data.frame(stringsAsFactors = F)
   
   plots <- reactiveValues()
   plots$pr_rd <- data.frame(stringsAsFactors = F)
@@ -204,6 +206,8 @@ server <- function(input, output,session) {
     if(is.null(values$snp_gvcf_file)){return(NULL)}
     req(values$snp_gvcf_file)
     Rsamtools::indexTabix(values$snp_gvcf_file$datapath,format = "vcf")
+    #read the header of p.VCF file to checking the chr id
+    #values$snp_gvcf_file_ref <- VariantAnnotation::scanVcfHeader(values$snp_gvcf_file$datapath)@reference
     showModal(modalDialog(
       title = "File upload",
       "The joint called SNP file has been uploaded and indexed"
@@ -242,9 +246,11 @@ server <- function(input, output,session) {
     if(input$ref=="GRCh38"){
       blacklist <- data.table::fread("GRCh38_unified_blacklist.bed.gz")%>%
         regioneR::toGRanges()
-    }else{
+      values$ref_info <- data.table::fread("hg38.info.txt")
+    }else if(input$ref=="GRCh37"){
       blacklist <- data.table::fread("ENCFF001TDO.bed.gz")%>%
         regioneR::toGRanges()
+      values$ref_info <- data.table::fread("hg19.info.txt")
     }
   })
   
@@ -309,7 +315,9 @@ server <- function(input, output,session) {
     }else{
       w$show()
       loc.start <- 0
-      loc.end <- hg38.info%>%filter(chrom==chr)%>%dplyr::select(seqlengths)%>%unlist
+      loc.end <- values$ref_info%>%
+        filter(chrom==chr)%>%
+        dplyr::select(seqlengths)%>%unlist
       range.gr <- GenomicRanges::GRanges(chr,ranges = IRanges(loc.start,loc.end))
       range.gr <- GenomicRanges::setdiff(range.gr, blacklist)
       plots$snp_chr <- ReadGVCF(snp_gvcf_file$datapath,ref_genome=input$ref,param = range.gr)%>%
