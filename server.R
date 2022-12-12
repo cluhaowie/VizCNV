@@ -207,7 +207,7 @@ server <- function(input, output,session) {
     req(values$snp_gvcf_file)
     Rsamtools::indexTabix(values$snp_gvcf_file$datapath,format = "vcf")
     #read the header of p.VCF file to checking the chr id
-    #values$snp_gvcf_file_ref <- VariantAnnotation::scanVcfHeader(values$snp_gvcf_file$datapath)@reference
+    values$snp_gvcf_file_ref <- VariantAnnotation::scanVcfHeader(values$snp_gvcf_file$datapath)@reference
     showModal(modalDialog(
       title = "File upload",
       "The joint called SNP file has been uploaded and indexed"
@@ -310,6 +310,13 @@ server <- function(input, output,session) {
     snp_gvcf_file=values$snp_gvcf_file
     ref_genome <- input$ref
     chr <- input$chr
+    if(!chr%in%values$snp_gvcf_file_ref){
+      if(chr%in%chrom_id){
+        chr <- names(chrom_id)[which(chrom_id==chr)]
+      }else{
+        chr <- chrom_id[which(names(chrom_id)==chr)]
+      }
+    }
     if(is.null(snp_gvcf_file$datapath)){
       return(NULL)
     }else{

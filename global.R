@@ -288,3 +288,6 @@ SNPCOLOR2 <- c("#E69F00","#39918C")
 CNVCOLOR6 <- c("#00468b","#00468b","#8b0000","#8b0000","#008b46","#008b46")
 names(CNVCOLOR6) <- c("<TRP>","TRP","<DUP>","DUP","<DEL>","DEL")
 scale_SVType <- scale_fill_manual(CNVCOLOR6)
+chrom_id <- c(1:22,"X")
+names(chrom_id) <- paste0("chr",chrom_id)
+
