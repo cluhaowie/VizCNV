@@ -146,9 +146,12 @@ server <- function(input, output,session) {
     if(is.integer(input$local_pr_snv_file)){cat("no file\n")}else{
       values$snp_gvcf_file <- parseFilePaths(volumes, input$local_pr_snv_file)
       index.file <- paste0(values$snp_gvcf_file$datapath,".tbi")
+      #read the header of p.VCF file to checking the chr id
+      values$snp_gvcf_file_ref <- VariantAnnotation::scanVcfHeader(values$snp_gvcf_file$datapath)@reference
       if(!file.exists(index.file)){
         Rsamtools::indexTabix(values$snp_gvcf_file$datapath,format = "vcf")
       }
+      
       showModal(modalDialog(
         title = "File upload",
         "The joint called SNP file has been indexed"
