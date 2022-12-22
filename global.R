@@ -68,7 +68,6 @@ library(bedr)
 library(RSQLite) 
 library(Rsamtools)
 library(VariantAnnotation)
-library(BSgenome.Hsapiens.UCSC.hg38)
 library(scattermore)
 
 # set up local database -------
