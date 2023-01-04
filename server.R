@@ -326,7 +326,7 @@ server <- function(input, output,session) {
       w$show()
       loc.start <- 0
       loc.end <- values$ref_info%>%
-        filter(chrom==chr)%>%
+        filter(chrom%in%c(chr,paste0("chr",chr)))%>%
         dplyr::select(seqlengths)%>%unlist
       range.gr <- GenomicRanges::GRanges(chr,ranges = IRanges(loc.start,loc.end))
       range.gr <- GenomicRanges::setdiff(range.gr, blacklist)
