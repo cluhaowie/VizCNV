@@ -9,14 +9,14 @@ options(timeout = 6000)
 options(shiny.maxRequestSize=3*1024^3) ## max file size 3 Gb
 options(shiny.autoreload=TRUE)
 options(shiny.reactlog=TRUE) 
-library(BiocManager)
-options(repos = BiocManager::repositories())
+#library(BiocManager)
+#options(repos = BiocManager::repositories())
 
 
 # Packages ----------------------------------------------------------------
 # Install missing packages from CRAN
 list.of.packages <- c("dplyr", "data.table", "knitr", "testthat", "shiny", "shinydashboard",
-                      "tippy","DT","ggplot2","RSQLite","shinyWidgets","shinyFiles","waiter","scattermore","cowplot","devtools")
+                      "tippy","DT","ggplot2","RSQLite","shinyWidgets","shinyFiles","waiter","scattermore","cowplot","devtools","BiocManager")
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
 if(length(new.packages)) install.packages(new.packages)
 
@@ -54,7 +54,7 @@ library(shiny)
 library(shinydashboard)
 library(shinyFiles)
 library(shinyWidgets)
-library(shinyjs)
+#library(shinyjs)
 library(waiter)
 library(fs)
 library(tippy)
