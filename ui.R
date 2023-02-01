@@ -44,17 +44,9 @@ ui <- dashboardPage(
                   box(title="Filter parameters",status="primary",width = 12,solidHeader = T,collapsible = T,
                       
                       fluidRow(
-                        column(2, 
+                        column(4, 
                                p(HTML("<b>Chromosome</b>"),span(shiny::icon("info-circle"), id = "info_chr"),selectizeInput('chr', choice=NULL,label = NULL,options = list(maxItems = 1,placeholder="chr6")),
                                  tippy::tippy_this(elementId = "info_chr",tooltip = "Selected chromosome",placement = "right")
-                               )),
-                        column(2, 
-                               p(HTML("<b>Type</b>"),span(shiny::icon("info-circle"), id = "info_type"),selectizeInput('type', label = NULL, choices = NULL,options = list(maxItems = 4)),
-                                 tippy::tippy_this(elementId = "info_type",tooltip = "The type of CNV in vcf header",placement = "right")
-                               )),
-                        column(2, 
-                               p(HTML("<b>GT</b>"),span(shiny::icon("info-circle"), id = "info_gt"),selectInput('gt', label = NULL, choices = c("0/1","1/1","0/1|1/1")),
-                                 tippy::tippy_this(elementId = "info_gt",tooltip = "The genotype of the CNV",placement = "right")
                                ))
                       ),
                       fluidRow(
@@ -74,9 +66,9 @@ ui <- dashboardPage(
                         column(4, 
                                p(HTML("<b>Choose segment to be included</b>"),span(shiny::icon("info-circle"), id = "info_include"),checkboxGroupInput(inputId="include_seg",
                                                                                                                                                        label = NULL,
-                                                                                                                                                       c("index case"="Proband",
-                                                                                                                                                         "Mom"="Mother",
-                                                                                                                                                         "Dad"="Father"),selected = "Proband"),
+                                                                                                                                                       c("index case"="index",
+                                                                                                                                                         "Mom"="m",
+                                                                                                                                                         "Dad"="f"),selected = "index"),
                                  tippy::tippy_this(elementId = "info_include",tooltip = "Choose to show segment from either or both parents",placement = "right")
                                ))
                       ),
@@ -100,9 +92,6 @@ ui <- dashboardPage(
                       DT::dataTableOutput("Select_table"))),
                 fluidRow(
                   box(title ="Plot",width = 12,solidHeader = T, status = "success",collapsible = T,
-                      fluidRow(
-                        column(1,uiOutput("ui_dlbtn_goto"))
-                      ),
                       fluidRow(                                     
                         plotOutput(
                           "plot1",
