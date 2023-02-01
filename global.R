@@ -68,7 +68,7 @@ library(bedr)
 library(RSQLite) 
 library(Rsamtools)
 library(VariantAnnotation)
-library(scattermore)
+#library(scattermore) ## deprecated
 
 # set up local database -------
 
