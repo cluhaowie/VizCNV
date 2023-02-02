@@ -43,7 +43,7 @@ server <- function(input, output,session) {
   shinyFileChoose(input, "local_f_rd_file", roots = volumes, session = session)
   shinyFileChoose(input, "local_pr_snv_file", roots = volumes, session = session)
   output$file_source_ui1 <- renderUI({
-    if(input$file_source=="FALSE"){
+    if(input$file_source=="TRUE"){
       tagList(
         radioButtons(inputId = "ref",label = h3("Choose one reference genome"),choices = list("GRCh37"="GRCh37","GRCh38"="GRCh38"),inline = T,selected = "GRCh38"),
         fileInput("sv_vcf_file",label = "Structual variant vcf files",accept=c("*.vcf","*.vcf.gz"),multiple = F,buttonLabel = "Browse..."),
@@ -67,7 +67,7 @@ server <- function(input, output,session) {
     }
   })
   output$file_source_ui2 <- renderUI({
-    if(input$file_source=="FALSE"){
+    if(input$file_source=="TRUE"){
       tagList(
         fileInput("pr_rd_file",label = "Proband's read depth files (required)",accept=c("*.bed","*.bed.gz"),multiple = F,buttonLabel = "Browse..."),
         fileInput("m_rd_file",label = "Mom's read depth files (optional)",accept=c("*.bed","*.bed.gz"),multiple = F,buttonLabel = "Browse..."),
@@ -101,7 +101,9 @@ server <- function(input, output,session) {
            values$local_file_paths$datapath[5] <- parseFilePaths(volumes, input$local_pr_snv_file)$name)
     values$local_file_paths
   })
-  
+  output$dnSNV_ui <- shiny::renderUI({
+    
+  })
   # observe file uploaded and save in SQLdatabase---------
   # local option
   observeEvent(input$local_sv_file,{ 

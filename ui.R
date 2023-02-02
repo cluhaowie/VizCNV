@@ -47,7 +47,8 @@ ui <- dashboardPage(
                         column(4, 
                                p(HTML("<b>Chromosome</b>"),span(shiny::icon("info-circle"), id = "info_chr"),selectizeInput('chr', choice=NULL,label = NULL,options = list(maxItems = 1,placeholder="chr6")),
                                  tippy::tippy_this(elementId = "info_chr",tooltip = "Selected chromosome",placement = "right")
-                               ))
+                               )),
+                        column(4,uiOutput("dnSNV_ui"))
                       ),
                       fluidRow(
                         column(4, 
