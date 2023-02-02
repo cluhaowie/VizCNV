@@ -52,10 +52,6 @@ ui <- dashboardPage(
                       ),
                       fluidRow(
                         column(4, 
-                               p(HTML("<b>Show de novo SNV ?</b>"),span(shiny::icon("info-circle"), id = "info_nor"),checkboxGroupInput(inputId="include_dnSNV",
-                                                                                                                                    label = NULL,
-                                                                                                                                    c("Show"="TRUE")))),
-                        column(4, 
                                p(HTML("<b>Segment option</b>"),span(shiny::icon("info-circle"), id = "info_seg"),radioButtons('seg_option', 
                                                                                                                               label = NULL,
                                                                                                                               choiceNames = list("SLM","CBS"),

@@ -102,7 +102,13 @@ server <- function(input, output,session) {
     values$local_file_paths
   })
   output$dnSNV_ui <- shiny::renderUI({
-    
+    if(is.null(input$sv_vcf_file)){return(NULL)}
+    else{
+      shiny::tagList(
+        p(HTML("<b>Show de novo SNV ?</b>"),
+          span(shiny::icon("info-circle"), id = "info_nor"),
+          checkboxGroupInput(inputId="include_dnSNV",label = NULL,c("Show"="TRUE"))))
+    }
   })
   # observe file uploaded and save in SQLdatabase---------
   # local option
