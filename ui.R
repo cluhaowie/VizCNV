@@ -63,9 +63,9 @@ ui <- dashboardPage(
                         column(4, 
                                p(HTML("<b>Choose segment to be included</b>"),span(shiny::icon("info-circle"), id = "info_include"),checkboxGroupInput(inputId="include_seg",
                                                                                                                                                        label = NULL,
-                                                                                                                                                       c("index case"="index",
-                                                                                                                                                         "Mom"="m",
-                                                                                                                                                         "Dad"="f"),selected = "index"),
+                                                                                                                                                       c("index case"="Proband",
+                                                                                                                                                         "Mom"="Mother",
+                                                                                                                                                         "Dad"="Father"),selected = "Proband"),
                                  tippy::tippy_this(elementId = "info_include",tooltip = "Choose to show segment from either or both parents",placement = "right")
                                ))
                       ),
@@ -89,7 +89,10 @@ ui <- dashboardPage(
                       DT::dataTableOutput("Select_table"))),
                 fluidRow(
                   box(title ="Plot",width = 12,solidHeader = T, status = "success",collapsible = T,
-                      fluidRow(                                     
+                      fluidRow(
+                        column(1,uiOutput("ui_dlbtn_goto"))
+                      ),
+                      fluidRow(
                         plotOutput(
                           "plot1",
                           height = 400,
