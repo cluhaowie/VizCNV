@@ -205,8 +205,13 @@ ReadGVCF <- function(path_to_gVCF,ref_genome=ref_genome,param = param){
   G3=c('0/1',"0|1")
   GT <- as.data.table(GT)
   setnames(GT,colnames(GT),c("index","P1","P2"))
-  GT.anno <- GT %>% mutate(InhFrom=ifelse(index%in%G3&P1%in%G1&P2%in%c(G2,G3),P2_ID,
-                                          ifelse(index%in%G3&P1%in%c(G2,G3)&P2%in%G1,P1_ID,"Notphased")))
+  GT.anno <- GT %>% mutate(InhFrom=case_when(index%in%G3&P1%in%G1&P2%in%c(G2,G3) ~ P2_ID,
+                                             index%in%G3&P1%in%c(G2,G3)&P2%in%G1 ~ P1_ID,
+                                             index%in%G1&P1%in%G1&P2 %in% G2 ~ P1_ID, 
+                                             index%in%G2&P1%in%G2&P2 %in% G1 ~ P1_ID,
+                                             index%in%G1&P1%in%G2&P2 %in% G1 ~ P2_ID, 
+                                             index%in%G2&P1%in%G1&P2 %in% G2 ~ P2_ID, 
+                                             TRUE ~ "Notphased"))
   AD <- as.data.table(AD)
   setnames(AD,colnames(AD),c("index","P1","P2"))
   AD.anno <- AD%>%
@@ -274,15 +279,16 @@ scale_rd <- scale_y_continuous(name="Log2 Ratio",
                                           round(log2(6/2),2)
                                ))
 scale_snp <- scale_y_continuous(name="B-allele frequency",
-                                breaks = c(round(1/2,2),
+                                limits = c(-0.0005, 1.0005),
+                                breaks = c(0,
+                                           round(1/2,2),
                                            round(1/3,2),
                                            round(2/3,2),
                                            round(1/4,2),
                                            round(3/4,2),
                                            round(2/5,2),
-                                           round(3/5,2)
-                                
-                                ))
+                                           round(3/5,2),
+                                           1))
 SNPCOLOR2 <- c("#E69F00","#39918C")
 CNVCOLOR6 <- c("#00468b","#00468b","#8b0000","#8b0000","#008b46","#008b46")
 names(CNVCOLOR6) <- c("<TRP>","TRP","<DUP>","DUP","<DEL>","DEL")
