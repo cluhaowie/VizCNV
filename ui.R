@@ -48,7 +48,7 @@ ui <- dashboardPage(
                                p(HTML("<b>Chromosome</b>"),span(shiny::icon("info-circle"), id = "info_chr"),selectizeInput('chr', choice=NULL,label = NULL,options = list(maxItems = 1,placeholder="chr6")),
                                  tippy::tippy_this(elementId = "info_chr",tooltip = "Selected chromosome",placement = "right")
                                )),
-                        column(4,uiOutput("dnSNV_ui"))
+                        column(4,uiOutput("blt_dnSNV_ui"))
                       ),
                       fluidRow(
                         column(4, 
@@ -67,6 +67,13 @@ ui <- dashboardPage(
                                                                                                                                                          "Mom"="Mother",
                                                                                                                                                          "Dad"="Father"),selected = "Proband"),
                                  tippy::tippy_this(elementId = "info_include",tooltip = "Choose to show segment from either or both parents",placement = "right")
+                               )),
+                        column(4, 
+                               p(HTML("<b>Annotation option</b>"),span(shiny::icon("info-circle"), id = "info_anno"),checkboxGroupInput(inputId="include_anno",
+                                                                                                                                        label = NULL,
+                                                                                                                                        c("GRCh38 v1.0 MANE refseq"="hg38_gene"),selected = "hg38_gene"),
+                                 tippy::tippy_this(elementId = "include_anno",tooltip = "Include MANE 1.0 transcripts
+                                                   in the annotation track",placement = "right")
                                ))
                       ),
                       fluidRow(
@@ -92,6 +99,8 @@ ui <- dashboardPage(
                       fluidRow(
                         column(1,uiOutput("ui_dlbtn_goto"))
                       ),
+                      fluidRow(
+                        uiOutput("ui_plot_anno")),
                       fluidRow(
                         plotOutput(
                           "plot1",
