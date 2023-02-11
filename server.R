@@ -29,9 +29,11 @@ server <- function(input, output,session) {
   plots$snp_chr <- data.frame(stringsAsFactors = F)
   plots$xlabel <- character()
   plots$SNPcols <- vector(length = 3) ## placeholder for color in SNP plot
+  plots$genelabel <- data.frame(stringsAsFactors = F)
   
   plots$plot1 <- list()
   plots$plot2 <- list()
+  plots$plot3 <- list()
   toListen <- reactive({
     list(values$data,values$pr_rd)
   })
@@ -101,8 +103,10 @@ server <- function(input, output,session) {
            values$local_file_paths$datapath[5] <- parseFilePaths(volumes, input$local_pr_snv_file)$name)
     values$local_file_paths
   })
-  output$dnSNV_ui <- shiny::renderUI({
-    if(is.null(input$sv_vcf_file)){return(NULL)}
+  output$blt_dnSNV_ui <- shiny::renderUI({
+    if(is.null(input$snp_gvcf_file)&is.integer(input$local_pr_snv_file)){
+      return(NULL)
+      }
     else{
       shiny::tagList(
         p(HTML("<b>Show de novo SNV ?</b>"),
@@ -350,7 +354,6 @@ server <- function(input, output,session) {
     }
   })
   
-  
   ext1 <- eventReactive(input$btn_plot,{
     # from input
     if(nrow(plots$pr_rd) == 0){
@@ -390,6 +393,8 @@ server <- function(input, output,session) {
       guides(color = guide_legend(override.aes = list(size = 4)))+
       scale_x_continuous(labels = scales::label_number())
   })
+  ## annotation panel
+
   
   # interactive plot regions-------
   ranges <- reactiveValues(x = NULL, y = NULL)
@@ -432,6 +437,12 @@ server <- function(input, output,session) {
     plots$plot2 <- ext2()+coord_cartesian(xlim = ranges$x, expand = FALSE)
     plots$plot2
   })
+  output$plot_anno <- renderPlot({
+    if(length(plots$plot3) == 0){
+      return(NULL)
+    }
+    plots$plot3+coord_cartesian(xlim = ranges$x, expand = FALSE)
+  })
   #When a double-click happens, check if there's a brush on the plot.
   #If so, zoom to the brush bounds; if not, reset the zoom.
   observeEvent(input$plot1_dblclick, {
@@ -439,14 +450,43 @@ server <- function(input, output,session) {
     chr <- input$chr
     if (!is.null(brush)) {
       ranges$x <- c(brush$xmin, brush$xmax)
-      ranges$y <- c(brush$ymin, brush$ymax)
-      if(nrow(values$data)!=0){
-        values$work_data <- values$data%>%filter(CHROM==chr)%>%filter(POS>=brush$xmin,POS < brush$xmax)
+      #ranges$y <- c(brush$ymin, brush$ymax)
+      if(max(ranges$x)-min(ranges$x) > maxSize_anno) {
+        plots$genelabel <- data.frame(stringsAsFactors = F)
+      }else{
+        plots$genelabel <- genebase%>%
+          filter(seqname==input$chr,
+                 start>(min(ranges$x)-1000),
+                 end < (max(ranges$x)+1000),
+                 type%in%c("exon"))%>%
+          dplyr::select(seqname,start,end,strand,transcript_id,gene_id,type)%>%
+          dplyr::collect()%>%
+          mutate(gene_num=round(as.numeric(as.factor(gene_id)),3))
+          
+        if(length(unique(plots$genelabel$gene_id))<maxtranscript){
+          gene_x <- plots$genelabel%>%
+            group_by(gene_num)%>%
+            summarise(start=(min(start)+max(end))/2,
+                      end=(min(start)+max(end))/2,
+                      gene_id=unique(gene_id))
+          plots$plot3 <- plots$genelabel%>%
+            ggplot(aes(xstart = start,xend = end,y = gene_num))+
+            ggtranscript::geom_range(aes(fill = strand)) +
+            ggtranscript::geom_intron(data = ggtranscript::to_intron(plots$genelabel, "gene_num"),aes(strand = strand))+
+            geom_text(data=gene_x,aes(x=start,label=gene_id),vjust = -1.2,check_overlap = T,fontface="italic")+
+            style_genes+scale_x_continuous(labels = scales::label_number())+scale_genes
+        }
       }
-      
+      if(nrow(values$data)!=0){
+        values$work_data <- values$data%>%
+          filter(CHROM==chr)%>%
+          filter(POS>=brush$xmin,POS < brush$xmax)
+      }
     } else {
       ranges$x <- NULL
       ranges$y <- NULL
+      plots$genelabel <- data.frame(stringsAsFactors = F)
+      plots$plot3 <- list()
       if(nrow(values$data)!=0){
         values$work_data <- values$data%>%filter(CHROM==chr)
       }
@@ -497,8 +537,8 @@ server <- function(input, output,session) {
       paste("index",input$chr,".pdf")
     },
     content = function(file){
-      p <- cowplot::plot_grid(plots$plot1,plots$plot2,ncol = 1)
-      ggplot2::ggsave(filename =file, plot = p,device = "pdf",width =12 ,height = 8,units = "in")
+      p <- cowplot::plot_grid(plots$plot1,plots$plot3,plots$plot2,ncol = 1)
+      ggplot2::ggsave(filename =file, plot = p,device = "pdf",width =12 ,height = 12,units = "in")
     }
   )
   output$dl_btn_dnsnv <- downloadHandler(

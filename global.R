@@ -14,9 +14,10 @@ options(shiny.reactlog=TRUE)
 
 
 # Packages ----------------------------------------------------------------
-# Install missing packages from CRAN
+# Install missing packages from CRAN, 'arrow' may be a problem
 list.of.packages <- c("dplyr", "data.table", "knitr", "testthat", "shiny", "shinydashboard",
-                      "tippy","DT","ggplot2","RSQLite","shinyWidgets","shinyFiles","waiter","scattermore","cowplot","devtools","BiocManager")
+                      "tippy","DT","ggplot2","RSQLite","shinyWidgets","shinyFiles","waiter",
+                      "scattermore","cowplot","devtools","BiocManager","arrow") 
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
 if(length(new.packages)) install.packages(new.packages)
 
@@ -69,10 +70,19 @@ library(RSQLite)
 library(Rsamtools)
 library(VariantAnnotation)
 #library(scattermore) ## deprecated
+library(arrow) ## read parquet data
 
 # set up local database -------
 
 sqlitePath="data/database.sqlite"
+genePath_hg38="data/MANE.GRCh38.v1.0.refseq.gz.parquet"
+rmskPath_hg38="data/hg38_rmsk.gz.parquet"
+maxSize_anno <- 20e6 # max size to show the transcripts
+maxtranscript <- 30 # max number of transcript to show
+
+genebase <- arrow::read_parquet(genePath_hg38,as_data_frame = F)
+rmskbase <- arrow::read_parquet(rmskPath_hg38,as_data_frame = F)
+
 
 saveData <- function(data,table) {
   # Connect to the database
@@ -247,6 +257,11 @@ style_rd <- theme_classic()+
     axis.title = element_text(color = "black", size = 16,face = "bold"),
     #axis.line.x = element_blank(),
     axis.ticks = element_line(color = "black"))
+style_genes <- style_rd+
+  theme(panel.grid.major.y = element_blank(),
+        axis.title.x = element_blank())
+scale_genes <- scale_y_continuous(labels = scales::label_number(accuracy = 0.01))
+  
 style_snp <- theme_classic()+
   theme(
     plot.title = element_text(face = "bold", size = 12),
