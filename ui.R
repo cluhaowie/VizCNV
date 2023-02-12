@@ -103,6 +103,13 @@ ui <- dashboardPage(
                         uiOutput("ui_plot_anno")),
                       fluidRow(
                         plotOutput(
+                          "plot_anno",
+                          height = 200,
+                          dblclick = "plot_anno_dblclick",
+                          brush = brushOpts(id = "plot_anno_brush",direction = "x",
+                                            resetOnNew = TRUE))),
+                      fluidRow(
+                        plotOutput(
                           "plot1",
                           height = 400,
                           dblclick = "plot1_dblclick",
