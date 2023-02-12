@@ -265,10 +265,6 @@ style_rd <- theme_classic()+
 style_genes <- style_rd+
   theme(panel.grid.major.y = element_blank(),
         axis.title.x = element_blank())
-<<<<<<< HEAD
-
-=======
->>>>>>> 48b286ba9df08bf6529bbd4d6932d7a670698d94
 scale_genes <- scale_y_continuous(labels = scales::label_number(accuracy = 0.01))
   
 style_snp <- theme_classic()+

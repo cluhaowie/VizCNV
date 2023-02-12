@@ -34,10 +34,8 @@ server <- function(input, output,session) {
   plots$plot1 <- list()
   plots$plot2 <- list()
   plots$plot3 <- list()
-<<<<<<< HEAD
   plots$plot3_dl <- list()
-=======
->>>>>>> 48b286ba9df08bf6529bbd4d6932d7a670698d94
+
   toListen <- reactive({
     list(values$data,values$pr_rd)
   })
@@ -457,12 +455,8 @@ server <- function(input, output,session) {
     if(length(plots$plot3) == 0){
       return(NULL)
     }
-<<<<<<< HEAD
     plots$plot3_dl <- plots$plot3+coord_cartesian(xlim = ranges$x, expand = FALSE)
     plots$plot3_dl
-=======
-    plots$plot3+coord_cartesian(xlim = ranges$x, expand = FALSE)
->>>>>>> 48b286ba9df08bf6529bbd4d6932d7a670698d94
   })
   #When a double-click happens, check if there's a brush on the plot.
   #If so, zoom to the brush bounds; if not, reset the zoom.
@@ -482,13 +476,8 @@ server <- function(input, output,session) {
                  type%in%c("exon"))%>%
           dplyr::select(seqname,start,end,strand,transcript_id,gene_id,type)%>%
           dplyr::collect()%>%
-<<<<<<< HEAD
           mutate(gene_num=round(as.numeric(as.factor(gene_id)),3),
                  strand=as.factor(strand))
-=======
-          mutate(gene_num=round(as.numeric(as.factor(gene_id)),3))
->>>>>>> 48b286ba9df08bf6529bbd4d6932d7a670698d94
-          
         if(length(unique(plots$genelabel$gene_id))<maxtranscript){
           gene_x <- plots$genelabel%>%
             group_by(gene_num)%>%
@@ -500,13 +489,9 @@ server <- function(input, output,session) {
             ggtranscript::geom_range(aes(fill = strand)) +
             ggtranscript::geom_intron(data = ggtranscript::to_intron(plots$genelabel, "gene_num"),aes(strand = strand))+
             geom_text(data=gene_x,aes(x=start,label=gene_id),vjust = -1.2,check_overlap = T,fontface="italic")+
-<<<<<<< HEAD
             style_genes+scale_genes+
             scale_fill_manual(values = c("+"="#E69F00","-"="#39918C"))+
             scale_x_continuous(labels = scales::label_number())
-=======
-            style_genes+scale_x_continuous(labels = scales::label_number())+scale_genes
->>>>>>> 48b286ba9df08bf6529bbd4d6932d7a670698d94
         }
       }
       if(nrow(values$data)!=0){
@@ -569,13 +554,10 @@ server <- function(input, output,session) {
       paste(input$chr,".pdf")
     },
     content = function(file){
-<<<<<<< HEAD
+
       mylist <- list(plots$plot1,plots$plot3_dl,plots$plot2)
       mylist <- mylist[lengths(mylist)!= 0]
       p <- cowplot::plot_grid(plotlist=mylist,ncol = 1,align = 'v',axis = 'lr')
-=======
-      p <- cowplot::plot_grid(plots$plot1,plots$plot3,plots$plot2,ncol = 1)
->>>>>>> 48b286ba9df08bf6529bbd4d6932d7a670698d94
       ggplot2::ggsave(filename =file, plot = p,device = "pdf",width =12 ,height = 12,units = "in")
     }
   )
