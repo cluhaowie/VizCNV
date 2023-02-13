@@ -1,8 +1,3 @@
----
-editor_options: 
-  markdown: 
-    wrap: 72
----
 
 # VizCNV
 
@@ -21,6 +16,11 @@ Launch app on local:
 
 ``` r
 shiny::runGitHub(repo = "BCM-Lupskilab/VizCNV")
+```
+
+or Launch app on local with the dev branch:
+``` r
+shiny::runGitHub(repo = "cluhaowie/VizCNV",ref="dev-annotrack")
 ```
 
 ![fig](/www/screenshot1.png)
