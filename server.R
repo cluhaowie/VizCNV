@@ -412,6 +412,17 @@ server <- function(input, output,session) {
   
   # interactive plot regions-------
   ranges <- reactiveValues(x = NULL, y = NULL)
+  output$brush_info <- renderPrint({
+    brush <- input$plot1_brush
+    chr <- input$chr
+    if(!is.null(brush)){
+      cat(paste0("select region: ",chr,":",
+                 format(round(brush$xmin,0),big.mark=",",scientific = FALSE),
+                 "-",
+                 format(round(brush$xmax,0),big.mark=",",scientific = FALSE),
+                 ", ",round(brush$xmax-brush$xmin,0),"bp"))
+    }
+  })
   output$plot1 <- renderPlot({
     if(nrow(plots$pr_rd) == 0){
       return(NULL)
