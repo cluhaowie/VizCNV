@@ -18,6 +18,7 @@ server <- function(input, output,session) {
   values$selected_record <- data.frame(stringsAsFactors = F)
   values$snp_gvcf_file_ref <- vector()
   values$ref_info <- data.frame(stringsAsFactors = F)
+  values$anno_rect <- data.frame(stringsAsFactors = F)
   
   plots <- reactiveValues()
   plots$pr_rd <- data.frame(stringsAsFactors = F)
@@ -442,6 +443,12 @@ server <- function(input, output,session) {
       trp.df$rowidx <- as.numeric(rownames(trp.df))
       cpx.df$rowidx <- as.numeric(rownames(cpx.df))
     }
+    if(nrow(values$anno_rect)==0){
+      anno_rect <- data.frame()
+    }else{
+      anno_rect <- values$anno_rect
+      anno_rect$rowidx <- as.numeric(rownames(anno_rect))
+    }
     plots$plot1 <- ext1()+
       coord_cartesian(xlim = ranges$x, ylim = ranges$y, expand = FALSE)+
       ## pointer to the selected CNV call(suppressed)
@@ -452,6 +459,7 @@ server <- function(input, output,session) {
       annotate("rect",xmin=del.df$POS,xmax=del.df$END,ymin=del.df$rowidx%%4*0.1-3,ymax=(del.df$rowidx%%4+1)*0.1-3,fill = CNVCOLOR6["DEL"])+
       annotate("rect",xmin=trp.df$POS,xmax=trp.df$END,ymin=trp.df$rowidx%%4*0.1-3,ymax=(trp.df$rowidx%%4+1)*0.1-3,fill = CNVCOLOR6["TRP"])+
       annotate("rect",xmin=cpx.df$POS,xmax=cpx.df$END,ymin=cpx.df$rowidx%%4*0.1-3,ymax=(cpx.df$rowidx%%4+1)*0.1-3,fill = CNVCOLOR6["CPX"])+
+      annotate("rect",xmin=anno_rect$xmin,xmax=anno_rect$xmax,fill=anno_rect$fill,ymin=anno_rect$rowidx*0-3,ymax=(anno_rect$rowidx-anno_rect$rowidx+2),alpha=0.3)+
       ggtitle(paste0(plots$xlabel,":",paste0(round(as.numeric(ranges$x)),collapse = "-")))
     plots$plot1
   })
@@ -466,7 +474,15 @@ server <- function(input, output,session) {
     if(length(plots$plot3) == 0){
       return(NULL)
     }
-    plots$plot3_dl <- plots$plot3+coord_cartesian(xlim = ranges$x, expand = FALSE)
+    if(nrow(values$anno_rect)==0){
+      anno_rect <- data.frame()
+    }else{
+      anno_rect <- values$anno_rect
+      anno_rect$rowidx <- as.numeric(rownames(anno_rect))
+    }
+    plots$plot3_dl <- plots$plot3+
+      annotate("rect",xmin=anno_rect$xmin,xmax=anno_rect$xmax,fill=anno_rect$fill,ymin=anno_rect$rowidx*0,ymax=(anno_rect$rowidx-anno_rect$rowidx+2)+length(unique(plots$genelabel$gene_id)),alpha=0.3)+
+      coord_cartesian(xlim = ranges$x, expand = FALSE)
     plots$plot3_dl
   })
   #When a double-click happens, check if there's a brush on the plot.
@@ -530,12 +546,30 @@ server <- function(input, output,session) {
       ranges$y <- NULL
     }
   })
-  
+  observeEvent(input$btl_goto,{
+    if(!is.null(input$goto_reg)){
+      goto_reg <- as.numeric(unlist(strsplit(input$goto_reg,"-|_")))
+      validate(need(length(goto_reg)==2,"Check at least two coordinates"))
+      ranges$x <- goto_reg
+    }
+  })
+  observeEvent(input$btl_add,{
+    brush <- input$plot1_brush
+    if(!is.null(brush)){
+      xmin <- round(brush$xmin,0)
+      xmax <- round(brush$xmax,0)
+      fill <- input$add_col
+      values$anno_rect <- rbindlist(list(values$anno_rect,data.frame(xmin,xmax,fill)))
+    }
+  })
+  observeEvent(input$btl_reset,{
+    values$anno_rect <- data.frame(stringsAsFactors = F)
+  })
+
   ## buttons 
   output$ui_dlbtn_tbl <- renderUI({
     if(nrow(values$data) > 0){
-      tagList(shiny::actionButton("btl_select", "Select",icon("check")),
-              shiny::actionButton("btl_select2", "Clear",icon("trash")))
+      tagList(shiny::actionButton("btl_select", "Select",icon("check")))
     }
   })
   output$ui_dlbtn_plt <- renderUI({
@@ -551,6 +585,22 @@ server <- function(input, output,session) {
   output$ui_dlbtn_dnsnv <- renderUI({
     if(length(plots$plot2) > 0){
       shiny::downloadButton("dl_btn_dnsnv","Download dnSNV")
+    }
+  })
+  output$ui_btn_goto <- renderUI({
+    if(length(plots$plot1)>0){
+      tagList(
+        fluidRow(
+          column(1,shiny::actionButton("btl_goto","goto")),
+          column(8,shiny::textInput("goto_reg",label = NULL,placeholder = "e.g, 10000-20000 or 10000_200000"))))
+    }
+  })
+  output$ui_btn_add <- renderUI({
+    if(length(plots$plot1)>0){
+      tagList(
+        fluidRow(column(1,shiny::actionButton("btl_add","Add")),
+                 column(4,colourpicker::colourInput("add_col",NULL,"yellow",palette = "limited")),
+                 column(1,shiny::actionButton("btl_reset","Reset"))))
     }
   })
   observeEvent(input$cl_btn,{

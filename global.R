@@ -17,7 +17,7 @@ options(shiny.reactlog=TRUE)
 # Install missing packages from CRAN, 'arrow' may be a problem
 list.of.packages <- c("dplyr", "data.table", "knitr", "testthat", "shiny", "shinydashboard",
                       "tippy","DT","ggplot2","RSQLite","shinyWidgets","shinyFiles","waiter",
-                      "scattermore","cowplot","devtools","BiocManager","arrow") 
+                      "scattermore","cowplot","devtools","BiocManager","arrow","colourpicker") 
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
 if(length(new.packages)) install.packages(new.packages)
 
@@ -71,7 +71,7 @@ library(Rsamtools)
 library(VariantAnnotation)
 #library(scattermore) ## deprecated
 library(arrow) ## read parquet data
-
+#library(colourpicker) ## required for picking annotation color
 # set up local database -------
 
 sqlitePath="data/database.sqlite"
