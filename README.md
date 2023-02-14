@@ -17,7 +17,10 @@ Launch app on local:
 ``` r
 shiny::runGitHub(repo = "BCM-Lupskilab/VizCNV")
 ```
-
+or lauch app on lacal with the dev repo
+``` r
+shiny::runGitHub(repo = "cluhaowie/VizCNV",ref="dev-annotrack")
+```
 
 ![fig](/www/screenshot1.png)
 
