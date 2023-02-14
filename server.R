@@ -129,6 +129,19 @@ server <- function(input, output,session) {
                           resetOnNew = TRUE))
     }
   })
+  output$ui_plot_snp <- shiny::renderUI({
+    if(is.null(input$snp_gvcf_file)&is.integer(input$local_pr_snv_file)){
+      helpText("")
+    } else {
+      plotOutput(
+        "plot2",
+        height = 400,
+        dblclick = "plot2_dblclick",
+        brush = brushOpts(id = "plot2_brush",direction = "x",
+                          resetOnNew = TRUE))
+    }
+  })
+  
   # observe file uploaded and save in SQLdatabase---------
   # local option
   observeEvent(input$local_sv_file,{ 

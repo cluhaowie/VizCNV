@@ -80,13 +80,6 @@ ui <- dashboardPage(
                         useWaiter(),
                         uiOutput("btn_filter_plot")
                       ))),
-                # fluidRow(
-                #     box(title = "plot parameter",width = 10,solidHeader = T, status = "primary",collapsible = T,
-                #         fluidRow(
-                #            # column(1,actionButton("btn_filter","Filter")),
-                #             column(1,actionButton("btn_plot","Plot")))
-                #         )),
-                
                 fluidRow(
                   box(title = "Table",width = 12,solidHeader = T, status = "success",collapsible = T,
                       DT::dataTableOutput("filter_sv_table"),
@@ -108,13 +101,7 @@ ui <- dashboardPage(
                           dblclick = "plot1_dblclick",
                           brush = brushOpts(id = "plot1_brush",direction = "x",
                                             resetOnNew = TRUE))),
-                      fluidRow(                                     
-                        plotOutput(
-                          "plot2",
-                          height = 400,
-                          dblclick = "plot2_dblclick",
-                          brush = brushOpts(id = "plot2_brush",direction = "x",
-                                            resetOnNew = TRUE))),
+                      fluidRow(uiOutput("ui_plot_snp")),
                       fluidRow(
                         column(1,uiOutput("ui_dlbtn_plt")),
                         column(1,uiOutput("ui_clbtn_plt")),
