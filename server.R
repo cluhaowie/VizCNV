@@ -684,8 +684,9 @@ server <- function(input, output,session) {
 
       mylist <- list(plots$plot1,plots$plot3_dl,plots$plot2)
       mylist <- mylist[lengths(mylist)!= 0]
+      n <- length(mylist)
       p <- cowplot::plot_grid(plotlist=mylist,ncol = 1,align = 'v',axis = 'lr')
-      ggplot2::ggsave(filename =file, plot = p,device = "pdf",width =12 ,height = 12,units = "in")
+      ggplot2::ggsave(filename =file, plot = p,device = "pdf",width =12 ,height = n*4,units = "in")
     }
   )
   output$dl_btn_dnsnv <- downloadHandler(
