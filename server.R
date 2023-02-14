@@ -498,8 +498,8 @@ server <- function(input, output,session) {
       }else{
         plots$genelabel <- genebase%>%
           filter(seqname==input$chr,
-                 start>(min(ranges$x)-1000),
-                 end < (max(ranges$x)+1000),
+                 start>(min(ranges$x)-geneExtend),
+                 end < (max(ranges$x)+geneExtend),
                  type%in%c("exon"))%>%
           dplyr::select(seqname,start,end,strand,transcript_id,gene_id,type)%>%
           dplyr::collect()%>%
@@ -548,9 +548,62 @@ server <- function(input, output,session) {
   })
   observeEvent(input$btl_goto,{
     if(!is.null(input$goto_reg)){
-      goto_reg <- as.numeric(unlist(strsplit(input$goto_reg,"-|_")))
-      validate(need(length(goto_reg)==2,"Check at least two coordinates"))
-      ranges$x <- goto_reg
+      gene <- as.character(input$goto_reg)
+      gene.exist <- genebase%>%filter(seqname==input$chr,
+                                      gene_id==gene,
+                                      type%in%c("exon"))%>%
+        dplyr::select(seqname,start,end,strand,transcript_id,gene_id,type)%>%
+        collect()
+      if(nrow(gene.exist)!=0){
+        ranges$x <- c(as.numeric(min(gene.exist$start)-geneExtend),
+                      as.numeric(max(gene.exist$end)+geneExtend))
+        gene.exist <- gene.exist%>%
+          mutate(gene_num=round(as.numeric(as.factor(gene_id)),3),
+                 strand=as.factor(strand))
+        gene_x <- gene.exist%>%
+          group_by(gene_num)%>%
+          summarise(start=(min(start)+max(end))/2,
+                    end=(min(start)+max(end))/2,
+                    gene_id=unique(gene_id))
+        plots$plot3 <- gene.exist%>%
+          ggplot(aes(xstart = start,xend = end,y = gene_num))+
+          ggtranscript::geom_range(aes(fill = strand)) +
+          ggtranscript::geom_intron(data = ggtranscript::to_intron(gene.exist, "gene_num"),aes(strand = strand))+
+          geom_text(data=gene_x,aes(x=start,label=gene_id),vjust = -1.2,check_overlap = T,fontface="italic")+
+          style_genes+scale_genes+
+          scale_fill_manual(values = c("+"="#E69F00","-"="#39918C"))+
+          scale_x_continuous(labels = scales::label_number())
+      }else{
+        goto_reg <- as.numeric(unlist(strsplit(input$goto_reg,"-|_")))
+        validate(need(length(goto_reg)==2,"Check at least two coordinates"))
+        ranges$x <- c(min(goto_reg)-geneExtend,max(goto_reg)+geneExtend)
+        plots$genelabel <- genebase%>%
+          filter(seqname==input$chr,
+                 start>(min(ranges$x)-geneExtend),
+                 end < (max(ranges$x)+geneExtend),
+                 type%in%c("exon"))%>%
+          dplyr::select(seqname,start,end,strand,transcript_id,gene_id,type)%>%
+          dplyr::collect()%>%
+          mutate(gene_num=round(as.numeric(as.factor(gene_id)),3),
+                 strand=as.factor(strand))
+        if(length(unique(plots$genelabel$gene_id))<maxtranscript){
+          gene_x <- plots$genelabel%>%
+            group_by(gene_num)%>%
+            summarise(start=(min(start)+max(end))/2,
+                      end=(min(start)+max(end))/2,
+                      gene_id=unique(gene_id))
+          plots$plot3 <- plots$genelabel%>%
+            ggplot(aes(xstart = start,xend = end,y = gene_num))+
+            ggtranscript::geom_range(aes(fill = strand)) +
+            ggtranscript::geom_intron(data = ggtranscript::to_intron(plots$genelabel, "gene_num"),aes(strand = strand))+
+            geom_text(data=gene_x,aes(x=start,label=gene_id),vjust = -1.2,check_overlap = T,fontface="italic")+
+            style_genes+scale_genes+
+            scale_fill_manual(values = c("+"="#E69F00","-"="#39918C"))+
+            scale_x_continuous(labels = scales::label_number())
+        }
+
+      }
+      
     }
   })
   observeEvent(input$btl_add,{
@@ -592,7 +645,7 @@ server <- function(input, output,session) {
       tagList(
         fluidRow(
           column(1,shiny::actionButton("btl_goto","goto")),
-          column(8,shiny::textInput("goto_reg",label = NULL,placeholder = "e.g, 10000-20000 or 10000_200000"))))
+          column(8,shiny::textInput("goto_reg",label = NULL,placeholder = "e.g, 10000-20000 or GENE"))))
     }
   })
   output$ui_btn_add <- renderUI({

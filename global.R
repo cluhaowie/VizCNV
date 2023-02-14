@@ -79,6 +79,7 @@ genePath_hg38="data/MANE.GRCh38.v1.0.refseq.gz.parquet"
 rmskPath_hg38="data/hg38_rmsk.gz.parquet"
 maxSize_anno <- 20e6 # max size to show the transcripts
 maxtranscript <- 30 # max number of transcript to show
+geneExtend <- 1e5 # window size extend to 100kb
 
 genebase <- arrow::read_parquet(genePath_hg38,as_data_frame = F)
 rmskbase <- arrow::read_parquet(rmskPath_hg38,as_data_frame = F)
