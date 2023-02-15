@@ -151,7 +151,7 @@ SegNormRD <- function(df, id, seg.method = "cbs") {
     print("segment with CBS")
     CNA.obj <-
       DNAcopy::CNA(
-        log2(df$ratio + 0.00001),
+        log2(df$ratio + 0.001),
         df$V1,
         df$V2,
         data.type = "logratio",
@@ -169,7 +169,7 @@ SegNormRD <- function(df, id, seg.method = "cbs") {
     res <- lapply(df.ls, function(df) {
       slm <-
         SLMSeg::SLM(
-          log2(df$ratio + 0.00001),
+          log2(df$ratio + 0.001),
           omega = 0.3,
           FW = 0,
           eta = 1e-5
@@ -219,9 +219,9 @@ ReadGVCF <- function(path_to_gVCF,ref_genome=ref_genome,param = param){
   GT.anno <- GT %>% mutate(InhFrom=case_when(index%in%G3&P1%in%G1&P2%in%c(G2,G3) ~ P2_ID,
                                              index%in%G3&P1%in%c(G2,G3)&P2%in%G1 ~ P1_ID,
                                              index%in%G1&P1%in%G1&P2 %in% G2 ~ P1_ID, 
-                                             index%in%G2&P1%in%G2&P2 %in% G1 ~ P1_ID,
-                                             index%in%G1&P1%in%G2&P2 %in% G1 ~ P2_ID, 
-                                             index%in%G2&P1%in%G1&P2 %in% G2 ~ P2_ID, 
+                                             index%in%G1&P1%in%G2&P2 %in% G1 ~ P2_ID,
+                                             index%in%G2&P1%in%c(G2,G3)&P2 %in% G1 ~ P1_ID,
+                                             index%in%G2&P1%in%G1&P2 %in% c(G2,G3) ~ P2_ID, 
                                              TRUE ~ "Notphased"))
   AD <- as.data.table(AD)
   setnames(AD,colnames(AD),c("index","P1","P2"))

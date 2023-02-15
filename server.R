@@ -390,7 +390,8 @@ server <- function(input, output,session) {
     include_seg <- input$include_seg
     df <- rbindlist(list(plots$pr_seg,plots$m_seg,plots$f_seg))%>%
       filter(ID%in%include_seg)%>%
-      mutate(ID=as.factor(ID))
+      mutate(ID=as.factor(ID))%>%
+      mutate(seg.mean=ifelse(seg.mean < -2.5,-2.4,seg.mean))
     plots$xlabel=unique(df$chrom)[1]
     ggplot(plots$pr_rd, aes(x=V2, y=log2(ratio+0.00001))) +
       geom_point(shape=".")+
@@ -678,7 +679,7 @@ server <- function(input, output,session) {
   ## Download handler
   output$dl_plt <- downloadHandler(
     filename = function(){
-      paste(input$chr,".pdf")
+      paste0(input$chr,".pdf")
     },
     content = function(file){
 
