@@ -1,5 +1,5 @@
 
-
+source("global.R")
 server <- function(input, output,session) {
   # Reavtive Values --------------------------
   values <- reactiveValues()
