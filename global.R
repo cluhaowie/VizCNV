@@ -22,7 +22,7 @@ new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"
 if(length(new.packages)) install.packages(new.packages)
 
 # Install missing packages from Bioconductor
-biocLitePackages <- c("DNAcopy", "GenomicRanges", "VariantAnnotation","bedr") 
+biocLitePackages <- c("DNAcopy", "GenomicRanges", "VariantAnnotation","bedr","ggtranscript") 
 new.biocLitePackage <- biocLitePackages[!(biocLitePackages %in% installed.packages()[,"Package"])]
 if (!require("BiocManager", quietly = TRUE))
   install.packages("BiocManager")
