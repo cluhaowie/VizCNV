@@ -77,7 +77,7 @@ ui <- dashboardPage(
                                ))
                       ),
                       fluidRow(
-                        useWaiter(),
+                        waiter::useWaiter(),
                         uiOutput("btn_filter_plot")
                       ))),
                 fluidRow(

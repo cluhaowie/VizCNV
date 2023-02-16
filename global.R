@@ -310,3 +310,6 @@ scale_SVType <- scale_fill_manual(CNVCOLOR6)
 chrom_id <- c(1:22,"X")
 names(chrom_id) <- paste0("chr",chrom_id)
 
+
+dir_create("~/Downloads/VizCNV")
+
