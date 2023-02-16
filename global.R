@@ -17,7 +17,7 @@ options(shiny.autoreload=TRUE)
 # Install missing packages from CRAN, 'arrow' may be a problem
 list.of.packages <- c("dplyr", "data.table", "shiny", "shinydashboard",
                       "tippy","DT","ggplot2","shinyWidgets","shinyFiles","waiter",
-                      "scattermore","cowplot","devtools","BiocManager","arrow","colourpicker") 
+                      "cowplot","devtools","BiocManager","arrow","colourpicker") 
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
 if(length(new.packages)) install.packages(new.packages)
 
@@ -49,25 +49,19 @@ rm(list = ls())
 
 library(dplyr)
 library(data.table)
-#library(testthat)
 library(shiny)
 library(shinydashboard)
 library(shinyFiles)
 library(shinyWidgets)
-#library(shinyjs)
 library(waiter)
 library(fs)
 library(tippy)
-#library(shinycssloaders)
-#library(shinytest)
-#library(htmltools)
 library(DT)
 # for file processing
 library(ggplot2)
 library(bedr)
 library(Rsamtools)
 library(VariantAnnotation)
-#library(scattermore) ## deprecated
 library(arrow) ## read parquet data
 #library(colourpicker) ## required for picking annotation color
 # set up local database -------
