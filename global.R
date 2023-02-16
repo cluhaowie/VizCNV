@@ -66,8 +66,8 @@ library(arrow) ## read parquet data
 #library(colourpicker) ## required for picking annotation color
 # set up local database -------
 
-sqlitePath="data/database.sqlite"
-genePath_hg38="data/MANE.GRCh38.v1.0.refseq.gz.parquet"
+#sqlitePath="data/database.sqlite"
+genePath_hg38=here::here("data/MANE.GRCh38.v1.0.refseq.gz.parquet")
 #rmskPath_hg38="data/hg38_rmsk.gz.parquet"
 maxSize_anno <- 20e6 # max size to show the transcripts
 maxtranscript <- 30 # max number of transcript to show
