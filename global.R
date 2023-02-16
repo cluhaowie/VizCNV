@@ -8,15 +8,15 @@
 options(timeout = 6000)
 options(shiny.maxRequestSize=3*1024^3) ## max file size 3 Gb
 options(shiny.autoreload=TRUE)
-options(shiny.reactlog=TRUE) 
+#options(shiny.reactlog=TRUE) 
 #library(BiocManager)
 #options(repos = BiocManager::repositories())
 
 
 # Packages ----------------------------------------------------------------
 # Install missing packages from CRAN, 'arrow' may be a problem
-list.of.packages <- c("dplyr", "data.table", "knitr", "testthat", "shiny", "shinydashboard",
-                      "tippy","DT","ggplot2","RSQLite","shinyWidgets","shinyFiles","waiter",
+list.of.packages <- c("dplyr", "data.table", "shiny", "shinydashboard",
+                      "tippy","DT","ggplot2","shinyWidgets","shinyFiles","waiter",
                       "scattermore","cowplot","devtools","BiocManager","arrow","colourpicker") 
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
 if(length(new.packages)) install.packages(new.packages)
@@ -49,8 +49,7 @@ rm(list = ls())
 
 library(dplyr)
 library(data.table)
-library(knitr)
-library(testthat)
+#library(testthat)
 library(shiny)
 library(shinydashboard)
 library(shinyFiles)
@@ -66,7 +65,6 @@ library(DT)
 # for file processing
 library(ggplot2)
 library(bedr)
-library(RSQLite) 
 library(Rsamtools)
 library(VariantAnnotation)
 #library(scattermore) ## deprecated

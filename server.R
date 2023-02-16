@@ -5,6 +5,7 @@ server <- function(input, output,session) {
   values <- reactiveValues()
   
   values$data <- data.frame(stringsAsFactors = F)
+  #values$work_data, store sv call, must include ALT 
   values$work_data <- data.frame(stringsAsFactors = F)
   values$pr_rd <- data.frame(stringsAsFactors = F)
   values$m_rd <- data.frame(stringsAsFactors = F)
