@@ -19,11 +19,13 @@ Launch app on local with the main branch:
 shiny::runGitHub(repo = "BCM-Lupskilab/VizCNV")
 ```
 
+
 or Launch app on local with the dev branch:
 
 ```r
 shiny::runGitHub(repo = "cluhaowie/VizCNV",ref="dev-annotrack")
 ```
+
 
 Upload the required file from local file systerm:
 ![gif1](docs/uploadFile.gif)
