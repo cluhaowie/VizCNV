@@ -8,20 +8,21 @@
 options(timeout = 6000)
 options(shiny.maxRequestSize=3*1024^3) ## max file size 3 Gb
 options(shiny.autoreload=TRUE)
-options(shiny.reactlog=TRUE) 
+#options(shiny.reactlog=TRUE) 
 #library(BiocManager)
 #options(repos = BiocManager::repositories())
 
 
 # Packages ----------------------------------------------------------------
-# Install missing packages from CRAN
-list.of.packages <- c("dplyr", "data.table", "knitr", "testthat", "shiny", "shinydashboard",
-                      "tippy","DT","ggplot2","RSQLite","shinyWidgets","shinyFiles","waiter","scattermore","cowplot","devtools","BiocManager")
+# Install missing packages from CRAN, 'arrow' may be a problem
+list.of.packages <- c("dplyr", "data.table", "shiny", "shinydashboard",
+                      "tippy","DT","ggplot2","shinyWidgets","shinyFiles","waiter",
+                      "cowplot","devtools","BiocManager","arrow","colourpicker") 
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
 if(length(new.packages)) install.packages(new.packages)
 
 # Install missing packages from Bioconductor
-biocLitePackages <- c("DNAcopy", "GenomicRanges", "VariantAnnotation","bedr") 
+biocLitePackages <- c("DNAcopy", "GenomicRanges", "VariantAnnotation","bedr","ggtranscript") 
 new.biocLitePackage <- biocLitePackages[!(biocLitePackages %in% installed.packages()[,"Package"])]
 if (!require("BiocManager", quietly = TRUE))
   install.packages("BiocManager")
@@ -48,31 +49,33 @@ rm(list = ls())
 
 library(dplyr)
 library(data.table)
-library(knitr)
-library(testthat)
 library(shiny)
 library(shinydashboard)
 library(shinyFiles)
 library(shinyWidgets)
-#library(shinyjs)
 library(waiter)
 library(fs)
 library(tippy)
-#library(shinycssloaders)
-#library(shinytest)
-#library(htmltools)
 library(DT)
 # for file processing
 library(ggplot2)
 library(bedr)
-library(RSQLite) 
 library(Rsamtools)
 library(VariantAnnotation)
-#library(scattermore) ## deprecated
-
+library(arrow) ## read parquet data
+#library(colourpicker) ## required for picking annotation color
 # set up local database -------
 
-sqlitePath="data/database.sqlite"
+#sqlitePath="data/database.sqlite"
+genePath_hg38=here::here("data/MANE.GRCh38.v1.0.refseq.gz.parquet")
+#rmskPath_hg38="data/hg38_rmsk.gz.parquet"
+maxSize_anno <- 20e6 # max size to show the transcripts
+maxtranscript <- 30 # max number of transcript to show
+geneExtend <- 1e5 # window size extend to 100kb
+
+genebase <- arrow::read_parquet(genePath_hg38,as_data_frame = F)
+#rmskbase <- arrow::read_parquet(rmskPath_hg38,as_data_frame = F)
+
 
 saveData <- function(data,table) {
   # Connect to the database
@@ -140,7 +143,7 @@ SegNormRD <- function(df, id, seg.method = "cbs") {
     print("segment with CBS")
     CNA.obj <-
       DNAcopy::CNA(
-        log2(df$ratio + 0.00001),
+        log2(df$ratio + 0.001),
         df$V1,
         df$V2,
         data.type = "logratio",
@@ -158,7 +161,7 @@ SegNormRD <- function(df, id, seg.method = "cbs") {
     res <- lapply(df.ls, function(df) {
       slm <-
         SLMSeg::SLM(
-          log2(df$ratio + 0.00001),
+          log2(df$ratio + 0.001),
           omega = 0.3,
           FW = 0,
           eta = 1e-5
@@ -208,9 +211,9 @@ ReadGVCF <- function(path_to_gVCF,ref_genome=ref_genome,param = param){
   GT.anno <- GT %>% mutate(InhFrom=case_when(index%in%G3&P1%in%G1&P2%in%c(G2,G3) ~ P2_ID,
                                              index%in%G3&P1%in%c(G2,G3)&P2%in%G1 ~ P1_ID,
                                              index%in%G1&P1%in%G1&P2 %in% G2 ~ P1_ID, 
-                                             index%in%G2&P1%in%G2&P2 %in% G1 ~ P1_ID,
-                                             index%in%G1&P1%in%G2&P2 %in% G1 ~ P2_ID, 
-                                             index%in%G2&P1%in%G1&P2 %in% G2 ~ P2_ID, 
+                                             index%in%G1&P1%in%G2&P2 %in% G1 ~ P2_ID,
+                                             index%in%G2&P1%in%c(G2,G3)&P2 %in% G1 ~ P1_ID,
+                                             index%in%G2&P1%in%G1&P2 %in% c(G2,G3) ~ P2_ID, 
                                              TRUE ~ "Notphased"))
   AD <- as.data.table(AD)
   setnames(AD,colnames(AD),c("index","P1","P2"))
@@ -252,6 +255,11 @@ style_rd <- theme_classic()+
     axis.title = element_text(color = "black", size = 16,face = "bold"),
     #axis.line.x = element_blank(),
     axis.ticks = element_line(color = "black"))
+style_genes <- style_rd+
+  theme(panel.grid.major.y = element_blank(),
+        axis.title.x = element_blank())
+scale_genes <- scale_y_continuous(labels = scales::label_number(accuracy = 0.01))
+  
 style_snp <- theme_classic()+
   theme(
     plot.title = element_text(face = "bold", size = 12),
@@ -295,4 +303,7 @@ names(CNVCOLOR6) <- c("<TRP>","TRP","<DUP>","DUP","<DEL>","DEL")
 scale_SVType <- scale_fill_manual(CNVCOLOR6)
 chrom_id <- c(1:22,"X")
 names(chrom_id) <- paste0("chr",chrom_id)
+
+
+dir_create("~/Downloads/VizCNV")
 

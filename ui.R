@@ -44,24 +44,13 @@ ui <- dashboardPage(
                   box(title="Filter parameters",status="primary",width = 12,solidHeader = T,collapsible = T,
                       
                       fluidRow(
-                        column(2, 
+                        column(4, 
                                p(HTML("<b>Chromosome</b>"),span(shiny::icon("info-circle"), id = "info_chr"),selectizeInput('chr', choice=NULL,label = NULL,options = list(maxItems = 1,placeholder="chr6")),
                                  tippy::tippy_this(elementId = "info_chr",tooltip = "Selected chromosome",placement = "right")
                                )),
-                        column(2, 
-                               p(HTML("<b>Type</b>"),span(shiny::icon("info-circle"), id = "info_type"),selectizeInput('type', label = NULL, choices = NULL,options = list(maxItems = 4)),
-                                 tippy::tippy_this(elementId = "info_type",tooltip = "The type of CNV in vcf header",placement = "right")
-                               )),
-                        column(2, 
-                               p(HTML("<b>GT</b>"),span(shiny::icon("info-circle"), id = "info_gt"),selectInput('gt', label = NULL, choices = c("0/1","1/1","0/1|1/1")),
-                                 tippy::tippy_this(elementId = "info_gt",tooltip = "The genotype of the CNV",placement = "right")
-                               ))
+                        column(4,uiOutput("blt_dnSNV_ui"))
                       ),
                       fluidRow(
-                        column(4, 
-                               p(HTML("<b>Show de novo SNV ?</b>"),span(shiny::icon("info-circle"), id = "info_nor"),checkboxGroupInput(inputId="include_dnSNV",
-                                                                                                                                    label = NULL,
-                                                                                                                                    c("Show"="TRUE")))),
                         column(4, 
                                p(HTML("<b>Segment option</b>"),span(shiny::icon("info-circle"), id = "info_seg"),radioButtons('seg_option', 
                                                                                                                               label = NULL,
@@ -78,19 +67,19 @@ ui <- dashboardPage(
                                                                                                                                                          "Mom"="Mother",
                                                                                                                                                          "Dad"="Father"),selected = "Proband"),
                                  tippy::tippy_this(elementId = "info_include",tooltip = "Choose to show segment from either or both parents",placement = "right")
+                               )),
+                        column(4, 
+                               p(HTML("<b>Annotation option</b>"),span(shiny::icon("info-circle"), id = "info_anno"),checkboxGroupInput(inputId="include_anno",
+                                                                                                                                        label = NULL,
+                                                                                                                                        c("GRCh38 v1.0 MANE refseq"="hg38_gene"),selected = "hg38_gene"),
+                                 tippy::tippy_this(elementId = "include_anno",tooltip = "Include MANE 1.0 transcripts
+                                                   in the annotation track",placement = "right")
                                ))
                       ),
                       fluidRow(
-                        useWaiter(),
+                        use_waiter(),
                         uiOutput("btn_filter_plot")
                       ))),
-                # fluidRow(
-                #     box(title = "plot parameter",width = 10,solidHeader = T, status = "primary",collapsible = T,
-                #         fluidRow(
-                #            # column(1,actionButton("btn_filter","Filter")),
-                #             column(1,actionButton("btn_plot","Plot")))
-                #         )),
-                
                 fluidRow(
                   box(title = "Table",width = 12,solidHeader = T, status = "success",collapsible = T,
                       DT::dataTableOutput("filter_sv_table"),
@@ -100,23 +89,19 @@ ui <- dashboardPage(
                       DT::dataTableOutput("Select_table"))),
                 fluidRow(
                   box(title ="Plot",width = 12,solidHeader = T, status = "success",collapsible = T,
+                      fluidRow(uiOutput("ui_plot_anno")),
                       fluidRow(
-                        column(1,uiOutput("ui_dlbtn_goto"))
-                      ),
-                      fluidRow(                                     
+                        column(width = 4,uiOutput("ui_btn_goto")),
+                        column(width = 4,uiOutput("ui_btn_add")),
+                        column(width = 4,verbatimTextOutput("brush_info"))),
+                      fluidRow(
                         plotOutput(
                           "plot1",
                           height = 400,
                           dblclick = "plot1_dblclick",
                           brush = brushOpts(id = "plot1_brush",direction = "x",
                                             resetOnNew = TRUE))),
-                      fluidRow(                                     
-                        plotOutput(
-                          "plot2",
-                          height = 400,
-                          dblclick = "plot2_dblclick",
-                          brush = brushOpts(id = "plot2_brush",direction = "x",
-                                            resetOnNew = TRUE))),
+                      fluidRow(uiOutput("ui_plot_snp")),
                       fluidRow(
                         column(1,uiOutput("ui_dlbtn_plt")),
                         column(1,uiOutput("ui_clbtn_plt")),

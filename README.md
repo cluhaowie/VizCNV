@@ -1,4 +1,5 @@
 
+
 # VizCNV
 
 This is a shiny app for chromosomal copy number variant analysis. It can
@@ -12,18 +13,19 @@ R version \>= 3.6.3 Following R libraries are required:
 Shifting level models based segmentation is performed using
 [SLMSuite](https://bmcbioinformatics.biomedcentral.com/articles/10.1186/s12859-017-1734-5).
 
-Launch app on local:
+Launch app on local with the main branch:
 
 ``` r
 shiny::runGitHub(repo = "BCM-Lupskilab/VizCNV")
 ```
 
-or launch app on local with the dev repo
-``` r
+
+or Launch app on local with the dev branch:
+
+```r
 shiny::runGitHub(repo = "cluhaowie/VizCNV",ref="dev-annotrack")
 ```
 
-![fig](/www/screenshot1.png)
 
 Upload the required file from local file systerm:
 ![gif1](docs/uploadFile.gif)

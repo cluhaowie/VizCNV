@@ -1,10 +1,11 @@
 
-
+source("global.R")
 server <- function(input, output,session) {
   # Reavtive Values --------------------------
   values <- reactiveValues()
   
   values$data <- data.frame(stringsAsFactors = F)
+  #values$work_data, store sv call, must include ALT 
   values$work_data <- data.frame(stringsAsFactors = F)
   values$pr_rd <- data.frame(stringsAsFactors = F)
   values$m_rd <- data.frame(stringsAsFactors = F)
@@ -18,6 +19,7 @@ server <- function(input, output,session) {
   values$selected_record <- data.frame(stringsAsFactors = F)
   values$snp_gvcf_file_ref <- vector()
   values$ref_info <- data.frame(stringsAsFactors = F)
+  values$anno_rect <- data.frame(stringsAsFactors = F)
   
   plots <- reactiveValues()
   plots$pr_rd <- data.frame(stringsAsFactors = F)
@@ -29,9 +31,13 @@ server <- function(input, output,session) {
   plots$snp_chr <- data.frame(stringsAsFactors = F)
   plots$xlabel <- character()
   plots$SNPcols <- vector(length = 3) ## placeholder for color in SNP plot
+  plots$genelabel <- data.frame(stringsAsFactors = F)
   
   plots$plot1 <- list()
   plots$plot2 <- list()
+  plots$plot3 <- list()
+  plots$plot3_dl <- list()
+
   toListen <- reactive({
     list(values$data,values$pr_rd)
   })
@@ -43,7 +49,7 @@ server <- function(input, output,session) {
   shinyFileChoose(input, "local_f_rd_file", roots = volumes, session = session)
   shinyFileChoose(input, "local_pr_snv_file", roots = volumes, session = session)
   output$file_source_ui1 <- renderUI({
-    if(input$file_source=="FALSE"){
+    if(input$file_source=="TRUE"){
       tagList(
         radioButtons(inputId = "ref",label = h3("Choose one reference genome"),choices = list("GRCh37"="GRCh37","GRCh38"="GRCh38"),inline = T,selected = "GRCh38"),
         fileInput("sv_vcf_file",label = "Structual variant vcf files",accept=c("*.vcf","*.vcf.gz"),multiple = F,buttonLabel = "Browse..."),
@@ -67,7 +73,7 @@ server <- function(input, output,session) {
     }
   })
   output$file_source_ui2 <- renderUI({
-    if(input$file_source=="FALSE"){
+    if(input$file_source=="TRUE"){
       tagList(
         fileInput("pr_rd_file",label = "Proband's read depth files (required)",accept=c("*.bed","*.bed.gz"),multiple = F,buttonLabel = "Browse..."),
         fileInput("m_rd_file",label = "Mom's read depth files (optional)",accept=c("*.bed","*.bed.gz"),multiple = F,buttonLabel = "Browse..."),
@@ -100,6 +106,41 @@ server <- function(input, output,session) {
            values$local_file_paths$datapath[5] <- "None",
            values$local_file_paths$datapath[5] <- parseFilePaths(volumes, input$local_pr_snv_file)$name)
     values$local_file_paths
+  })
+  output$blt_dnSNV_ui <- shiny::renderUI({
+    if(is.null(input$snp_gvcf_file)&is.integer(input$local_pr_snv_file)){
+      return(NULL)
+      }
+    else{
+      shiny::tagList(
+        p(HTML("<b>Show de novo SNV ?</b>"),
+          span(shiny::icon("info-circle"), id = "info_nor"),
+          checkboxGroupInput(inputId="include_dnSNV",label = NULL,c("Show"="TRUE"))))
+    }
+  })
+  output$ui_plot_anno <- shiny::renderUI({
+    if(is.null(input$include_anno)){
+      helpText("")
+    } else {
+      plotOutput(
+        "plot_anno",
+        height = 200,
+        dblclick = "plot_anno_dblclick",
+        brush = brushOpts(id = "plot_anno_brush",direction = "x",
+                          resetOnNew = TRUE))
+    }
+  })
+  output$ui_plot_snp <- shiny::renderUI({
+    if(is.null(input$snp_gvcf_file)&is.integer(input$local_pr_snv_file)){
+      helpText("")
+    } else {
+      plotOutput(
+        "plot2",
+        height = 400,
+        dblclick = "plot2_dblclick",
+        brush = brushOpts(id = "plot2_brush",direction = "x",
+                          resetOnNew = TRUE))
+    }
   })
   
   # observe file uploaded and save in SQLdatabase---------
@@ -342,7 +383,6 @@ server <- function(input, output,session) {
     }
   })
   
-  
   ext1 <- eventReactive(input$btn_plot,{
     # from input
     if(nrow(plots$pr_rd) == 0){
@@ -351,7 +391,8 @@ server <- function(input, output,session) {
     include_seg <- input$include_seg
     df <- rbindlist(list(plots$pr_seg,plots$m_seg,plots$f_seg))%>%
       filter(ID%in%include_seg)%>%
-      mutate(ID=as.factor(ID))
+      mutate(ID=as.factor(ID))%>%
+      mutate(seg.mean=ifelse(seg.mean < -2.5,-2.4,seg.mean))
     plots$xlabel=unique(df$chrom)[1]
     ggplot(plots$pr_rd, aes(x=V2, y=log2(ratio+0.00001))) +
       geom_point(shape=".")+
@@ -382,9 +423,22 @@ server <- function(input, output,session) {
       guides(color = guide_legend(override.aes = list(size = 4)))+
       scale_x_continuous(labels = scales::label_number())
   })
+  ## annotation panel
+
   
   # interactive plot regions-------
   ranges <- reactiveValues(x = NULL, y = NULL)
+  output$brush_info <- renderPrint({
+    brush <- input$plot1_brush
+    chr <- input$chr
+    if(!is.null(brush)){
+      cat(paste0("select region: ",chr,":",
+                 format(round(brush$xmin,0),big.mark=",",scientific = FALSE),
+                 "-",
+                 format(round(brush$xmax,0),big.mark=",",scientific = FALSE),
+                 ", ",round(brush$xmax-brush$xmin,0),"bp"))
+    }
+  })
   output$plot1 <- renderPlot({
     if(nrow(plots$pr_rd) == 0){
       return(NULL)
@@ -404,6 +458,12 @@ server <- function(input, output,session) {
       trp.df$rowidx <- as.numeric(rownames(trp.df))
       cpx.df$rowidx <- as.numeric(rownames(cpx.df))
     }
+    if(nrow(values$anno_rect)==0){
+      anno_rect <- data.frame()
+    }else{
+      anno_rect <- values$anno_rect
+      anno_rect$rowidx <- as.numeric(rownames(anno_rect))
+    }
     plots$plot1 <- ext1()+
       coord_cartesian(xlim = ranges$x, ylim = ranges$y, expand = FALSE)+
       ## pointer to the selected CNV call(suppressed)
@@ -414,6 +474,7 @@ server <- function(input, output,session) {
       annotate("rect",xmin=del.df$POS,xmax=del.df$END,ymin=del.df$rowidx%%4*0.1-3,ymax=(del.df$rowidx%%4+1)*0.1-3,fill = CNVCOLOR6["DEL"])+
       annotate("rect",xmin=trp.df$POS,xmax=trp.df$END,ymin=trp.df$rowidx%%4*0.1-3,ymax=(trp.df$rowidx%%4+1)*0.1-3,fill = CNVCOLOR6["TRP"])+
       annotate("rect",xmin=cpx.df$POS,xmax=cpx.df$END,ymin=cpx.df$rowidx%%4*0.1-3,ymax=(cpx.df$rowidx%%4+1)*0.1-3,fill = CNVCOLOR6["CPX"])+
+      annotate("rect",xmin=anno_rect$xmin,xmax=anno_rect$xmax,fill=anno_rect$fill,ymin=anno_rect$rowidx*0-3,ymax=(anno_rect$rowidx-anno_rect$rowidx+2),alpha=0.3)+
       ggtitle(paste0(plots$xlabel,":",paste0(round(as.numeric(ranges$x)),collapse = "-")))
     plots$plot1
   })
@@ -424,6 +485,21 @@ server <- function(input, output,session) {
     plots$plot2 <- ext2()+coord_cartesian(xlim = ranges$x, expand = FALSE)
     plots$plot2
   })
+  output$plot_anno <- renderPlot({
+    if(length(plots$plot3) == 0){
+      return(NULL)
+    }
+    if(nrow(values$anno_rect)==0){
+      anno_rect <- data.frame()
+    }else{
+      anno_rect <- values$anno_rect
+      anno_rect$rowidx <- as.numeric(rownames(anno_rect))
+    }
+    plots$plot3_dl <- plots$plot3+
+      annotate("rect",xmin=anno_rect$xmin,xmax=anno_rect$xmax,fill=anno_rect$fill,ymin=anno_rect$rowidx*0,ymax=(anno_rect$rowidx-anno_rect$rowidx+2)+length(unique(plots$genelabel$gene_id)),alpha=0.3)+
+      coord_cartesian(xlim = ranges$x, expand = FALSE)
+    plots$plot3_dl
+  })
   #When a double-click happens, check if there's a brush on the plot.
   #If so, zoom to the brush bounds; if not, reset the zoom.
   observeEvent(input$plot1_dblclick, {
@@ -431,14 +507,45 @@ server <- function(input, output,session) {
     chr <- input$chr
     if (!is.null(brush)) {
       ranges$x <- c(brush$xmin, brush$xmax)
-      ranges$y <- c(brush$ymin, brush$ymax)
-      if(nrow(values$data)!=0){
-        values$work_data <- values$data%>%filter(CHROM==chr)%>%filter(POS>=brush$xmin,POS < brush$xmax)
+      #ranges$y <- c(brush$ymin, brush$ymax)
+      if(max(ranges$x)-min(ranges$x) > maxSize_anno) {
+        plots$genelabel <- data.frame(stringsAsFactors = F)
+      }else{
+        plots$genelabel <- genebase%>%
+          filter(seqname==input$chr,
+                 start>(min(ranges$x)-geneExtend),
+                 end < (max(ranges$x)+geneExtend),
+                 type%in%c("exon"))%>%
+          dplyr::select(seqname,start,end,strand,transcript_id,gene_id,type)%>%
+          dplyr::collect()%>%
+          mutate(gene_num=round(as.numeric(as.factor(gene_id)),3),
+                 strand=as.factor(strand))
+        if(length(unique(plots$genelabel$gene_id))<maxtranscript){
+          gene_x <- plots$genelabel%>%
+            group_by(gene_num)%>%
+            summarise(start=(min(start)+max(end))/2,
+                      end=(min(start)+max(end))/2,
+                      gene_id=unique(gene_id))
+          plots$plot3 <- plots$genelabel%>%
+            ggplot(aes(xstart = start,xend = end,y = gene_num))+
+            ggtranscript::geom_range(aes(fill = strand)) +
+            ggtranscript::geom_intron(data = ggtranscript::to_intron(plots$genelabel, "gene_num"),aes(strand = strand))+
+            geom_text(data=gene_x,aes(x=start,label=gene_id),vjust = -1.2,check_overlap = T,fontface="italic")+
+            style_genes+scale_genes+
+            scale_fill_manual(values = c("+"="#E69F00","-"="#39918C"))+
+            scale_x_continuous(labels = scales::label_number())
+        }
       }
-      
+      if(nrow(values$data)!=0){
+        values$work_data <- values$data%>%
+          filter(CHROM==chr)%>%
+          filter(POS>=brush$xmin,POS < brush$xmax)
+      }
     } else {
       ranges$x <- NULL
       ranges$y <- NULL
+      plots$genelabel <- data.frame(stringsAsFactors = F)
+      plots$plot3 <- list()
       if(nrow(values$data)!=0){
         values$work_data <- values$data%>%filter(CHROM==chr)
       }
@@ -454,12 +561,83 @@ server <- function(input, output,session) {
       ranges$y <- NULL
     }
   })
-  
+  observeEvent(input$btl_goto,{
+    if(!is.null(input$goto_reg)){
+      gene <- as.character(input$goto_reg)
+      gene.exist <- genebase%>%filter(seqname==input$chr,
+                                      gene_id==gene,
+                                      type%in%c("exon"))%>%
+        dplyr::select(seqname,start,end,strand,transcript_id,gene_id,type)%>%
+        collect()
+      if(nrow(gene.exist)!=0){
+        ranges$x <- c(as.numeric(min(gene.exist$start)-geneExtend),
+                      as.numeric(max(gene.exist$end)+geneExtend))
+        gene.exist <- gene.exist%>%
+          mutate(gene_num=round(as.numeric(as.factor(gene_id)),3),
+                 strand=as.factor(strand))
+        gene_x <- gene.exist%>%
+          group_by(gene_num)%>%
+          summarise(start=(min(start)+max(end))/2,
+                    end=(min(start)+max(end))/2,
+                    gene_id=unique(gene_id))
+        plots$plot3 <- gene.exist%>%
+          ggplot(aes(xstart = start,xend = end,y = gene_num))+
+          ggtranscript::geom_range(aes(fill = strand)) +
+          ggtranscript::geom_intron(data = ggtranscript::to_intron(gene.exist, "gene_num"),aes(strand = strand))+
+          geom_text(data=gene_x,aes(x=start,label=gene_id),vjust = -1.2,check_overlap = T,fontface="italic")+
+          style_genes+scale_genes+
+          scale_fill_manual(values = c("+"="#E69F00","-"="#39918C"))+
+          scale_x_continuous(labels = scales::label_number())
+      }else{
+        goto_reg <- as.numeric(unlist(strsplit(input$goto_reg,"-|_")))
+        validate(need(length(goto_reg)==2,"Check at least two coordinates"))
+        ranges$x <- c(min(goto_reg)-geneExtend,max(goto_reg)+geneExtend)
+        plots$genelabel <- genebase%>%
+          filter(seqname==input$chr,
+                 start>(min(ranges$x)-geneExtend),
+                 end < (max(ranges$x)+geneExtend),
+                 type%in%c("exon"))%>%
+          dplyr::select(seqname,start,end,strand,transcript_id,gene_id,type)%>%
+          dplyr::collect()%>%
+          mutate(gene_num=round(as.numeric(as.factor(gene_id)),3),
+                 strand=as.factor(strand))
+        if(length(unique(plots$genelabel$gene_id))<maxtranscript){
+          gene_x <- plots$genelabel%>%
+            group_by(gene_num)%>%
+            summarise(start=(min(start)+max(end))/2,
+                      end=(min(start)+max(end))/2,
+                      gene_id=unique(gene_id))
+          plots$plot3 <- plots$genelabel%>%
+            ggplot(aes(xstart = start,xend = end,y = gene_num))+
+            ggtranscript::geom_range(aes(fill = strand)) +
+            ggtranscript::geom_intron(data = ggtranscript::to_intron(plots$genelabel, "gene_num"),aes(strand = strand))+
+            geom_text(data=gene_x,aes(x=start,label=gene_id),vjust = -1.2,check_overlap = T,fontface="italic")+
+            style_genes+scale_genes+
+            scale_fill_manual(values = c("+"="#E69F00","-"="#39918C"))+
+            scale_x_continuous(labels = scales::label_number())
+        }
+
+      }
+      
+    }
+  })
+  observeEvent(input$btl_add,{
+    brush <- input$plot1_brush
+    if(!is.null(brush)){
+      xmin <- round(brush$xmin,0)
+      xmax <- round(brush$xmax,0)
+      fill <- input$add_col
+      values$anno_rect <- rbindlist(list(values$anno_rect,data.frame(xmin,xmax,fill)))
+    }
+  })
+  observeEvent(input$btl_reset,{
+    values$anno_rect <- data.frame(stringsAsFactors = F)
+  })
+
   ## buttons 
   output$ui_dlbtn_tbl <- renderUI({
     if(nrow(values$data) > 0){
-      tagList(shiny::actionButton("btl_select", "Select",icon("check")),
-              shiny::actionButton("btl_select2", "Clear",icon("trash")))
+      tagList(shiny::actionButton("btl_select", "Select",icon("check")))
     }
   })
   output$ui_dlbtn_plt <- renderUI({
@@ -477,6 +655,22 @@ server <- function(input, output,session) {
       shiny::downloadButton("dl_btn_dnsnv","Download dnSNV")
     }
   })
+  output$ui_btn_goto <- renderUI({
+    if(length(plots$plot1)>0){
+      tagList(
+        fluidRow(
+          column(1,shiny::actionButton("btl_goto","goto")),
+          column(8,shiny::textInput("goto_reg",label = NULL,placeholder = "e.g, 10000-20000 or GENE"))))
+    }
+  })
+  output$ui_btn_add <- renderUI({
+    if(length(plots$plot1)>0){
+      tagList(
+        fluidRow(column(1,shiny::actionButton("btl_add","Add")),
+                 column(4,colourpicker::colourInput("add_col",NULL,"yellow",palette = "limited")),
+                 column(1,shiny::actionButton("btl_reset","Reset"))))
+    }
+  })
   observeEvent(input$cl_btn,{
     plots$snp_chr <- data.frame(stringsAsFactors = F)
     plots$pr_rd <- data.frame(stringsAsFactors = F)
@@ -486,11 +680,15 @@ server <- function(input, output,session) {
   ## Download handler
   output$dl_plt <- downloadHandler(
     filename = function(){
-      paste("index",input$chr,".pdf")
+      paste0(input$chr,".pdf")
     },
     content = function(file){
-      p <- cowplot::plot_grid(plots$plot1,plots$plot2,ncol = 1)
-      ggplot2::ggsave(filename =file, plot = p,device = "pdf",width =12 ,height = 8,units = "in")
+
+      mylist <- list(plots$plot1,plots$plot3_dl,plots$plot2)
+      mylist <- mylist[lengths(mylist)!= 0]
+      n <- length(mylist)
+      p <- cowplot::plot_grid(plotlist=mylist,ncol = 1,align = 'v',axis = 'lr')
+      ggplot2::ggsave(filename =file, plot = p,device = "pdf",width =12 ,height = n*4,units = "in")
     }
   )
   output$dl_btn_dnsnv <- downloadHandler(
