@@ -38,7 +38,7 @@ server <- function(input, output,session) {
   plots$plot2 <- list()
   plots$plot3 <- list()
   plots$plot3_dl <- list()
-
+  
   toListen <- reactive({
     list(values$data,values$pr_rd)
   })
@@ -52,13 +52,11 @@ server <- function(input, output,session) {
   output$file_source_ui1 <- renderUI({
     if(input$file_source=="TRUE"){
       tagList(
-        radioButtons(inputId = "ref",label = h3("Choose one reference genome"),choices = list("GRCh37"="GRCh37","GRCh38"="GRCh38"),inline = T,selected = "GRCh38"),
-        fileInput("sv_vcf_file",label = "Structual variant vcf files",accept=c("*.vcf","*.vcf.gz"),multiple = F,buttonLabel = "Browse..."),
+         fileInput("sv_vcf_file",label = "Structual variant vcf files",accept=c("*.vcf","*.vcf.gz"),multiple = F,buttonLabel = "Browse..."),
         fileInput("snp_gvcf_file",label = "SNV gVCF file",accept=c("*.vcf","*.vcf.gz"),multiple = F,buttonLabel = "Browse...")
       )
     }else{
       tagList(
-        radioButtons(inputId = "ref",label = h3("Choose one reference genome"),choices = list("GRCh37"="GRCh37","GRCh38"="GRCh38"),inline = T,selected = "GRCh38"),
         h5(strong("Select local sv file (optional):")),
         shinyFilesButton(id = "local_sv_file", label = "Browse...", title = "Please select a file", multiple = F, viewtype = "detail"),
         h5(strong("Select local proband read depth file (required)")),
@@ -84,7 +82,7 @@ server <- function(input, output,session) {
       verbatimTextOutput("filepaths")
     }
   })
-
+  
   output$filepaths <- renderPrint({
     ifelse(is.integer(input$local_sv_file),
            values$local_file_paths$datapath[1] <- "None",
@@ -106,7 +104,7 @@ server <- function(input, output,session) {
   output$blt_dnSNV_ui <- shiny::renderUI({
     if(is.null(input$snp_gvcf_file)&is.integer(input$local_pr_snv_file)){
       return(NULL)
-      }
+    }
     else{
       shiny::tagList(
         p(HTML("<b>Show de novo SNV ?</b>"),
@@ -303,7 +301,7 @@ server <- function(input, output,session) {
   extensions=c("Responsive","Buttons"),
   server = T,editable = TRUE,filter = list(position = 'top', clear = T),options = list(dom = 'Bfrtip',buttons = c('txt','csv', 'excel')))
   w <- waiter::Waiter$new(html = spin_3(), 
-                  color = transparent(.5))
+                          color = transparent(.5))
   output$Select_table <- DT::renderDataTable({
     values$selected_record
   })
@@ -420,7 +418,7 @@ server <- function(input, output,session) {
       scale_x_continuous(labels = scales::label_number())
   })
   ## annotation panel
-
+  
   
   # interactive plot regions-------
   ranges <- reactiveValues(x = NULL, y = NULL)
@@ -551,7 +549,7 @@ server <- function(input, output,session) {
     brush <- input$plot2_brush
     if (!is.null(brush)) {
       ranges$x <- c(brush$xmin, brush$xmax)
-     # ranges$y <- c(brush$ymin, brush$ymax)
+      # ranges$y <- c(brush$ymin, brush$ymax)
     } else {
       ranges$x <- NULL
       ranges$y <- NULL
@@ -612,7 +610,7 @@ server <- function(input, output,session) {
             scale_fill_manual(values = c("+"="#E69F00","-"="#39918C"))+
             scale_x_continuous(labels = scales::label_number())
         }
-
+        
       }
       
     }
@@ -629,7 +627,7 @@ server <- function(input, output,session) {
   observeEvent(input$btl_reset,{
     values$anno_rect <- data.frame(stringsAsFactors = F)
   })
-
+  
   ## buttons 
   output$ui_dlbtn_tbl <- renderUI({
     if(nrow(values$data) > 0){
@@ -672,14 +670,14 @@ server <- function(input, output,session) {
     plots$pr_rd <- data.frame(stringsAsFactors = F)
     input$filter_sv_table_rows_selected <- NULL
   })
-
+  
   ## Download handler
   output$dl_plt <- downloadHandler(
     filename = function(){
       paste0(input$chr,".pdf")
     },
     content = function(file){
-
+      
       mylist <- list(plots$plot1,plots$plot3_dl,plots$plot2)
       mylist <- mylist[lengths(mylist)!= 0]
       n <- length(mylist)
