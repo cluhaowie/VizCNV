@@ -697,7 +697,7 @@ server <- function(input, output,session) {
   
   ##Anno tracks
   observeEvent(input$btn_anno,{
-    
+    print("loading")
     chrn = input$chr
     path = "./data/"
     IDR<-data.table::fread(paste0(path,"Claudia_hg19_MergedInvDirRpts_sorted.bed")) %>% 
@@ -795,11 +795,11 @@ server <- function(input, output,session) {
     
     
     
-    btnVal2 <- mod_anno_check_Server("IDR")
-    btnVal3 <- mod_anno_check_Server("SegDup")
-    btnVal4 <- mod_anno_check_Server("OMIM")
-    btnVal5 <- mod_anno_check_Server("gnomAD")
-    btnVal6 <- mod_anno_check_Server("RMSK")
+    btnVal2 <- mod_checkbox_Server("IDR")
+    btnVal3 <- mod_checkbox_Server("SegDup")
+    btnVal4 <- mod_checkbox_Server("OMIM")
+    btnVal5 <- mod_checkbox_Server("gnomAD")
+    btnVal6 <- mod_checkbox_Server("RMSK")
     ranges <- mod_anno_plot_switch_Server("IDR", btnVal2$box_state, p2, ranges)
     ranges <- mod_anno_plot_switch_Server("Segdup", btnVal3$box_state, p3, ranges)
     ranges <- mod_anno_plot_switch_Server("OMIM", btnVal4$box_state, p4, ranges)

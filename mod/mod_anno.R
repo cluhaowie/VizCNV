@@ -1,5 +1,5 @@
 
-
+source("./mod/mod_checkbox.R")
 
 
 anno_track_UI <- function(id, height = 100) {
@@ -81,26 +81,6 @@ anno_table_Server <- function(id, df, ranges, chrn) {
   )
 }
 
-mod_anno_check_UI <- function(id) {
-  ns <- NS(id)
-  tagList(
-    checkboxInput(ns("checkbox"), paste0(id), T)
-  )
-}
-
-mod_anno_check_Server <- function(id) {
-  moduleServer(
-    id,
-    function(input, output, session) {
-      return(
-        list(
-          box_state = reactive({input$checkbox})
-        )
-      )      
-    }
-  )
-}
-
 mod_anno_plot_switch_UI <- function(id) {
   ns <- NS(id)
   shinyjs::useShinyjs()
@@ -118,10 +98,15 @@ mod_anno_plot_switch_Server <- function(id, cbox, p, ranges) {
     id,
     function(input, output, session) {
       ranges <- anno_track_Server("plot", p, ranges)
-      observeEvent(cbox(), {
-        shinyjs::toggle(id = "panel")
+      observe({
+        if (isTRUE(cbox())) {
+          shinyjs::show(id = "panel")
+        } else {
+          shinyjs::hide(id = "panel")
+        }
       })
       return(ranges)
     }
   )
 }
+
