@@ -81,7 +81,7 @@ anno_table_Server <- function(id, df, ranges, chrn) {
   )
 }
 
-mod_anno_plot_switch_UI <- function(id) {
+mod_plot_switch_UI <- function(id) {
   ns <- NS(id)
   shinyjs::useShinyjs()
   shinyjs::hidden(fluidRow(
@@ -93,7 +93,7 @@ mod_anno_plot_switch_UI <- function(id) {
   )
 }
 
-mod_anno_plot_switch_Server <- function(id, cbox, p, ranges) {
+mod_plot_switch_Server <- function(id, cbox, p, ranges) {
   moduleServer(
     id,
     function(input, output, session) {
