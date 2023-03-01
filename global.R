@@ -195,7 +195,7 @@ blacklist <- data.table::fread("GRCh38_unified_blacklist.bed.gz")%>%
   regioneR::toGRanges()
 
 ReadGVCF <- function(path_to_gVCF,ref_genome=ref_genome,param = param){
-  print("scaning the region")
+  print("Grabbing regions")
   vcf<- VariantAnnotation::readVcf(file = path_to_gVCF,genome = ref_genome,param = param)
   vcf.gr <- vcf@rowRanges
   GT <- VariantAnnotation::geno(vcf)$GT
@@ -209,13 +209,19 @@ ReadGVCF <- function(path_to_gVCF,ref_genome=ref_genome,param = param){
   G3=c('0/1',"0|1")
   GT <- as.data.table(GT)
   setnames(GT,colnames(GT),c("index","P1","P2"))
-  GT.anno <- GT %>% mutate(InhFrom=case_when(index%in%G3&P1%in%G1&P2%in%c(G2,G3) ~ P2_ID,
-                                             index%in%G3&P1%in%c(G2,G3)&P2%in%G1 ~ P1_ID,
-                                             index%in%G1&P1%in%G1&P2 %in% G2 ~ P1_ID, 
-                                             index%in%G1&P1%in%G2&P2 %in% G1 ~ P2_ID,
-                                             index%in%G2&P1%in%c(G2,G3)&P2 %in% G1 ~ P1_ID,
-                                             index%in%G2&P1%in%G1&P2 %in% c(G2,G3) ~ P2_ID, 
-                                             TRUE ~ "Notphased"))
+  GT.anno <- GT %>% 
+    mutate(B_InhFrom=case_when(index %in% G3 & P1 %in% G1 & P2  %in% c(G2,G3) ~ P2_ID, #cases 11,12
+                               index %in% G3 & P1 %in% G3 & P2  %in% G1 ~ P1_ID, #case 13
+                               index %in% G3 & P1 %in% G2 & P2  %in% G1 ~ P1_ID, #case 16
+                               index %in% G2 & P1 %in% G1 & P2  %in% c(G2,G3) ~ P2_ID, #cases 20,21
+                               index %in% G2 & P1 %in% G3 & P2  %in% G1 ~ P2_ID, #case 22
+                               index %in% G2 & P1 %in% G2 & P2  %in% G1 ~ P2_ID, #case 25
+                               TRUE ~ "Notphased")) %>% 
+    mutate(A_InhFrom=case_when(index %in% G1 & P1 %in% c(G1,G3) & P2  %in% G2 ~ P1_ID, #cases 3,6
+                               index %in% G1 & P1 %in% G2 & P2  %in% c(G1,G3) ~ P2_ID, #cases 7,8
+                               index %in% G2 & P1 %in% c(G1,G3) & P2  %in% G2 ~ P1_ID, #cases 12,15
+                               index %in% G2 & P1 %in% G2 & P2  %in% c(G1,G3) ~ P2_ID, #cases 16,17
+                               TRUE ~ "Notphased")) 
   AD <- as.data.table(AD)
   setnames(AD,colnames(AD),c("index","P1","P2"))
   AD.anno <- AD%>%

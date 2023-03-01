@@ -1,11 +1,9 @@
 
-source("./mod/mod_anno.R")
-source("./mod/mod_upload.R")
-
+source("./mod/mod_plot_output.R")
 
 ui <- dashboardPage(
   
-  dashboardHeader(title = "GREGoR VizCNV"),
+  dashboardHeader(title = "VizCNV-dev"),
   
   dashboardSidebar(
     sidebarMenu(
@@ -70,8 +68,8 @@ ui <- dashboardPage(
                            HTML("<b>Basic Plot Options: </b>"),
                            mod_checkbox_UI("Read Depth Plot (static)", value = F),
                            mod_checkbox_UI("Read Depth Plot (dynamic)"),
-                           mod_checkbox_UI("Baf-B Allele"),
-                           mod_checkbox_UI("Baf-A Allele", value = F),
+                           mod_checkbox_UI("Baf-B_allele"),
+                           mod_checkbox_UI("Baf-A_allele"),
                            uiOutput("blt_dnSNV_ui"),
                            actionButton("btn_plot", "Plot")),
                     column(6,
@@ -91,26 +89,25 @@ ui <- dashboardPage(
                       )
                       ),
                   fluidRow(box(title = "Plots",width = 12,solidHeader = T, status = "success",collapsible = T,
-                    plotOutput(
-                      "plot1",
-                      height = 400,
-                      dblclick = "plot1_dblclick",
-                      brush = brushOpts(id = "plot1_brush",direction = "x",
-                                        resetOnNew = TRUE)),
-                  uiOutput("ui_plot_snp"),
-                  uiOutput("ui_plot_anno"),
-                  mod_anno_plot_switch_UI("IDR"),
-                  mod_anno_plot_switch_UI("Segdup"),
-                  mod_anno_plot_switch_UI("OMIM"),
-                  mod_anno_plot_switch_UI("gnomAD"),
-                  mod_anno_plot_switch_UI("RMSK"),
-                  fluidRow(column(1,uiOutput("ui_dlbtn_plt")),
-                           column(1,uiOutput("ui_clbtn_plt")),
-                           column(1,uiOutput("ui_dlbtn_dnsnv")))
-                  
-                
-                )
-               )
+                    # plotOutput(
+                    #   "plot1",
+                    #   height = 300,
+                    #   dblclick = "plot1_dblclick",
+                    #   brush = brushOpts(id = "plot1_brush",direction = "x",
+                    #                     resetOnNew = TRUE)),
+                    mod_plot_switch_UI("Baf-B_allele", height = 300),
+                    mod_plot_switch_UI("Baf-A_allele", height = 300),
+                    # uiOutput("ui_plot_anno"),
+                    mod_plot_switch_UI("IDR"),
+                    mod_plot_switch_UI("Segdup"),
+                    mod_plot_switch_UI("OMIM"),
+                    mod_plot_switch_UI("gnomAD"),
+                    mod_plot_switch_UI("RMSK"),
+                    fluidRow(column(1,uiOutput("ui_dlbtn_plt")),
+                             column(1,uiOutput("ui_clbtn_plt")),
+                             column(1,uiOutput("ui_dlbtn_dnsnv")))
+                  )
+                 )
                ),
         tabItem(tabName = "table",
                 fluidRow(box(title = "dnCNV Table",width = 12,solidHeader = T, status = "success",collapsible = T),

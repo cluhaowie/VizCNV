@@ -2,7 +2,7 @@
 source("./mod/mod_checkbox.R")
 
 
-anno_track_UI <- function(id, height = 100) {
+mod_plot_output_UI <- function(id, height = 100) {
   ns <- NS(id)
   tagList(
     plotOutput(ns("plot"),
@@ -14,7 +14,7 @@ anno_track_UI <- function(id, height = 100) {
   )
 }
 
-anno_track_Server <- function(id, p, ranges, zoom = T){
+mod_plot_output_Server <- function(id, p, ranges, zoom = T){
   moduleServer(
     id,
     function(input, output, session) {
@@ -81,13 +81,13 @@ anno_table_Server <- function(id, df, ranges, chrn) {
   )
 }
 
-mod_plot_switch_UI <- function(id) {
+mod_plot_switch_UI <- function(id, height = 100) {
   ns <- NS(id)
   shinyjs::useShinyjs()
   shinyjs::hidden(fluidRow(
     id =ns("panel"),
     tagList(
-      anno_track_UI(ns("plot"))
+      mod_plot_output_UI(ns("plot"), height)
     )
   )
   )
@@ -97,7 +97,7 @@ mod_plot_switch_Server <- function(id, cbox, p, ranges) {
   moduleServer(
     id,
     function(input, output, session) {
-      ranges <- anno_track_Server("plot", p, ranges)
+      ranges <- mod_plot_output_Server("plot", p, ranges)
       observe({
         if (isTRUE(cbox())) {
           shinyjs::show(id = "panel")
@@ -109,4 +109,9 @@ mod_plot_switch_Server <- function(id, cbox, p, ranges) {
     }
   )
 }
+
+
+
+
+
 

@@ -1,5 +1,5 @@
 
-source("./mod/mod_anno.R")
+source("./mod/mod_plot_output.R")
 
 server <- function(input, output,session) {
   # Reavtive Values --------------------------
@@ -367,7 +367,7 @@ server <- function(input, output,session) {
       range.gr <- GenomicRanges::setdiff(range.gr, blacklist)
       plots$snp_chr <- ReadGVCF(snp_gvcf_file$datapath,ref_genome=input$ref,param = range.gr)%>%
         as.data.frame()
-      InhFrom <- unique(plots$snp_chr$InhFrom)
+      InhFrom <- unique(plots$snp_chr$B_InhFrom)
       if(length(InhFrom)==3){
         names(plots$SNPcols) <- InhFrom
         plots$SNPcols[names(plots$SNPcols)!="Notphased"] <- SNPCOLOR2
@@ -398,14 +398,19 @@ server <- function(input, output,session) {
       ylim(-4,4)+xlab(plots$xlabel)+
       scale_rd+style_rd+scale_x_continuous(labels = scales::label_number())
   },ignoreInit = T)
-  ext2 <- eventReactive(input$btn_plot,{
-    if(nrow(plots$snp_chr) == 0){
-      return(NULL)
-    }
+  
+  
+  
+  #Baf-B plot
+  observeEvent(input$btn_plot,{
+    req(nrow(plots$snp_chr) != 0)
+
     df <- plots$snp_chr%>%filter(likelyDN%in%c(input$include_dnSNV,"FALSE"))
     cols <- plots$SNPcols
     xlabel=unique(df$chrom)[1]
-    df %>% ggplot(aes(x=start,y=pr_ALT_Freq,col=InhFrom))+
+    
+    
+    snp_a <- ggplot(df, aes(x=start,y=pr_ALT_Freq,col=A_InhFrom))+
       geom_point(shape=".")+
       #scattermore::geom_scattermore(shape=".",pixels=c(1024,1024))+
       geom_point(data = subset(df, likelyDN %in%c("TRUE")),size = 2,shape=8,color="red")+
@@ -416,7 +421,52 @@ server <- function(input, output,session) {
       scale_colour_manual(values = cols)+
       guides(color = guide_legend(override.aes = list(size = 4)))+
       scale_x_continuous(labels = scales::label_number())
+    
+    btnVala <- mod_checkbox_Server("Baf-A_allele")
+    ranges <- mod_plot_switch_Server("Baf-A_allele", btnVala$box_state, snp_a, ranges)
+    
+    snp_b <- ggplot(df, aes(x=start,y=pr_ALT_Freq,col=B_InhFrom))+
+      geom_point(shape=".")+
+      #scattermore::geom_scattermore(shape=".",pixels=c(1024,1024))+
+      geom_point(data = subset(df, likelyDN %in%c("TRUE")),size = 2,shape=8,color="red")+
+      scale_fill_manual("LikelyDN",limits=c("dnSNV"),values = "red")+
+      xlab(xlabel)+
+      scale_snp+
+      style_snp+
+      scale_colour_manual(values = cols)+
+      guides(color = guide_legend(override.aes = list(size = 4)))+
+      scale_x_continuous(labels = scales::label_number())
+    
+    btnValb <- mod_checkbox_Server("Baf-B_allele")
+    ranges <- mod_plot_switch_Server("Baf-B_allele", btnValb$box_state, snp_b, ranges)
+    
   })
+
+  # observeEvent(input$btn_plot,{
+  #   req(nrow(plots$snp_chr) != 0)
+  #   
+  #   df <- plots$snp_chr%>%filter(likelyDN%in%c(input$include_dnSNV,"FALSE"))
+  #   cols <- plots$SNPcols
+  #   xlabel=unique(df$chrom)[1]
+  #   
+  #   snp_a <- ggplot(df, aes(x=start,y=pr_ALT_Freq,col=A_InhFrom))+
+  #     geom_point(shape=".")+
+  #     #scattermore::geom_scattermore(shape=".",pixels=c(1024,1024))+
+  #     geom_point(data = subset(df, likelyDN %in%c("TRUE")),size = 2,shape=8,color="red")+
+  #     scale_fill_manual("LikelyDN",limits=c("dnSNV"),values = "red")+
+  #     xlab(xlabel)+
+  #     scale_snp+
+  #     style_snp+
+  #     scale_colour_manual(values = cols)+
+  #     guides(color = guide_legend(override.aes = list(size = 4)))+
+  #     scale_x_continuous(labels = scales::label_number())
+  # 
+  #   btnVala <- mod_checkbox_Server("Baf-A_allele")
+  #   ranges <- mod_plot_switch_Server("Baf-A_allele", btnVala$box_state, snp_a, ranges)
+  #   print("2")
+  # })
+  
+  
   ## annotation panel
   
   
@@ -471,13 +521,6 @@ server <- function(input, output,session) {
       annotate("rect",xmin=anno_rect$xmin,xmax=anno_rect$xmax,fill=anno_rect$fill,ymin=anno_rect$rowidx*0-3,ymax=(anno_rect$rowidx-anno_rect$rowidx+2),alpha=0.3)+
       ggtitle(paste0(plots$xlabel,":",paste0(round(as.numeric(ranges$x)),collapse = "-")))
     plots$plot1
-  })
-  output$plot2 <- renderPlot({
-    if(nrow(plots$snp_chr) == 0){
-      return(NULL)
-    }
-    plots$plot2 <- ext2()+coord_cartesian(xlim = ranges$x, expand = FALSE)
-    plots$plot2
   })
   output$plot_anno <- renderPlot({
     if(length(plots$plot3) == 0){
@@ -545,16 +588,7 @@ server <- function(input, output,session) {
       }
     }
   })
-  observeEvent(input$plot2_dblclick, {
-    brush <- input$plot2_brush
-    if (!is.null(brush)) {
-      ranges$x <- c(brush$xmin, brush$xmax)
-      # ranges$y <- c(brush$ymin, brush$ymax)
-    } else {
-      ranges$x <- NULL
-      ranges$y <- NULL
-    }
-  })
+
   observeEvent(input$btl_goto,{
     if(!is.null(input$goto_reg)){
       gene <- as.character(input$goto_reg)
@@ -695,7 +729,7 @@ server <- function(input, output,session) {
   
   ##Anno tracks
   observeEvent(input$btn_anno,{
-    print("loading")
+    print("Annotating")
     chrn = input$chr
     path = "./data/"
     IDR<-data.table::fread(paste0(path,"Claudia_hg19_MergedInvDirRpts_sorted.bed")) %>% 
@@ -798,11 +832,14 @@ server <- function(input, output,session) {
     btnVal4 <- mod_checkbox_Server("OMIM")
     btnVal5 <- mod_checkbox_Server("gnomAD")
     btnVal6 <- mod_checkbox_Server("RMSK")
-    ranges <- mod_anno_plot_switch_Server("IDR", btnVal2$box_state, p2, ranges)
-    ranges <- mod_anno_plot_switch_Server("Segdup", btnVal3$box_state, p3, ranges)
-    ranges <- mod_anno_plot_switch_Server("OMIM", btnVal4$box_state, p4, ranges)
-    ranges <- mod_anno_plot_switch_Server("gnomAD", btnVal5$box_state, p5, ranges)
-    ranges <- mod_anno_plot_switch_Server("RMSK", btnVal6$box_state, p6, ranges)
+    ranges <- mod_plot_switch_Server("IDR", btnVal2$box_state, p2, ranges)
+    ranges <- mod_plot_switch_Server("Segdup", btnVal3$box_state, p3, ranges)
+    ranges <- mod_plot_switch_Server("OMIM", btnVal4$box_state, p4, ranges)
+    ranges <- mod_plot_switch_Server("gnomAD", btnVal5$box_state, p5, ranges)
+    ranges <- mod_plot_switch_Server("RMSK", btnVal6$box_state, p6, ranges)
+    
+    
+    
     
     anno_table_Server("IDR", IDR, ranges, chrn)
     anno_table_Server("SegDup", SegDup, ranges, chrn)
