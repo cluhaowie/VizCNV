@@ -1,4 +1,5 @@
 
+source("./mod/mod_anno.R")
 
 server <- function(input, output,session) {
   # Reavtive Values --------------------------
@@ -83,12 +84,7 @@ server <- function(input, output,session) {
       verbatimTextOutput("filepaths")
     }
   })
-  output$btn_filter_plot <- renderUI({
-    tagList(
-      column(1,actionButton("btn_filter","Filter")),
-      column(1,actionButton("btn_plot","Plot"))
-    )
-  })
+
   output$filepaths <- renderPrint({
     ifelse(is.integer(input$local_sv_file),
            values$local_file_paths$datapath[1] <- "None",
@@ -698,5 +694,124 @@ server <- function(input, output,session) {
       write.csv(df,file,row.names = F)
     }
   )
+  
+  ##Anno tracks
+  observeEvent(input$btn_anno,{
+    
+    chrn = input$chr
+    path = "./data/"
+    IDR<-data.table::fread(paste0(path,"Claudia_hg19_MergedInvDirRpts_sorted.bed")) %>% 
+      dplyr::select(V1,V2,V3,V4,V5,V6) %>% 
+      dplyr::rename("chrom" = V1, "start" = V2, "end" = V3, "name" = V4, "score" = V5, "strand" = V6) %>%
+      dplyr::filter(chrom == chrn)
+    IDR <- IDR %>%
+      mutate(idx = sample(1:1, size = dim(IDR)[1], replace = T)/1000)
+    IDR_pos <- IDR %>%
+      filter(strand == "+")
+    IDR_neg <- IDR %>%
+      filter(strand == "-")
+    p2 <- ggplot(IDR, aes(x = start, y = idx)) +
+      geom_segment(data = IDR_pos, aes(x = start, y = idx, xend = end, yend = idx), arrow = arrow(length = unit(0.05, "inches")), color = "dodgerblue")+
+      geom_segment(data = IDR_neg, aes(x = end, y = idx, xend = start, yend = idx), arrow = arrow(length = unit(0.05, "inches")), color = "dodgerblue3")+
+      style_anno+
+      ylab("IDR")
+    SegDup <- data.table::fread(paste0(path, "SegDup_hg19_UCSC.bed"))
+    SegDup <- SegDup %>%
+      dplyr::rename("chrom" = "#chrom", "start" = "chromStart", "end" = "chromEnd") %>%
+      filter(chrom ==chrn)
+    SegDup <- SegDup %>%
+      mutate(idx = sample(1:100, size = dim(SegDup)[1], replace = T)/1000) %>%
+      mutate(color = case_when(level == "SD_low" ~ "gray40",
+                               level == "SD_mid" ~ "yellow2",
+                               level == "SD_high" ~ "darkorange"))
+    SegDup_pos <- SegDup %>%
+      filter(strand == "+")
+    SegDup_neg <- SegDup %>%
+      filter(strand == "-")
+    p3 <- ggplot(SegDup, aes(x = start, y = idx)) +
+      geom_segment(data = SegDup_pos, aes(x = start, y = idx, xend = end, yend = idx), arrow = arrow(length = unit(0.05, "inches")), color = SegDup_pos$color)+
+      geom_segment(data = SegDup_neg, aes(x = end, y = idx, xend = start, yend = idx), arrow = arrow(length = unit(0.05, "inches")), color = SegDup_neg$color)+
+      style_anno+
+      scale_anno+
+      ylab("SegDup")
+    
+    
+    OMIM <- data.table::fread(paste0(path, "OMIM_gene2_hg19_UCSC_all.bed"))
+    OMIM <- OMIM %>%
+      filter(chrom == chrn) %>%
+      mutate_at(vars(pheno_key), as.factor)
+    OMIM <- OMIM %>%
+      mutate(idx = sample(1:100, size = dim(OMIM)[1], replace = T)/1000) %>%
+      mutate(color = case_when(pheno_key == "0" ~ "grey",
+                               pheno_key == "1" ~ "lightgreen",
+                               pheno_key == "2" ~ "green3",
+                               pheno_key == "3" ~ "green4",
+                               pheno_key == "4" ~ "purple", ))
+    
+    OMIM_label <- OMIM %>%
+      filter(pheno_key  %in% c("3","4"))
+    p4 <- ggplot(OMIM, aes(x = start, y = idx)) +
+      annotate("rect", xmin = OMIM$start, xmax = OMIM$end, ymin = OMIM$idx, ymax = OMIM$idx+0.0001, color = OMIM$color)+
+      annotate("text", x = OMIM_label$start, y = OMIM_label$idx, label = OMIM_label$gene_symbol, size = 3.5, hjust = 1.1)+
+      style_anno+
+      scale_anno+
+      ylab("OMIM")
+    
+    gnomAD <- data.table::fread(paste0(path, "gnomAD_allSV_hg19_UCSC.bed"))
+    gnomAD <- gnomAD %>%
+      dplyr::rename("chrom" = "#chrom", "start" = "chromStart", "end" = "chromEnd") %>%
+      filter(chrom == chrn)
+    gnomAD <- gnomAD %>%
+      mutate(idx = sample(1:100, size = dim(gnomAD)[1], replace = T)/1000) %>%
+      mutate(color = case_when(svtype == "BND" ~ "grey",
+                               svtype == "DEL" ~ "red",
+                               svtype == "DUP" ~ "blue",
+                               svtype == "INS" ~ "darkorange",
+                               TRUE ~ "cyan4"))
+    p5 <- ggplot(gnomAD, aes(x = start, y = idx)) +
+      annotate("rect", xmin = gnomAD$start, xmax = gnomAD$end, ymin = gnomAD$idx, ymax = gnomAD$idx+0.0001, color = gnomAD$color)+
+      style_anno+
+      scale_anno+
+      ylab("gnomAD")
+    
+    
+    rmsk <- read_parquet(paste0(path, "rmsk_hg19_UCSC.parquet"))
+    rmsk <- rmsk %>%
+      dplyr::rename("chrom" = "#chrom") %>%
+      filter(chrom ==  chrn)
+    rmsk <- rmsk %>%
+      mutate(idx = case_when(repClass == "SINE" ~ 0.014*7,
+                             repClass == "LINE" ~ 0.014*6,
+                             repClass == "LTR" ~ 0.014*5,
+                             repClass == "DNA" ~ 0.014*4,
+                             repClass == "Simple_repeat" ~ 0.014*3,
+                             repClass == "Low_complexity" ~ 0.014*2,
+                             TRUE ~ 0.014))
+    p6 <- ggplot(rmsk, aes(x = start, y = idx)) +
+      annotate("rect", xmin = rmsk$start, xmax = rmsk$end, ymin = rmsk$idx, ymax = rmsk$idx+0.0001, color = "black")+
+      style_anno+
+      scale_anno+
+      ylab("RMSK")
+    
+    
+    
+    btnVal2 <- mod_anno_check_Server("IDR")
+    btnVal3 <- mod_anno_check_Server("SegDup")
+    btnVal4 <- mod_anno_check_Server("OMIM")
+    btnVal5 <- mod_anno_check_Server("gnomAD")
+    btnVal6 <- mod_anno_check_Server("RMSK")
+    ranges <- mod_anno_plot_switch_Server("IDR", btnVal2$box_state, p2, ranges)
+    ranges <- mod_anno_plot_switch_Server("Segdup", btnVal3$box_state, p3, ranges)
+    ranges <- mod_anno_plot_switch_Server("OMIM", btnVal4$box_state, p4, ranges)
+    ranges <- mod_anno_plot_switch_Server("gnomAD", btnVal5$box_state, p5, ranges)
+    ranges <- mod_anno_plot_switch_Server("RMSK", btnVal6$box_state, p6, ranges)
+    
+    anno_table_Server("IDR", IDR, ranges, chrn)
+    anno_table_Server("SegDup", SegDup, ranges, chrn)
+    anno_table_Server("OMIM", OMIM, ranges, chrn)
+    anno_table_Server("gnomAD", gnomAD, ranges, chrn)
+    anno_table_Server("rmsk", rmsk, ranges, chrn)
+  })
+  
   
 }

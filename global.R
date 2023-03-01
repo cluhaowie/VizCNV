@@ -17,12 +17,12 @@ options(shiny.autoreload=TRUE)
 # Install missing packages from CRAN, 'arrow' may be a problem
 list.of.packages <- c("dplyr", "data.table", "shiny", "shinydashboard",
                       "tippy","DT","ggplot2","shinyWidgets","shinyFiles","waiter",
-                      "cowplot","devtools","BiocManager","arrow","colourpicker") 
+                      "cowplot","devtools","BiocManager","arrow","colourpicker", "shinyjs") 
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
 if(length(new.packages)) install.packages(new.packages)
 
 # Install missing packages from Bioconductor
-biocLitePackages <- c("DNAcopy", "GenomicRanges", "VariantAnnotation","bedr","ggtranscript") 
+biocLitePackages <- c("DNAcopy", "GenomicRanges", "VariantAnnotation","bedr") 
 new.biocLitePackage <- biocLitePackages[!(biocLitePackages %in% installed.packages()[,"Package"])]
 if (!require("BiocManager", quietly = TRUE))
   install.packages("BiocManager")
@@ -63,11 +63,12 @@ library(bedr)
 library(Rsamtools)
 library(VariantAnnotation)
 library(arrow) ## read parquet data
+library(shinyjs)
 #library(colourpicker) ## required for picking annotation color
 # set up local database -------
 
 #sqlitePath="data/database.sqlite"
-genePath_hg38=here::here("data/MANE.GRCh38.v1.0.refseq.gz.parquet")
+genePath_hg38=("./data/MANE.GRCh38.v1.0.refseq.gz.parquet")
 #rmskPath_hg38="data/hg38_rmsk.gz.parquet"
 maxSize_anno <- 20e6 # max size to show the transcripts
 maxtranscript <- 30 # max number of transcript to show
@@ -251,8 +252,8 @@ style_rd <- theme_classic()+
     panel.grid.major.y = element_line(linetype = 5,colour = "grey50"),
     panel.grid.major.x = element_line(linetype = 5,colour = "grey50"),
     panel.background = element_blank(),
-    axis.text = element_text(color = "black", size = 12),
-    axis.title = element_text(color = "black", size = 16,face = "bold"),
+    axis.text = element_text(color = "black"),
+    # axis.title = element_text(color = "black",face = "bold"),
     #axis.line.x = element_blank(),
     axis.ticks = element_line(color = "black"))
 style_genes <- style_rd+
@@ -273,12 +274,12 @@ style_snp <- theme_classic()+
     panel.grid.major.x = element_line(linetype = 5,colour = "grey50"),
     panel.background = element_blank(),
     axis.text = element_text(color = "black", size = 12),
-    axis.title = element_text(color = "black", size = 16,face = "bold"),
-    #axis.line.x = element_blank(),
+    axis.title = element_text(color = "black",face = "bold"),
+    axis.line.x = element_blank(),
     axis.ticks = element_line(color = "black"))
 
 scale_rd <- scale_y_continuous(name="Log2 Ratio",
-                               limits=c(-3, 2),
+                               limits=c(-2.5, 2),
                                breaks = c(round(log2(1/2),2),
                                           round(log2(2/2),2),
                                           round(log2(3/2),2),
@@ -307,3 +308,14 @@ names(chrom_id) <- paste0("chr",chrom_id)
 
 dir_create("~/Downloads/VizCNV")
 
+
+style_anno <- theme_classic()+
+  theme(axis.text.x=element_blank(), 
+        axis.ticks.x=element_blank(), #remove x axis ticks
+        axis.title.x = element_blank(),
+        axis.line.x = element_blank(),
+        axis.text.y=element_text(color = "white"),  #remove y axis labels
+        axis.ticks.y=element_blank()
+  )
+
+scale_anno <- scale_y_continuous(limits = c(-0.01,.11))
