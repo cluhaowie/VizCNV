@@ -9,7 +9,9 @@ ui <- dashboardPage(
     sidebarMenu(
       menuItem(tabName = "input", text = "Input/Filtering", icon = icon("upload")),
       menuItem(tabName = "plot", text = "Plots", icon = icon("search")),
-      menuItem(tabName = "table", text = "Tables", icon = icon("table"))
+      menuItem(tabName = "table", text = "Tables", icon = icon("table")),
+      menuItem(tabName = "help", text = "Help", icon = icon("question-circle")),
+      menuItem(tabName = "about", text = "About", icon = icon("info-circle"))
     )
   ),
   
@@ -26,16 +28,13 @@ ui <- dashboardPage(
           ),
           fluidRow(
             box(title="Filter parameters",status="primary",width = 12,solidHeader = T,collapsible = T,
-                
-                fluidRow(
-                  column(4, 
+                  column(2, 
                          p(HTML("<b>Chromosome</b>"),span(shiny::icon("info-circle"), id = "info_chr"),selectizeInput('chr', choice=NULL,label = NULL,options = list(maxItems = 1,placeholder="chr6")),
                            tippy::tippy_this(elementId = "info_chr",tooltip = "Selected chromosome",placement = "right")
                          )),
-                  column(4,uiOutput("blt_dnSNV_ui"))
-                ),
+
                 fluidRow(
-                  column(4, 
+                  column(2,
                          p(HTML("<b>Segment option</b>"),span(shiny::icon("info-circle"), id = "info_seg"),radioButtons('seg_option', 
                                                                                                                         label = NULL,
                                                                                                                         choiceNames = list("SLM","CBS"),
@@ -44,7 +43,7 @@ ui <- dashboardPage(
                                                                SLM is fast and tend to give more segment,can be used for high-quality data; 
                                                                CBS is slow and give less segment, can be used for noisy data ",placement = "right")
                          )),
-                  column(4, 
+                  column(2, 
                          p(HTML("<b>Choose segment to be included</b>"),span(shiny::icon("info-circle"), id = "info_include"),checkboxGroupInput(inputId="include_seg",
                                                                                                                                                  label = NULL,
                                                                                                                                                  c("index case"="Proband",
@@ -70,6 +69,7 @@ ui <- dashboardPage(
                          mod_checkbox_UI("Read Depth Plot (dynamic)"),
                          mod_checkbox_UI("Baf-B Allele"),
                          mod_checkbox_UI("Baf-A Allele", value = F),
+                         uiOutput("blt_dnSNV_ui"),
                          actionButton("btn_plot", "Plot")),
                   column(6,
                          HTML("<b>Annotation Track Options:</b>"),
@@ -79,7 +79,6 @@ ui <- dashboardPage(
                          mod_checkbox_UI("gnomAD"),
                          mod_checkbox_UI("RMSK", value = F),
                          actionButton("btn_anno", "Annotate"))
-
                   ),
                 box(title = "Plot Controls",width = 14,solidHeader = T, status = "success",collapsible = T,
                     column(width = 4,uiOutput("ui_btn_goto")),
@@ -118,9 +117,12 @@ ui <- dashboardPage(
                   tabPanel("rmsk",anno_table_UI("rmsk"))
                 )
               )
-        )
-      )
+        ),
+        tabItem(tabName = "help",
+                "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum"),
+        tabItem(tabName = "about",
+                "Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt. Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore et dolore magnam aliquam quaerat voluptatem. Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam, nisi ut aliquid ex ea commodi consequatur? Quis autem vel eum iure reprehenderit qui in ea voluptate velit esse quam nihil molestiae consequatur, vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?")
     )
   )
 
-
+)
