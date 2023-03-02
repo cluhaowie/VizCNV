@@ -1,3 +1,7 @@
+###WORK IN PROGRESS###
+###UNLIKELY TO IMPLEMENT THIS##
+
+
 
 mod_snp_upload_UI <- function(id) {
   ns <- NS(id)

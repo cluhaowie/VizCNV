@@ -1,7 +1,19 @@
 
 source("./mod/mod_checkbox.R")
 
-
+#' shiny plotOutput wrapper UI
+#'
+#' 
+#'
+#' @param height value to change the height of the plot (in pixels)
+#' 
+#'
+#' @return tagList of Shiny UI elements
+#'
+#' @examples
+#' mod_plot_output_UI("plot", height = 300)
+#'
+#' @export
 mod_plot_output_UI <- function(id, height = 100) {
   ns <- NS(id)
   tagList(
@@ -14,6 +26,22 @@ mod_plot_output_UI <- function(id, height = 100) {
   )
 }
 
+
+#' shiny plotOutput wrapper server
+#'
+#' 
+#'
+#' @param p a ggplot object
+#' @param ranges, a reactive object to store current plot brush values
+#' @param zoom, a boolean to switch from static to dynamic plot output (default = T) If False, the plot will not zoom in when doubleclicked brush area.
+#' 
+#'
+#' @return reactive ranges for other plots
+#'
+#' @examples
+#' mod_plot_output_server("plot", p, ranges, zoom = F)
+#'
+#' @export
 mod_plot_output_Server <- function(id, p, ranges, zoom = T){
   moduleServer(
     id,
@@ -43,6 +71,17 @@ mod_plot_output_Server <- function(id, p, ranges, zoom = T){
   )
 }
 
+#' Annotation table wrapper UI
+#'
+#' Creates UI elemnts for annotation table
+#'
+#'
+#' @return tagList of Shiny UI elements
+#'
+#' @examples
+#' anno_table_UI("table")
+#'
+#' @export
 anno_table_UI <- function(id) {
   ns <- NS(id)
   tagList(
@@ -51,6 +90,21 @@ anno_table_UI <- function(id) {
   )
 }
 
+#' Annotation table wrapper UI
+#'
+#' preprocess tables for rendering
+#'
+#' @param df a dataframe for display, usually a .bed file
+#' @param ranges a reactive object to store current plot brush values
+#' @param chrn current chromosome number (beware: chr is expected to be a prefix here)
+#' 
+#'
+#' @return reactive df table and reactive downloadhandler
+#'
+#' @examples
+#' anno_table_Server("table", OMIM, ranges, "chr2")
+#'
+#' @export
 anno_table_Server <- function(id, df, ranges, chrn) {
   moduleServer(
     id,
@@ -81,6 +135,21 @@ anno_table_Server <- function(id, df, ranges, chrn) {
   )
 }
 
+
+#' Plot output toggle (show/hide) UI
+#'
+#' Allow showing and hiding plots when checkbox is ticked or unticked
+#' requires shinyjs package
+#'
+#' @param height value to change the height of the plot (in pixels)
+#'
+#' @return tagList of Shiny UI elements
+#'
+#' @examples
+#' mod_plot_switch_UI("plot")
+#'
+#' @export
+
 mod_plot_switch_UI <- function(id, height = 100) {
   ns <- NS(id)
   shinyjs::useShinyjs()
@@ -92,6 +161,23 @@ mod_plot_switch_UI <- function(id, height = 100) {
   )
   )
 }
+
+
+#' Plot output toggle (show/hide) server
+#'
+#' Allow showing and hiding plots when checkbox is ticked or unticked
+#'
+#' @param cbox checkbox value from checkboxInput
+#' @param p ggplot object
+#' @param ranges reactive ranges
+#' 
+#'
+#' @return reactive brush ranges
+#'
+#' @examples
+#' mod_plot_switch_Server("plot", boxVal, p, ranges)
+#'
+#' @export
 
 mod_plot_switch_Server <- function(id, cbox, p, ranges) {
   moduleServer(
