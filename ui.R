@@ -2,10 +2,16 @@ ui <- dashboardPage(
   dashboardHeader(title = "VizCNV",
                   leftUi = tagList(
                     dropdownBlock(
-                      id = "mydropdown",
-                      title = "Input",
+                      id = "input_dropdown_local",
+                      title = "File_longer",
+                      icon = icon("file-import"),
+                      uiOutput("file_source_ui1")),
+                    dropdownBlock(
+                      id = "input_dropdown_upload",
+                      title = "Upload",
                       icon = icon("upload"),
-                      uiOutput("file_source_ui1")))),
+                      uiOutput("file_source_ui2"))
+                    )),
   dashboardSidebar(sidebarMenu(
     #        menuItem(tabName = "input", text = "Input", icon = icon("upload")),
     menuItem(tabName = "zoom", text = "Zoom", icon = icon("search"))
@@ -43,7 +49,7 @@ ui <- dashboardPage(
                       fluidRow(
                         shinyWidgets::switchInput(inputId = "file_source",onLabel = "Local",offLabel = "Server"),
                         #box(width = 6,uiOutput("file_source_ui1")),
-                        box(width = 6,uiOutput("file_source_ui2"))
+                        #box(width = 6,uiOutput("file_source_ui2"))
                       ))
                 ),
                 fluidRow(
