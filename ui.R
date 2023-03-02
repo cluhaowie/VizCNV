@@ -24,7 +24,7 @@ ui <- dashboardPage(
                        shinyWidgets::switchInput(inputId = "file_source",onLabel = "Local",offLabel = "Server", labelWidth = 20, handleWidth = 300),
                        radioButtons(inputId = "ref",label = h3("Reference Genome Build"),choices = list("GRCh37"="GRCh37","GRCh38"="GRCh38"),inline = T,selected = "GRCh37")
                     ),
-          box(title="File upload",status="primary",width = 12,solidHeader = T,collapsible = T,
+          box(title="File import",status="primary",width = 12,solidHeader = T,collapsible = T,
               fluidRow(
                 box(width = 6,uiOutput("file_source_ui1")),
                 box(width = 6,uiOutput("file_source_ui2"))
