@@ -69,7 +69,7 @@ ui <- dashboardPage(
                            mod_checkbox_UI("Read Depth Plot (static)", value = F),
                            mod_checkbox_UI("Read Depth Plot (dynamic)"),
                            mod_checkbox_UI("Baf-B_allele"),
-                           mod_checkbox_UI("Baf-A_allele"),
+                           mod_checkbox_UI("Baf-A_allele", value = F),
                            uiOutput("blt_dnSNV_ui"),
                            actionButton("btn_plot", "Plot")),
                     column(6,
@@ -89,12 +89,12 @@ ui <- dashboardPage(
                       )
                       ),
                   fluidRow(box(title = "Plots",width = 12,solidHeader = T, status = "success",collapsible = T,
-                    # plotOutput(
-                    #   "plot1",
-                    #   height = 300,
-                    #   dblclick = "plot1_dblclick",
-                    #   brush = brushOpts(id = "plot1_brush",direction = "x",
-                    #                     resetOnNew = TRUE)),
+                    plotOutput(
+                      "plot1",
+                      height = 300,
+                      dblclick = "plot1_dblclick",
+                      brush = brushOpts(id = "plot1_brush",direction = "x",
+                                        resetOnNew = TRUE)),
                     mod_plot_switch_UI("Baf-B_allele", height = 300),
                     mod_plot_switch_UI("Baf-A_allele", height = 300),
                     # uiOutput("ui_plot_anno"),

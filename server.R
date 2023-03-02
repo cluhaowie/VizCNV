@@ -442,34 +442,9 @@ server <- function(input, output,session) {
     
   })
 
-  # observeEvent(input$btn_plot,{
-  #   req(nrow(plots$snp_chr) != 0)
-  #   
-  #   df <- plots$snp_chr%>%filter(likelyDN%in%c(input$include_dnSNV,"FALSE"))
-  #   cols <- plots$SNPcols
-  #   xlabel=unique(df$chrom)[1]
-  #   
-  #   snp_a <- ggplot(df, aes(x=start,y=pr_ALT_Freq,col=A_InhFrom))+
-  #     geom_point(shape=".")+
-  #     #scattermore::geom_scattermore(shape=".",pixels=c(1024,1024))+
-  #     geom_point(data = subset(df, likelyDN %in%c("TRUE")),size = 2,shape=8,color="red")+
-  #     scale_fill_manual("LikelyDN",limits=c("dnSNV"),values = "red")+
-  #     xlab(xlabel)+
-  #     scale_snp+
-  #     style_snp+
-  #     scale_colour_manual(values = cols)+
-  #     guides(color = guide_legend(override.aes = list(size = 4)))+
-  #     scale_x_continuous(labels = scales::label_number())
-  # 
-  #   btnVala <- mod_checkbox_Server("Baf-A_allele")
-  #   ranges <- mod_plot_switch_Server("Baf-A_allele", btnVala$box_state, snp_a, ranges)
-  #   print("2")
-  # })
-  
+
   
   ## annotation panel
-  
-  
   # interactive plot regions-------
   ranges <- reactiveValues(x = NULL, y = NULL)
   output$brush_info <- renderPrint({
