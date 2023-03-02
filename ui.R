@@ -85,30 +85,33 @@ ui <- dashboardPage(
                     )
                   ),
                   fluidRow(box(title = "Plots",width = 12,solidHeader = T, status = "success",collapsible = T,
-                               column(width = 3,uiOutput("ui_btn_goto")),
-                               column(width = 3,uiOutput("ui_btn_add")),
-                               column(width = 6,verbatimTextOutput("brush_info"),
-                    mod_plot_switch_UI("RD-static", height = 300),
-                    plotOutput(
-                      "plot1",
-                      height = 300,
-                      dblclick = "plot1_dblclick",
-                      brush = brushOpts(id = "plot1_brush",direction = "x",
-                                        resetOnNew = TRUE)),
-                    mod_plot_switch_UI("Baf-B_allele", height = 300),
-                    mod_plot_switch_UI("Baf-A_allele", height = 300),
-                    # uiOutput("ui_plot_anno"),
-                    mod_plot_switch_UI("IDR"),
-                    mod_plot_switch_UI("Segdup"),
-                    mod_plot_switch_UI("OMIM"),
-                    mod_plot_switch_UI("gnomAD"),
-                    mod_plot_switch_UI("RMSK"),
+                               fluidRow(
+                                 column(width = 3,uiOutput("ui_btn_goto")),
+                                 column(width = 3,uiOutput("ui_btn_add")),
+                                 column(width = 6,verbatimTextOutput("brush_info"))),
+                               fluidRow(
+                                 mod_plot_switch_UI("RD-static", height = 300),
+                                 plotOutput(
+                                   "plot1",
+                                   height = 300,
+                                   dblclick = "plot1_dblclick",
+                                   brush = brushOpts(id = "plot1_brush",direction = "x",
+                                                     resetOnNew = TRUE)),
+                                 mod_plot_switch_UI("Baf-B_allele", height = 300),
+                                 mod_plot_switch_UI("Baf-A_allele", height = 300),
+                                 # uiOutput("ui_plot_anno"),
+                                 mod_plot_switch_UI("IDR"),
+                                 mod_plot_switch_UI("Segdup"),
+                                 mod_plot_switch_UI("OMIM"),
+                                 mod_plot_switch_UI("gnomAD"),
+                                 mod_plot_switch_UI("RMSK")
+                               ),
                     fluidRow(column(1,uiOutput("ui_dlbtn_plt")),
                              column(1,uiOutput("ui_clbtn_plt")),
                              column(1,uiOutput("ui_dlbtn_dnsnv")))
                   )
                  )
-               )),
+               ),
         tabItem(tabName = "table",
                 fluidRow(box(title = "dnCNV Table",width = 12,solidHeader = T, status = "success",collapsible = T,
                              actionButton("btn_dnCNV", "Get potential dnCNVs"),
