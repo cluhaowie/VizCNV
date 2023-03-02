@@ -71,69 +71,7 @@ mod_plot_output_Server <- function(id, p, ranges, zoom = T){
   )
 }
 
-#' Annotation table wrapper UI
-#'
-#' Creates UI elemnts for annotation table
-#'
-#'
-#' @return tagList of Shiny UI elements
-#'
-#' @examples
-#' anno_table_UI("table")
-#'
-#' @export
-anno_table_UI <- function(id) {
-  ns <- NS(id)
-  tagList(
-    downloadButton(ns("download"), "Download (.tsv)"),
-    dataTableOutput(ns("table"))
-  )
-}
 
-#' Annotation table wrapper UI
-#'
-#' preprocess tables for rendering
-#'
-#' @param df a dataframe for display, usually a .bed file
-#' @param ranges a reactive object to store current plot brush values
-#' @param chrn current chromosome number (beware: chr is expected to be a prefix here)
-#' 
-#'
-#' @return reactive df table and reactive downloadhandler
-#'
-#' @examples
-#' anno_table_Server("table", OMIM, ranges, "chr2")
-#'
-#' @export
-anno_table_Server <- function(id, df, ranges, chrn) {
-  moduleServer(
-    id,
-    function(input, output, session) {
-      
-      gr <- reactive({
-        GRanges(seqnames = chrn, ranges = IRanges(ranges$x[1], ranges$x[2]))
-      })
-      
-      
-      df_table <- reactive({
-        as.data.frame(subsetByOverlaps(as(df,"GRanges"),gr()))
-      })
-      
-      output$table <- renderDataTable({
-        df_table()
-      })
-      
-      output$download <- downloadHandler(
-        filename = function() {
-          paste0(id,".tsv")
-        },
-        content = function(file) {
-          write.table(df, file, sep = "\t", row.names = F, quote = F)
-        }
-      )
-    }
-  )
-}
 
 
 #' Plot output toggle (show/hide) UI
@@ -198,6 +136,70 @@ mod_plot_switch_Server <- function(id, cbox, p, ranges, zoom = T) {
 }
 
 
+
+#' Annotation table wrapper UI
+#'
+#' Creates UI elemnts for annotation table
+#'
+#'
+#' @return tagList of Shiny UI elements
+#'
+#' @examples
+#' anno_table_UI("table")
+#'
+#' @export
+anno_table_UI <- function(id) {
+  ns <- NS(id)
+  tagList(
+    downloadButton(ns("download"), "Download (.tsv)"),
+    dataTableOutput(ns("table"))
+  )
+}
+
+#' Annotation table wrapper UI
+#'
+#' preprocess tables for rendering
+#'
+#' @param df a dataframe for display, usually a .bed file
+#' @param ranges a reactive object to store current plot brush values
+#' @param chrn current chromosome number (beware: chr is expected to be a prefix here)
+#' 
+#'
+#' @return reactive df table and reactive downloadhandler
+#'
+#' @examples
+#' anno_table_Server("table", OMIM, ranges, "chr2")
+#'
+#' @export
+anno_table_Server <- function(id, df, ranges, chrn) {
+  moduleServer(
+    id,
+    function(input, output, session) {
+      
+      gr <- reactive({
+        GRanges(seqnames = chrn, ranges = IRanges(ranges$x[1], ranges$x[2]))
+      })
+      
+      
+      df_table <- reactive({
+        as.data.frame(subsetByOverlaps(as(df,"GRanges"),gr()))
+      })
+      
+      output$table <- renderDataTable({
+        df_table()
+      })
+      
+      output$download <- downloadHandler(
+        filename = function() {
+          paste0(id,".tsv")
+        },
+        content = function(file) {
+          write.table(df, file, sep = "\t", row.names = F, quote = F)
+        }
+      )
+    }
+  )
+}
 
 
 

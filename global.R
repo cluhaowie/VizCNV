@@ -153,6 +153,7 @@ SegNormRD <- function(df, id, seg.method = "cbs") {
     seg <- DNAcopy::segment(CNA.obj)
     seg.output <- seg$output
     seg.output$ID <- id
+    print("done")
     return(seg.output)
   }
   ##EDIT: include SLM segmentation
@@ -178,7 +179,10 @@ SegNormRD <- function(df, id, seg.method = "cbs") {
       end=c(df$V2[c(idx[-1],end(df$V2)[1])])
       res.dt <- data.table(ID=id,chrom=chr,loc.start=start,loc.end=end,num.mark=res$lengths,seg.mean=res$values)
     })
+    print("done")
+    
     res <- data.table::rbindlist(res)
+    return(res)
   }
   
 }

@@ -1,5 +1,6 @@
 
 source("./mod/mod_plot_output.R")
+source("./mod/mod_dnCNV.R")
 
 ui <- dashboardPage(
   
@@ -111,7 +112,9 @@ ui <- dashboardPage(
                  )
                ),
         tabItem(tabName = "table",
-                fluidRow(box(title = "dnCNV Table",width = 12,solidHeader = T, status = "success",collapsible = T),
+                fluidRow(box(title = "dnCNV Table",width = 12,solidHeader = T, status = "success",collapsible = T,
+                             actionButton("btn_dnCNV", "Get potential dnCNVs"),
+                             mod_dnCNV_UI("dnCNV")),
                 box(title = "SV Table",width = 12,solidHeader = T, status = "success",collapsible = T,
                       DT::dataTableOutput("filter_sv_table"),
                       fluidRow(

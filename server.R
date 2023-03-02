@@ -1,5 +1,6 @@
 
 source("./mod/mod_plot_output.R")
+source("./mod/mod_dnCNV.R")
 
 server <- function(input, output,session) {
   # Reavtive Values --------------------------
@@ -317,6 +318,8 @@ server <- function(input, output,session) {
         filter(V1==chr)%>%
         mutate(ratio=V4/median(V4+0.00001))
       plots$pr_seg <- SegNormRD(plots$pr_rd,id="Proband",seg.method = seg_option)
+      # print(class(plots$pr_seg))
+      # print(head(plots$pr_seg))
       w$hide()
     }
     if(nrow(values$m_rd)==0){return(NULL)
@@ -813,9 +816,7 @@ server <- function(input, output,session) {
       style_anno+
       scale_anno+
       ylab("RMSK")
-    
-    
-    
+
     btnVal2 <- mod_checkbox_Server("IDR")
     btnVal3 <- mod_checkbox_Server("SegDup")
     btnVal4 <- mod_checkbox_Server("OMIM")
@@ -826,15 +827,21 @@ server <- function(input, output,session) {
     ranges <- mod_plot_switch_Server("OMIM", btnVal4$box_state, p4, ranges)
     ranges <- mod_plot_switch_Server("gnomAD", btnVal5$box_state, p5, ranges)
     ranges <- mod_plot_switch_Server("RMSK", btnVal6$box_state, p6, ranges)
-    
-    
-    
-    
+  
     anno_table_Server("IDR", IDR, ranges, chrn)
     anno_table_Server("SegDup", SegDup, ranges, chrn)
     anno_table_Server("OMIM", OMIM, ranges, chrn)
     anno_table_Server("gnomAD", gnomAD, ranges, chrn)
     anno_table_Server("rmsk", rmsk, ranges, chrn)
+  })
+  
+  
+  ## dnCNV table
+  observeEvent(input$btn_dnCNV, {
+    req(nrow(values$pr_rd)!=0)
+    req(nrow(values$m_rd)!=0)
+    req(nrow(values$f_rd)!=0)
+    mod_dnCNV_Server("dnCNV",plots$pr_seg, plots$m_seg, plots$f_seg)
   })
   
   
