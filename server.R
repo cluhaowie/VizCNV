@@ -51,13 +51,14 @@ server <- function(input, output,session) {
   output$file_source_ui1 <- renderUI({
       tagList(
         radioButtons(inputId = "ref",label = h3("Reference genome"),choices = list("GRCh37"="GRCh37","GRCh38"="GRCh38"),inline = T,selected = "GRCh38"),
-        shinyFilesButton(id = "local_sv_file", label = "Browse...", title = "Please select a file", multiple = F, viewtype = "detail"),
         h5(strong("Select local proband read depth file (required)")),
         shinyFilesButton(id = "local_pr_rd_file", label = "Browse...", title = "Please select a file", multiple = F, viewtype = "detail"),
         h5(strong("Select local mom's read depth file (optional)")),
         shinyFilesButton(id = "local_m_rd_file", label = "Browse...", title = "Please select a file", multiple = F, viewtype = "detail"),
         h5(strong("Select local dad's read depth file (optional)")),
         shinyFilesButton(id = "local_f_rd_file", label = "Browse...", title = "Please select a file", multiple = F, viewtype = "detail"),
+        h5(strong("Select local sv file (optional)")),
+        shinyFilesButton(id = "local_sv_file", label = "Browse...", title = "Please select a file", multiple = F, viewtype = "detail"),
         h5(strong("Select local proband snv file (optional)")),
         shinyFilesButton(id = "local_pr_snv_file", label = "Browse...", title = "Please select a file", multiple = F, viewtype = "detail")
       )
@@ -65,11 +66,11 @@ server <- function(input, output,session) {
   output$file_source_ui2 <- renderUI({
       tagList(
         radioButtons(inputId = "ref",label = h3("Reference genome"),choices = list("GRCh37"="GRCh37","GRCh38"="GRCh38"),inline = T,selected = "GRCh38"),
-        fileInput("sv_vcf_file",label = "Structual variant vcf files",accept=c("*.vcf","*.vcf.gz"),multiple = F,buttonLabel = "Browse..."),
-        fileInput("snp_gvcf_file",label = "SNV gVCF file",accept=c("*.vcf","*.vcf.gz"),multiple = F,buttonLabel = "Browse..."),
         fileInput("pr_rd_file",label = "Proband's read depth files (required)",accept=c("*.bed","*.bed.gz"),multiple = F,buttonLabel = "Browse..."),
         fileInput("m_rd_file",label = "Mom's read depth files (optional)",accept=c("*.bed","*.bed.gz"),multiple = F,buttonLabel = "Browse..."),
-        fileInput("f_rd_file",label = "Dad's read depth files (optional)",accept=c("*.bed","*.bed.gz"),multiple = F,buttonLabel = "Browse...")
+        fileInput("f_rd_file",label = "Dad's read depth files (optional)",accept=c("*.bed","*.bed.gz"),multiple = F,buttonLabel = "Browse..."),
+        fileInput("sv_vcf_file",label = "Structual variant vcf files",accept=c("*.vcf","*.vcf.gz"),multiple = F,buttonLabel = "Browse..."),
+        fileInput("snp_gvcf_file",label = "SNV gVCF file",accept=c("*.vcf","*.vcf.gz"),multiple = F,buttonLabel = "Browse...")
       )
   })
   output$btn_filter_plot <- renderUI({
@@ -125,7 +126,7 @@ server <- function(input, output,session) {
                             "The sv file has been uploaded"))
     }
     
-  },ignoreInit = T)
+  },ignoreInit = F)
   observeEvent(input$local_pr_rd_file,{ 
     if(is.integer(input$local_pr_rd_file)){cat("no file\n")}else{
       local_pr_rd_file <- parseFilePaths(volumes, input$local_pr_rd_file)
@@ -138,7 +139,7 @@ server <- function(input, output,session) {
       showModal(modalDialog(title = "File upload",
                             "The proband read depth file has been uploaded"))
     }
-  },ignoreInit = T)
+  },ignoreInit = F)
   observeEvent(input$local_m_rd_file,{ 
     if(is.integer(input$local_m_rd_file)){cat("no file\n")}else{
       local_m_rd_file <- parseFilePaths(volumes, input$local_m_rd_file)
@@ -146,7 +147,7 @@ server <- function(input, output,session) {
       showModal(modalDialog(title = "File upload",
                             "The mom's read depth file has been uploaded"))
     }
-  },ignoreInit = T)
+  },ignoreInit = F)
   observeEvent(input$local_f_rd_file,{ 
     if(is.integer(input$local_f_rd_file)){cat("no file\n")}else{
       local_f_rd_file <- parseFilePaths(volumes, input$local_f_rd_file)
