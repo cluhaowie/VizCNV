@@ -1,5 +1,11 @@
 ui <- dashboardPage(
-  dashboardHeader(title = "GREGoR VizCNV"),
+  dashboardHeader(title = "VizCNV",
+                  leftUi = tagList(
+                    dropdownBlock(
+                      id = "mydropdown",
+                      title = "Input",
+                      icon = icon("upload"),
+                      uiOutput("file_source_ui1")))),
   dashboardSidebar(sidebarMenu(
     #        menuItem(tabName = "input", text = "Input", icon = icon("upload")),
     menuItem(tabName = "zoom", text = "Zoom", icon = icon("search"))
@@ -36,7 +42,7 @@ ui <- dashboardPage(
                   box(title="File upload or select",status="primary",width = 12,solidHeader = T,collapsible = T,
                       fluidRow(
                         shinyWidgets::switchInput(inputId = "file_source",onLabel = "Local",offLabel = "Server"),
-                        box(width = 6,uiOutput("file_source_ui1")),
+                        #box(width = 6,uiOutput("file_source_ui1")),
                         box(width = 6,uiOutput("file_source_ui2"))
                       ))
                 ),

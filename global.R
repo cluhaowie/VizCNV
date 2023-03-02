@@ -63,6 +63,7 @@ library(bedr)
 library(Rsamtools)
 library(VariantAnnotation)
 library(arrow) ## read parquet data
+library(shinydashboardPlus)
 #library(colourpicker) ## required for picking annotation color
 # set up local database -------
 

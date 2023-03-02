@@ -49,16 +49,8 @@ server <- function(input, output,session) {
   shinyFileChoose(input, "local_f_rd_file", roots = volumes, session = session)
   shinyFileChoose(input, "local_pr_snv_file", roots = volumes, session = session)
   output$file_source_ui1 <- renderUI({
-    if(input$file_source=="TRUE"){
       tagList(
-        radioButtons(inputId = "ref",label = h3("Choose one reference genome"),choices = list("GRCh37"="GRCh37","GRCh38"="GRCh38"),inline = T,selected = "GRCh38"),
-        fileInput("sv_vcf_file",label = "Structual variant vcf files",accept=c("*.vcf","*.vcf.gz"),multiple = F,buttonLabel = "Browse..."),
-        fileInput("snp_gvcf_file",label = "SNV gVCF file",accept=c("*.vcf","*.vcf.gz"),multiple = F,buttonLabel = "Browse...")
-      )
-    }else{
-      tagList(
-        radioButtons(inputId = "ref",label = h3("Choose one reference genome"),choices = list("GRCh37"="GRCh37","GRCh38"="GRCh38"),inline = T,selected = "GRCh38"),
-        h5(strong("Select local sv file (optional):")),
+        radioButtons(inputId = "ref",label = h3("Reference genome"),choices = list("GRCh37"="GRCh37","GRCh38"="GRCh38"),inline = T,selected = "GRCh38"),
         shinyFilesButton(id = "local_sv_file", label = "Browse...", title = "Please select a file", multiple = F, viewtype = "detail"),
         h5(strong("Select local proband read depth file (required)")),
         shinyFilesButton(id = "local_pr_rd_file", label = "Browse...", title = "Please select a file", multiple = F, viewtype = "detail"),
@@ -69,19 +61,16 @@ server <- function(input, output,session) {
         h5(strong("Select local proband snv file (optional)")),
         shinyFilesButton(id = "local_pr_snv_file", label = "Browse...", title = "Please select a file", multiple = F, viewtype = "detail")
       )
-      
-    }
   })
   output$file_source_ui2 <- renderUI({
-    if(input$file_source=="TRUE"){
       tagList(
+        radioButtons(inputId = "ref",label = h3("Reference genome"),choices = list("GRCh37"="GRCh37","GRCh38"="GRCh38"),inline = T,selected = "GRCh38"),
+        fileInput("sv_vcf_file",label = "Structual variant vcf files",accept=c("*.vcf","*.vcf.gz"),multiple = F,buttonLabel = "Browse..."),
+        fileInput("snp_gvcf_file",label = "SNV gVCF file",accept=c("*.vcf","*.vcf.gz"),multiple = F,buttonLabel = "Browse..."),
         fileInput("pr_rd_file",label = "Proband's read depth files (required)",accept=c("*.bed","*.bed.gz"),multiple = F,buttonLabel = "Browse..."),
         fileInput("m_rd_file",label = "Mom's read depth files (optional)",accept=c("*.bed","*.bed.gz"),multiple = F,buttonLabel = "Browse..."),
         fileInput("f_rd_file",label = "Dad's read depth files (optional)",accept=c("*.bed","*.bed.gz"),multiple = F,buttonLabel = "Browse...")
       )
-    }else{
-      verbatimTextOutput("filepaths")
-    }
   })
   output$btn_filter_plot <- renderUI({
     tagList(
@@ -89,24 +78,7 @@ server <- function(input, output,session) {
       column(1,actionButton("btn_plot","Plot"))
     )
   })
-  output$filepaths <- renderPrint({
-    ifelse(is.integer(input$local_sv_file),
-           values$local_file_paths$datapath[1] <- "None",
-           values$local_file_paths$datapath[1] <- parseFilePaths(volumes, input$local_sv_file)$name)
-    ifelse(is.integer(input$local_pr_rd_file),
-           values$local_file_paths$datapath[2] <- "None",
-           values$local_file_paths$datapath[2] <- parseFilePaths(volumes, input$local_pr_rd_file)$name)
-    ifelse(is.integer(input$local_m_rd_file),
-           values$local_file_paths$datapath[3] <- "None",
-           values$local_file_paths$datapath[3] <- parseFilePaths(volumes, input$local_m_rd_file)$name)
-    ifelse(is.integer(input$local_f_rd_file),
-           values$local_file_paths$datapath[4] <- "None",
-           values$local_file_paths$datapath[4] <- parseFilePaths(volumes, input$local_f_rd_file)$name)
-    ifelse(is.integer(input$local_pr_snv_file),
-           values$local_file_paths$datapath[5] <- "None",
-           values$local_file_paths$datapath[5] <- parseFilePaths(volumes, input$local_pr_snv_file)$name)
-    values$local_file_paths
-  })
+
   output$blt_dnSNV_ui <- shiny::renderUI({
     if(is.null(input$snp_gvcf_file)&is.integer(input$local_pr_snv_file)){
       return(NULL)
