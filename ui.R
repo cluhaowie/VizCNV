@@ -95,12 +95,14 @@ ui <- dashboardPage(
                         column(width = 4,uiOutput("ui_btn_add")),
                         column(width = 4,verbatimTextOutput("brush_info"))),
                       fluidRow(
-                        plotOutput(
-                          "plot1",
-                          height = 400,
-                          dblclick = "plot1_dblclick",
-                          brush = brushOpts(id = "plot1_brush",direction = "x",
-                                            resetOnNew = TRUE))),
+                        column(width=12,
+                               plotOutput(
+                                 "plot1",
+                                 height = 400,
+                                 dblclick = "plot1_dblclick",
+                                 brush = brushOpts(id = "plot1_brush",direction = "x",
+                                                   resetOnNew = TRUE))
+                               )),
                       fluidRow(uiOutput("ui_plot_snp")),
                       fluidRow(
                         column(1,uiOutput("ui_dlbtn_plt")),

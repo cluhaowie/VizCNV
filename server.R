@@ -134,12 +134,14 @@ server <- function(input, output,session) {
     if(is.null(input$snp_gvcf_file)&is.integer(input$local_pr_snv_file)){
       helpText("")
     } else {
-      plotOutput(
-        "plot2",
-        height = 400,
-        dblclick = "plot2_dblclick",
-        brush = brushOpts(id = "plot2_brush",direction = "x",
-                          resetOnNew = TRUE))
+      column(width = 12,
+        plotOutput(
+          "plot2",
+          height = 400,
+          dblclick = "plot2_dblclick",
+          brush = brushOpts(id = "plot2_brush",direction = "x",
+                            resetOnNew = TRUE))
+      )
     }
   })
   
