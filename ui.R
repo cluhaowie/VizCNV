@@ -84,13 +84,10 @@ ui <- dashboardPage(
                            actionButton("btn_anno", "Annotate"))
                     )
                   ),
-                  fluidRow(box(title = "Controls",width = 12,solidHeader = T, status = "success",collapsible = T,
-                      column(width = 3,uiOutput("ui_btn_goto")),
-                      column(width = 3,uiOutput("ui_btn_add")),
-                      column(width = 6,verbatimTextOutput("brush_info"))
-                      )
-                      ),
                   fluidRow(box(title = "Plots",width = 12,solidHeader = T, status = "success",collapsible = T,
+                               column(width = 3,uiOutput("ui_btn_goto")),
+                               column(width = 3,uiOutput("ui_btn_add")),
+                               column(width = 6,verbatimTextOutput("brush_info"),
                     mod_plot_switch_UI("RD-static", height = 300),
                     plotOutput(
                       "plot1",
@@ -111,7 +108,7 @@ ui <- dashboardPage(
                              column(1,uiOutput("ui_dlbtn_dnsnv")))
                   )
                  )
-               ),
+               )),
         tabItem(tabName = "table",
                 fluidRow(box(title = "dnCNV Table",width = 12,solidHeader = T, status = "success",collapsible = T,
                              actionButton("btn_dnCNV", "Get potential dnCNVs"),
