@@ -124,18 +124,7 @@ server <- function(input, output,session) {
                           resetOnNew = TRUE))
     }
   })
-  output$ui_plot_snp <- shiny::renderUI({
-    if(is.null(input$snp_gvcf_file)&is.integer(input$local_pr_snv_file)){
-      helpText("")
-    } else {
-      plotOutput(
-        "plot2",
-        height = 400,
-        dblclick = "plot2_dblclick",
-        brush = brushOpts(id = "plot2_brush",direction = "x",
-                          resetOnNew = TRUE))
-    }
-  })
+
   
   # observe file uploaded and save in SQLdatabase---------
   # local option
@@ -193,6 +182,7 @@ server <- function(input, output,session) {
       ))
     }
   },ignoreInit = T)
+  
   # cloud option
   observe({
     sv_vcf_file=input$sv_vcf_file
@@ -375,6 +365,30 @@ server <- function(input, output,session) {
       }
       w$hide()
     }
+  })
+  
+  observeEvent(input$btn_plot,{
+    req(nrow(plots$pr_rd) != 0)
+    
+    include_seg <- input$include_seg
+    df <- rbindlist(list(plots$pr_seg,plots$m_seg,plots$f_seg))%>%
+      filter(ID%in%include_seg)%>%
+      mutate(ID=as.factor(ID))%>%
+      mutate(seg.mean=ifelse(seg.mean < -2.5,-2.4,seg.mean))
+    plots$xlabel=unique(df$chrom)[1]
+    rds <- ggplot(plots$pr_rd, aes(x=V2, y=log2(ratio+0.00001))) +
+      geom_point(shape=".")+
+      #scattermore::geom_scattermore(shape=".",pixels=c(1024,1024))+
+      geom_point(data = subset(plots$pr_rd, ratio < 0.7),aes(V2,log2(ratio+0.00001)),shape=".",color="green")+
+      geom_point(data = subset(plots$pr_rd, ratio > 1.3),aes(V2,log2(ratio+0.00001)),shape=".",color="red")+
+      geom_segment(data = df,aes(x=loc.start,y=seg.mean,xend=loc.end,yend=seg.mean,color=factor(ID)),size=1)+
+      scale_color_manual(name="Segment",values = c("Proband"="blue","Mother"="#E69F00","Father"="#39918C"),)+
+      ylim(-4,4)+xlab(plots$xlabel)+
+      scale_rd+style_rd+scale_x_continuous(labels = scales::label_number())
+    
+    
+    btnValrds <- mod_checkbox_Server("RD-static")
+    ranges <- mod_plot_switch_Server("RD-static", btnValrds$box_state, rds, ranges, zoom= F)
   })
   
   ext1 <- eventReactive(input$btn_plot,{

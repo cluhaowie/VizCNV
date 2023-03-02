@@ -170,6 +170,7 @@ mod_plot_switch_UI <- function(id, height = 100) {
 #' @param cbox checkbox value from checkboxInput
 #' @param p ggplot object
 #' @param ranges reactive ranges
+#' @param zoom boolean for zoom in or not
 #' 
 #'
 #' @return reactive brush ranges
@@ -179,11 +180,11 @@ mod_plot_switch_UI <- function(id, height = 100) {
 #'
 #' @export
 
-mod_plot_switch_Server <- function(id, cbox, p, ranges) {
+mod_plot_switch_Server <- function(id, cbox, p, ranges, zoom = T) {
   moduleServer(
     id,
     function(input, output, session) {
-      ranges <- mod_plot_output_Server("plot", p, ranges)
+      ranges <- mod_plot_output_Server("plot", p, ranges, zoom = zoom)
       observe({
         if (isTRUE(cbox())) {
           shinyjs::show(id = "panel")

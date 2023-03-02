@@ -66,7 +66,7 @@ ui <- dashboardPage(
                     use_waiter(),
                     column(4, 
                            HTML("<b>Basic Plot Options: </b>"),
-                           mod_checkbox_UI("Read Depth Plot (static)", value = F),
+                           mod_checkbox_UI("RD-static", value = F),
                            mod_checkbox_UI("Read Depth Plot (dynamic)"),
                            mod_checkbox_UI("Baf-B_allele"),
                            mod_checkbox_UI("Baf-A_allele", value = F),
@@ -83,12 +83,13 @@ ui <- dashboardPage(
                     )
                   ),
                   fluidRow(box(title = "Controls",width = 12,solidHeader = T, status = "success",collapsible = T,
-                      column(width = 4,uiOutput("ui_btn_goto")),
-                      column(width = 4,uiOutput("ui_btn_add")),
-                      column(width = 4,verbatimTextOutput("brush_info"))
+                      column(width = 3,uiOutput("ui_btn_goto")),
+                      column(width = 3,uiOutput("ui_btn_add")),
+                      column(width = 6,verbatimTextOutput("brush_info"))
                       )
                       ),
                   fluidRow(box(title = "Plots",width = 12,solidHeader = T, status = "success",collapsible = T,
+                    mod_plot_switch_UI("RD-static", height = 300),
                     plotOutput(
                       "plot1",
                       height = 300,
