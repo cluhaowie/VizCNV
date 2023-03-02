@@ -324,17 +324,21 @@ server <- function(input, output,session) {
     }
     if(nrow(values$m_rd)==0){return(NULL)
     }else{
+      w$show()
       plots$m_rd <- values$m_rd%>%
         filter(V1==chr)%>%
         mutate(ratio=V4/median(V4+0.00001))
       plots$m_seg <- SegNormRD(plots$m_rd,id="Mother",seg.method = seg_option)
+      w$hide()
     }
     if(nrow(values$f_rd)==0){return(NULL)
     }else{
+      w$show()
       plots$f_rd <- values$f_rd%>%
         filter(V1==chr)%>%
         mutate(ratio=V4/median(V4+0.00001))
       plots$f_seg <- SegNormRD(plots$f_rd,id="Father",seg.method = seg_option)
+      w$hide()
     }
   })
   observeEvent(input$btn_filter,{
@@ -399,13 +403,14 @@ server <- function(input, output,session) {
     if(nrow(plots$pr_rd) == 0){
       return(NULL)
     }
+    showNotification("Plotting Read Depth plots", type = "message", duration = 10)
     include_seg <- input$include_seg
     df <- rbindlist(list(plots$pr_seg,plots$m_seg,plots$f_seg))%>%
       filter(ID%in%include_seg)%>%
       mutate(ID=as.factor(ID))%>%
       mutate(seg.mean=ifelse(seg.mean < -2.5,-2.4,seg.mean))
     plots$xlabel=unique(df$chrom)[1]
-    ggplot(plots$pr_rd, aes(x=V2, y=log2(ratio+0.00001))) +
+    p <- ggplot(plots$pr_rd, aes(x=V2, y=log2(ratio+0.00001))) +
       geom_point(shape=".")+
       #scattermore::geom_scattermore(shape=".",pixels=c(1024,1024))+
       geom_point(data = subset(plots$pr_rd, ratio < 0.7),aes(V2,log2(ratio+0.00001)),shape=".",color="green")+
@@ -414,14 +419,17 @@ server <- function(input, output,session) {
       scale_color_manual(name="Segment",values = c("Proband"="blue","Mother"="#E69F00","Father"="#39918C"),)+
       ylim(-4,4)+xlab(plots$xlabel)+
       scale_rd+style_rd+scale_x_continuous(labels = scales::label_number())
+    return(p)
   },ignoreInit = T)
   
   
   
   #Baf-B plot
   observeEvent(input$btn_plot,{
+    
     req(nrow(plots$snp_chr) != 0)
 
+    noti_id <- showNotification("Plotting B-allele frequency plots", type = "message", duration = NULL)
     df <- plots$snp_chr%>%filter(likelyDN%in%c(input$include_dnSNV,"FALSE"))
     cols <- plots$SNPcols
     xlabel=unique(df$chrom)[1]
@@ -454,6 +462,7 @@ server <- function(input, output,session) {
       guides(color = guide_legend(override.aes = list(size = 4)))+
       scale_x_continuous(labels = scales::label_number())
     
+    removeNotification(noti_id)
     btnValb <- mod_checkbox_Server("Baf-B_allele")
     ranges <- mod_plot_switch_Server("Baf-B_allele", btnValb$box_state, snp_b, ranges)
     
@@ -721,7 +730,7 @@ server <- function(input, output,session) {
   
   ##Anno tracks
   observeEvent(input$btn_anno,{
-    print("Annotating")
+    id <- showNotification("Loading data and Annotating", type = "message", duration = NULL)
     chrn = input$chr
     path = "./data/"
     IDR<-data.table::fread(paste0(path,"Claudia_hg19_MergedInvDirRpts_sorted.bed")) %>% 
@@ -817,6 +826,7 @@ server <- function(input, output,session) {
       scale_anno+
       ylab("RMSK")
 
+  
     btnVal2 <- mod_checkbox_Server("IDR")
     btnVal3 <- mod_checkbox_Server("SegDup")
     btnVal4 <- mod_checkbox_Server("OMIM")
@@ -828,6 +838,7 @@ server <- function(input, output,session) {
     ranges <- mod_plot_switch_Server("gnomAD", btnVal5$box_state, p5, ranges)
     ranges <- mod_plot_switch_Server("RMSK", btnVal6$box_state, p6, ranges)
   
+    removeNotification(id)
     anno_table_Server("IDR", IDR, ranges, chrn)
     anno_table_Server("SegDup", SegDup, ranges, chrn)
     anno_table_Server("OMIM", OMIM, ranges, chrn)
