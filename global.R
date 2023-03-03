@@ -65,17 +65,17 @@ library(Rsamtools)
 library(VariantAnnotation)
 library(arrow) ## read parquet data
 library(shinyjs)
+library(ggtranscript)
 #library(colourpicker) ## required for picking annotation color
 # set up local database -------
 
 #sqlitePath="data/database.sqlite"
-genePath_hg38 <- "./data/MANE.GRCh38.v1.0.refseq.gz.parquet"
-#rmskPath_hg38="data/hg38_rmsk.gz.parquet"
+# genePath_hg38 <- "./data/MANE.GRCh38.v1.0.refseq.gz.parquet"
 maxSize_anno <- 20e6 # max size to show the transcripts
 maxtranscript <- 30 # max number of transcript to show
 geneExtend <- 1e5 # window size extend to 100kb
 
-genebase <- arrow::read_parquet(genePath_hg38,as_data_frame = F)
+# genebase <- arrow::read_parquet(genePath_hg38,as_data_frame = F)
 #rmskbase <- arrow::read_parquet(rmskPath_hg38,as_data_frame = F)
 
 
@@ -251,6 +251,8 @@ ReadGVCF <- function(path_to_gVCF,ref_genome=ref_genome,param = param){
 
 
 ## plot parameter
+
+
 style_rd <- theme_classic()+
   theme(
     plot.title = element_text(face = "bold", size = 12),
@@ -267,11 +269,7 @@ style_rd <- theme_classic()+
     # axis.title = element_text(color = "black",face = "bold"),
     #axis.line.x = element_blank(),
     axis.ticks = element_line(color = "black"))
-style_genes <- style_rd+
-  theme(panel.grid.major.y = element_blank(),
-        axis.title.x = element_blank())
-scale_genes <- scale_y_continuous(labels = scales::label_number(accuracy = 0.01))
-  
+
 style_snp <- theme_classic()+
   theme(
     plot.title = element_text(face = "bold", size = 12),
@@ -325,9 +323,16 @@ style_anno <- theme_classic()+
         axis.ticks.x=element_blank(), #remove x axis ticks
         axis.title.x = element_blank(),
         axis.line.x = element_blank(),
-        axis.text.y=element_text(color = "white"),  #remove y axis labels
+        # axis.text.y=element_text(color = "white"),  #remove y axis labels
         axis.ticks.y=element_blank()
   )
 
 scale_anno <- scale_y_continuous(limits = c(-0.01,.11))
 
+
+style_genes <- style_rd+
+  theme(panel.grid.major.y = element_blank(),
+        axis.title.x = element_blank(),
+        axis.ticks.y = element_blank(),
+        axis.text.y = element_text(color = "white"))
+scale_genes <- scale_y_continuous(labels = scales::label_number(accuracy = 0.01))
