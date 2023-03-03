@@ -1,4 +1,5 @@
 
+
 source("./mod/mod_plot_output.R")
 source("./mod/mod_dnCNV.R")
 
@@ -854,6 +855,5 @@ server <- function(input, output,session) {
     req(nrow(values$f_rd)!=0)
     mod_dnCNV_Server("dnCNV",plots$pr_seg, plots$m_seg, plots$f_seg)
   })
-  
   
 }
