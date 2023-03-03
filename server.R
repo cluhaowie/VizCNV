@@ -381,7 +381,7 @@ server <- function(input, output,session) {
     df <- rbindlist(list(plots$pr_seg,plots$m_seg,plots$f_seg))%>%
       filter(ID%in%include_seg)%>%
       mutate(ID=as.factor(ID))%>%
-      mutate(seg.mean=ifelse(seg.mean < -2.5,-2.4,seg.mean))
+      mutate(seg.mean=ifelse(seg.mean < -2.5,-2,seg.mean))
     plots$xlabel=unique(df$chrom)[1]
     rds <- ggplot(plots$pr_rd, aes(x=V2, y=log2(ratio+0.00001))) +
       geom_point(shape=".")+
@@ -408,7 +408,7 @@ server <- function(input, output,session) {
     df <- rbindlist(list(plots$pr_seg,plots$m_seg,plots$f_seg))%>%
       filter(ID%in%include_seg)%>%
       mutate(ID=as.factor(ID))%>%
-      mutate(seg.mean=ifelse(seg.mean < -2.5,-2.4,seg.mean))
+      mutate(seg.mean=ifelse(seg.mean < -2.5,-2,seg.mean))
     plots$xlabel=unique(df$chrom)[1]
     p <- ggplot(plots$pr_rd, aes(x=V2, y=log2(ratio+0.00001))) +
       geom_point(shape=".")+
@@ -546,34 +546,34 @@ server <- function(input, output,session) {
     if (!is.null(brush)) {
       ranges$x <- c(brush$xmin, brush$xmax)
       #ranges$y <- c(brush$ymin, brush$ymax)
-      if(max(ranges$x)-min(ranges$x) > maxSize_anno) {
-        plots$genelabel <- data.frame(stringsAsFactors = F)
-      }else{
-        plots$genelabel <- genebase%>%
-          filter(seqname==input$chr,
-                 start>(min(ranges$x)-geneExtend),
-                 end < (max(ranges$x)+geneExtend),
-                 type%in%c("exon"))%>%
-          dplyr::select(seqname,start,end,strand,transcript_id,gene_id,type)%>%
-          dplyr::collect()%>%
-          mutate(gene_num=round(as.numeric(as.factor(gene_id)),3),
-                 strand=as.factor(strand))
-        if(length(unique(plots$genelabel$gene_id))<maxtranscript){
-          gene_x <- plots$genelabel%>%
-            group_by(gene_num)%>%
-            summarise(start=(min(start)+max(end))/2,
-                      end=(min(start)+max(end))/2,
-                      gene_id=unique(gene_id))
-          plots$plot3 <- plots$genelabel%>%
-            ggplot(aes(xstart = start,xend = end,y = gene_num))+
-            ggtranscript::geom_range(aes(fill = strand)) +
-            ggtranscript::geom_intron(data = ggtranscript::to_intron(plots$genelabel, "gene_num"),aes(strand = strand))+
-            geom_text(data=gene_x,aes(x=start,label=gene_id),vjust = -1.2,check_overlap = T,fontface="italic")+
-            style_genes+scale_genes+
-            scale_fill_manual(values = c("+"="#E69F00","-"="#39918C"))+
-            scale_x_continuous(labels = scales::label_number())
-        }
-      }
+      # if(max(ranges$x)-min(ranges$x) > maxSize_anno) {
+      #   plots$genelabel <- data.frame(stringsAsFactors = F)
+      # }else{
+      #   plots$genelabel <- genebase%>%
+      #     filter(seqname==input$chr,
+      #            start>(min(ranges$x)-geneExtend),
+      #            end < (max(ranges$x)+geneExtend),
+      #            type%in%c("exon"))%>%
+      #     dplyr::select(seqname,start,end,strand,transcript_id,gene_id,type)%>%
+      #     dplyr::collect()%>%
+      #     mutate(gene_num=round(as.numeric(as.factor(gene_id)),3),
+      #            strand=as.factor(strand))
+      #   if(length(unique(plots$genelabel$gene_id))<maxtranscript){
+      #     gene_x <- plots$genelabel%>%
+      #       group_by(gene_num)%>%
+      #       summarise(start=(min(start)+max(end))/2,
+      #                 end=(min(start)+max(end))/2,
+      #                 gene_id=unique(gene_id))
+      #     plots$plot3 <- plots$genelabel%>%
+      #       ggplot(aes(xstart = start,xend = end,y = gene_num))+
+      #       ggtranscript::geom_range(aes(fill = strand)) +
+      #       ggtranscript::geom_intron(data = ggtranscript::to_intron(plots$genelabel, "gene_num"),aes(strand = strand))+
+      #       geom_text(data=gene_x,aes(x=start,label=gene_id),vjust = -1.2,check_overlap = T,fontface="italic")+
+      #       style_genes+scale_genes+
+      #       scale_fill_manual(values = c("+"="#E69F00","-"="#39918C"))+
+      #       scale_x_continuous(labels = scales::label_number())
+      #   }
+      # }
       if(nrow(values$data)!=0){
         values$work_data <- values$data%>%
           filter(CHROM==chr)%>%
@@ -730,7 +730,7 @@ server <- function(input, output,session) {
   
   ##Anno tracks
   observeEvent(input$btn_anno,{
-    id <- showNotification("Loading data and Annotating", type = "message", duration = NULL)
+    id <- showNotification("Annotating", type = "message", duration = NULL)
     chrn = input$chr
     path = "./data/"
     IDR<-data.table::fread(paste0(path,"Claudia_hg19_MergedInvDirRpts_sorted.bed")) %>% 
