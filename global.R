@@ -322,8 +322,8 @@ style_anno <- theme_classic()+
   theme(axis.text.x=element_blank(), 
         axis.ticks.x=element_blank(), #remove x axis ticks
         axis.title.x = element_blank(),
-        axis.line.x = element_blank(),
-        # axis.text.y=element_text(color = "white"),  #remove y axis labels
+        panel.grid.major.x = element_line(linetype = 5,colour = "grey50"),
+        axis.text.y=element_text(color = "white"),  #remove y axis labels
         axis.ticks.y=element_blank()
   )
 

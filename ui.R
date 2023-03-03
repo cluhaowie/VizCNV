@@ -97,7 +97,7 @@ ui <- dashboardPage(
                     mod_plot_switch_UI("Baf-B_allele", height = 300),
                     mod_plot_switch_UI("Baf-A_allele", height = 300),
                     # uiOutput("ui_plot_anno"),
-                    mod_plot_switch_UI("RefSeq", height = 200),
+                    mod_plot_switch_UI("RefSeq", height = 150),
                     mod_plot_switch_UI("IDR"),
                     mod_plot_switch_UI("Segdup"),
                     mod_plot_switch_UI("OMIM"),
@@ -121,6 +121,7 @@ ui <- dashboardPage(
                       DT::dataTableOutput("Select_table")),
                 box(title = "Annotation Table",width = 12,solidHeader = T, status = "success",collapsible = T,
                 tabsetPanel(
+                  tabPanel("RefSeq",anno_table_UI("RefSeq")),
                   tabPanel("IDR",anno_table_UI("IDR")),
                   tabPanel("SegDup",anno_table_UI("SegDup")),
                   tabPanel("OMIM",anno_table_UI("OMIM")),

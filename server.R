@@ -713,7 +713,7 @@ server <- function(input, output,session) {
     RefSeq <- read_parquet(paste0(path,p1_file))
     RefSeq <- RefSeq %>% 
       filter(seqname ==  chrn) %>%
-      mutate(gene_num=round(as.numeric(as.factor(gene_id)),3)/1000,
+      mutate(gene_num=round(as.numeric(as.factor(gene_id)),3)/100,
              strand=as.factor(strand))
       gene_x <- RefSeq%>%
         group_by(gene_num)%>%
@@ -824,7 +824,7 @@ server <- function(input, output,session) {
       ylab("RMSK")
     
     
-    showNotification("Annotating", type = "message")
+    showNotification("Annotating", type = "message", duration = 8)
     btnVal1 <- mod_checkbox_Server("RefSeq")
     btnVal2 <- mod_checkbox_Server("IDR")
     btnVal3 <- mod_checkbox_Server("SegDup")
@@ -839,6 +839,7 @@ server <- function(input, output,session) {
     ranges <- mod_plot_switch_Server("RMSK", btnVal6$box_state, p6, ranges)
   
     removeNotification(id)
+    anno_table_Server("RefSeq", RefSeq, ranges, chrn)
     anno_table_Server("IDR", IDR, ranges, chrn)
     anno_table_Server("SegDup", SegDup, ranges, chrn)
     anno_table_Server("OMIM", OMIM, ranges, chrn)
