@@ -2,6 +2,7 @@
 
 source("./mod/mod_plot_output.R")
 source("./mod/mod_dnCNV.R")
+source("./mod/mod_goto.R")
 
 ui <- dashboardPage(
   
@@ -86,10 +87,12 @@ ui <- dashboardPage(
                     )
                   ),
                   fluidRow(box(title = "Controls",width = 12,solidHeader = T, status = "success",collapsible = T,
-                      column(width = 3,uiOutput("ui_btn_goto")),
-                      column(width = 3,uiOutput("ui_btn_add")),
-                      column(width = 6,verbatimTextOutput("brush_info"))
-                      )
+
+                             column(4,shiny::textInput("goto_reg",label = NULL,placeholder = "gene, chromosome range")),
+                             column(2,shiny::actionButton("btn_go","go")),
+                             verbatimTextOutput("cur_range")
+                          
+                        )
                       ),
                   fluidRow(box(title = "Plots",width = 12,solidHeader = T, status = "success",collapsible = T,
                     mod_plot_switch_UI("RD-static", height = 300),

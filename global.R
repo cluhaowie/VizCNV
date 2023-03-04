@@ -7,6 +7,7 @@
 #    
 #  ------------------------------------------------------------------------
 options(timeout = 6000)
+options(scipen=999)
 options(shiny.maxRequestSize=3*1024^3) ## max file size 3 Gb
 options(shiny.autoreload=TRUE)
 #options(shiny.reactlog=TRUE) 
@@ -47,7 +48,7 @@ detach_all()
 rm(list = ls())
 
 # Loading ----
-
+library(stringr)
 library(dplyr)
 library(data.table)
 library(shiny)

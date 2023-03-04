@@ -2,6 +2,7 @@
 
 source("./mod/mod_plot_output.R")
 source("./mod/mod_dnCNV.R")
+source("./mod/mod_goto.R")
 
 server <- function(input, output,session) {
   # Reavtive Values --------------------------
@@ -377,83 +378,7 @@ server <- function(input, output,session) {
   
   
   
-  ## Plots section
-  ranges <- reactiveValues(x = NULL, y = NULL)
-  
-  observeEvent(input$btn_plot,{
-    req(nrow(plots$pr_rd) != 0)
-    
-    showNotification("Plotting Read Depth Plot", duration = 8, type = "message")
-    include_seg <- input$include_seg
-    df <- rbindlist(list(plots$pr_seg,plots$m_seg,plots$f_seg))%>%
-      filter(ID%in%include_seg)%>%
-      mutate(ID=as.factor(ID))%>%
-      mutate(seg.mean=ifelse(seg.mean < -2.5,-2,seg.mean))
-    plots$xlabel=unique(df$chrom)[1]
-    rd <- ggplot(plots$pr_rd, aes(x=V2, y=log2(ratio+0.00001))) +
-      geom_point(shape=".")+
-      #scattermore::geom_scattermore(shape=".",pixels=c(1024,1024))+
-      geom_point(data = subset(plots$pr_rd, ratio < 0.7),aes(V2,log2(ratio+0.00001)),shape=".",color="green")+
-      geom_point(data = subset(plots$pr_rd, ratio > 1.3),aes(V2,log2(ratio+0.00001)),shape=".",color="red")+
-      geom_segment(data = df,aes(x=loc.start,y=seg.mean,xend=loc.end,yend=seg.mean,color=factor(ID)),size=1)+
-      scale_color_manual(name="Segment",values = c("Proband"="blue","Mother"="#E69F00","Father"="#39918C"),)+
-      ylim(-4,4)+
-      xlab(plots$xlabel)+
-      scale_rd+
-      style_rd+
-      scale_x_continuous(labels = scales::label_number())
-    
-    
-    btnValrds <- mod_checkbox_Server("RD-static")
-    ranges <- mod_plot_switch_Server("RD-static", btnValrds$box_state, rd, ranges, zoom= F)
-    btnValrdd <- mod_checkbox_Server("RD-dynamic")
-    ranges <- mod_plot_switch_Server("RD-dynamic", btnValrdd$box_state, rd, ranges)
-  })
-
-  
-  #Baf-B plot
-  observeEvent(input$btn_plot,{
-    
-    req(nrow(plots$snp_chr) != 0)
-
-    noti_id <- showNotification("Plotting B-allele frequency plots", type = "message", duration = NULL)
-    df <- plots$snp_chr%>%filter(likelyDN%in%c(input$include_dnSNV,"FALSE"))
-    cols <- plots$SNPcols
-    xlabel=unique(df$chrom)[1]
-    
-    
-    snp_a <- ggplot(df, aes(x=start,y=pr_ALT_Freq,col=A_InhFrom))+
-      geom_point(shape=".")+
-      #scattermore::geom_scattermore(shape=".",pixels=c(1024,1024))+
-      geom_point(data = subset(df, likelyDN %in%c("TRUE")),size = 2,shape=8,color="red")+
-      scale_fill_manual("LikelyDN",limits=c("dnSNV"),values = "red")+
-      xlab(xlabel)+
-      scale_snp+
-      style_snp+
-      scale_colour_manual(values = cols)+
-      guides(color = guide_legend(override.aes = list(size = 4)))+
-      scale_x_continuous(labels = scales::label_number())
-    
-    btnVala <- mod_checkbox_Server("Baf-A_allele")
-    ranges <- mod_plot_switch_Server("Baf-A_allele", btnVala$box_state, snp_a, ranges)
-    
-    snp_b <- ggplot(df, aes(x=start,y=pr_ALT_Freq,col=B_InhFrom))+
-      geom_point(shape=".")+
-      #scattermore::geom_scattermore(shape=".",pixels=c(1024,1024))+
-      geom_point(data = subset(df, likelyDN %in%c("TRUE")),size = 2,shape=8,color="red")+
-      scale_fill_manual("LikelyDN",limits=c("dnSNV"),values = "red")+
-      xlab(xlabel)+
-      scale_snp+
-      style_snp+
-      scale_colour_manual(values = cols)+
-      guides(color = guide_legend(override.aes = list(size = 4)))+
-      scale_x_continuous(labels = scales::label_number())
-    
-    removeNotification(noti_id)
-    btnValb <- mod_checkbox_Server("Baf-B_allele")
-    ranges <- mod_plot_switch_Server("Baf-B_allele", btnValb$box_state, snp_b, ranges)
-    
-  })
+ 
 
 
   
@@ -689,6 +614,85 @@ server <- function(input, output,session) {
     }
   )
   
+  
+  ## Plots section
+  ranges <- reactiveValues(x = NULL, y = NULL)
+  
+  observeEvent(input$btn_plot,{
+    req(nrow(plots$pr_rd) != 0)
+    
+    showNotification("Plotting Read Depth Plot", duration = 8, type = "message")
+    include_seg <- input$include_seg
+    df <- rbindlist(list(plots$pr_seg,plots$m_seg,plots$f_seg))%>%
+      filter(ID%in%include_seg)%>%
+      mutate(ID=as.factor(ID))%>%
+      mutate(seg.mean=ifelse(seg.mean < -2.5,-2,seg.mean))
+    plots$xlabel=unique(df$chrom)[1]
+    rd <- ggplot(plots$pr_rd, aes(x=V2, y=log2(ratio+0.00001))) +
+      geom_point(shape=".")+
+      #scattermore::geom_scattermore(shape=".",pixels=c(1024,1024))+
+      geom_point(data = subset(plots$pr_rd, ratio < 0.7),aes(V2,log2(ratio+0.00001)),shape=".",color="green")+
+      geom_point(data = subset(plots$pr_rd, ratio > 1.3),aes(V2,log2(ratio+0.00001)),shape=".",color="red")+
+      geom_segment(data = df,aes(x=loc.start,y=seg.mean,xend=loc.end,yend=seg.mean,color=factor(ID)),size=1)+
+      scale_color_manual(name="Segment",values = c("Proband"="blue","Mother"="#E69F00","Father"="#39918C"),)+
+      ylim(-4,4)+
+      xlab(plots$xlabel)+
+      scale_rd+
+      style_rd+
+      scale_x_continuous(labels = scales::label_number())
+    
+    
+    btnValrds <- mod_checkbox_Server("RD-static")
+    ranges <- mod_plot_switch_Server("RD-static", btnValrds$box_state, rd, ranges, zoom= F)
+    btnValrdd <- mod_checkbox_Server("RD-dynamic")
+    ranges <- mod_plot_switch_Server("RD-dynamic", btnValrdd$box_state, rd, ranges)
+  })
+  
+  
+  #Baf-B plot
+  observeEvent(input$btn_plot,{
+    
+    req(nrow(plots$snp_chr) != 0)
+    
+    noti_id <- showNotification("Plotting B-allele frequency plots", type = "message", duration = NULL)
+    df <- plots$snp_chr%>%filter(likelyDN%in%c(input$include_dnSNV,"FALSE"))
+    cols <- plots$SNPcols
+    xlabel=unique(df$chrom)[1]
+    
+    
+    snp_a <- ggplot(df, aes(x=start,y=pr_ALT_Freq,col=A_InhFrom))+
+      geom_point(shape=".")+
+      #scattermore::geom_scattermore(shape=".",pixels=c(1024,1024))+
+      geom_point(data = subset(df, likelyDN %in%c("TRUE")),size = 2,shape=8,color="red")+
+      scale_fill_manual("LikelyDN",limits=c("dnSNV"),values = "red")+
+      xlab(xlabel)+
+      scale_snp+
+      style_snp+
+      scale_colour_manual(values = cols)+
+      guides(color = guide_legend(override.aes = list(size = 4)))+
+      scale_x_continuous(labels = scales::label_number())
+    
+    btnVala <- mod_checkbox_Server("Baf-A_allele")
+    ranges <- mod_plot_switch_Server("Baf-A_allele", btnVala$box_state, snp_a, ranges)
+    
+    snp_b <- ggplot(df, aes(x=start,y=pr_ALT_Freq,col=B_InhFrom))+
+      geom_point(shape=".")+
+      #scattermore::geom_scattermore(shape=".",pixels=c(1024,1024))+
+      geom_point(data = subset(df, likelyDN %in%c("TRUE")),size = 2,shape=8,color="red")+
+      scale_fill_manual("LikelyDN",limits=c("dnSNV"),values = "red")+
+      xlab(xlabel)+
+      scale_snp+
+      style_snp+
+      scale_colour_manual(values = cols)+
+      guides(color = guide_legend(override.aes = list(size = 4)))+
+      scale_x_continuous(labels = scales::label_number())
+    
+    removeNotification(noti_id)
+    btnValb <- mod_checkbox_Server("Baf-B_allele")
+    ranges <- mod_plot_switch_Server("Baf-B_allele", btnValb$box_state, snp_b, ranges)
+    
+  })
+  
   ##Anno tracks
   observeEvent(input$btn_anno,{
     if (input$ref == "GRCh37"){
@@ -855,5 +859,24 @@ server <- function(input, output,session) {
     req(nrow(values$f_rd)!=0)
     mod_dnCNV_Server("dnCNV",plots$pr_seg, plots$m_seg, plots$f_seg)
   })
+  
+
+
+  observe({
+    output$cur_range <- renderText({
+      req(!is.null(ranges$x))
+      paste0("current range: ", round(ranges$x[1]), "-", round(ranges$x[2]), "    width: ", round(ranges$x[2])-round(ranges$x[1])+1)
+      })
+    })
+  
+  observeEvent(input$btn_go,{
+    str <- stringr::str_trim(input$goto_reg)
+    goto_coord <- as.numeric(unlist(strsplit(str,"-|_")))
+    from <- goto_coord[1]
+    to <- goto_coord[2]
+    ranges$x <- c(from, to)
+  }, ignoreInit = T)
+
+
   
 }
