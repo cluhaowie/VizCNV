@@ -2,7 +2,6 @@
 
 source("./mod/mod_plot_output.R")
 source("./mod/mod_dnCNV.R")
-source("./mod/mod_goto.R")
 
 server <- function(input, output,session) {
   # Reavtive Values --------------------------
@@ -870,13 +869,32 @@ server <- function(input, output,session) {
     })
   
   observeEvent(input$btn_go,{
+    req(!is.null(input$goto_reg))
     str <- stringr::str_trim(input$goto_reg)
-    goto_coord <- as.numeric(unlist(strsplit(str,"-|_")))
-    from <- goto_coord[1]
-    to <- goto_coord[2]
-    ranges$x <- c(from, to)
+    str <- strsplit(str,"-|_")
+    if (length(str[[1]]) ==1) {
+      showNotification("Looking up gene name", type = "message")
+      path <- "./data/"
+      p1_file <- "NCBI_RefSeq_hg19_clean.bed.parquet"
+      RefSeq <- read_parquet(paste0(path,p1_file))
+      search <- as.character(str[[1]])
+      found <- RefSeq %>% 
+        filter(seqname == input$chr) %>% 
+        filter(grepl(search, gene_id, ignore.case = T))
+      if (nrow(found) != 0){
+        ranges$x <- c(as.numeric(min(found$start)-geneExtend),
+                      as.numeric(max(found$end)+geneExtend))
+      }
+    } else if (length(str[[1]]) == 2){
+      showNotification("Jumping to coordinates", type = "message")
+      from <- as.numeric(str[[1]][1])
+      to <- as.numeric(str[[1]][2])
+      ranges$x <- c(from, to)
+    }
   }, ignoreInit = T)
 
 
   
 }
+
+

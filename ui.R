@@ -2,7 +2,6 @@
 
 source("./mod/mod_plot_output.R")
 source("./mod/mod_dnCNV.R")
-source("./mod/mod_goto.R")
 
 ui <- dashboardPage(
   

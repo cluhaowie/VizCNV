@@ -17,7 +17,7 @@ options(shiny.autoreload=TRUE)
 
 # Packages ----------------------------------------------------------------
 # Install missing packages from CRAN, 'arrow' may be a problem
-list.of.packages <- c("dplyr", "data.table", "shiny", "shinydashboard",
+list.of.packages <- c("dplyr", "data.table", "shiny", "shinydashboard", "shinyFeedback",
                       "tippy","DT","ggplot2","shinyWidgets","shinyFiles","waiter",
                       "cowplot","devtools","BiocManager","arrow","colourpicker", "shinyjs") 
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
@@ -46,6 +46,7 @@ detach_all <- function() {
 }
 detach_all()
 rm(list = ls())
+devtools::install_github("dzhang32/ggtranscript")
 
 # Loading ----
 library(stringr)

@@ -88,7 +88,7 @@ mod_plot_output_Server <- function(id, p, ranges, zoom = T){
 #'
 #' @export
 
-mod_plot_switch_UI <- function(id, height = 80) {
+mod_plot_switch_UI <- function(id, height = 70) {
   ns <- NS(id)
   shinyjs::useShinyjs()
   shinyjs::hidden(fluidRow(
