@@ -32,9 +32,9 @@ if (!require("BiocManager", quietly = TRUE))
   install.packages("BiocManager")
 if(length(new.biocLitePackage)) BiocManager::install(new.biocLitePackage)
 # Install SLMSeg package from github
-local.packages <- c("SLMSeg","regioneR")
+local.packages <- c("SLMSeg","regioneR","ggtranscript")
 add.packages <- local.packages[!local.packages%in% installed.packages()[,"Package"]]
-if(length(add.packages)) devtools::install_github(c("cluhaowie/VizCNV/SLMSeg","bernatgel/regioneR"))
+if(length(add.packages)) devtools::install_github(c("cluhaowie/VizCNV/SLMSeg","bernatgel/regioneR","dzhang32/ggtranscript"))
 #Cleaning ----
 detach_all <- function() {
   basic.pkg <- c("package:stats", "package:graphics", "package:grDevices",
@@ -48,7 +48,7 @@ detach_all <- function() {
 }
 detach_all()
 rm(list = ls())
-devtools::install_github("dzhang32/ggtranscript")
+
 
 # Loading ----
 library(plyranges)
