@@ -474,67 +474,7 @@ server <- function(input, output,session) {
   # })
 # 
   
-  ## goto btn
-#   observeEvent(input$btl_goto,{
-#     if(!is.null(input$goto_reg)){
-#       gene <- as.character(input$goto_reg)
-#       gene.exist <- genebase%>%filter(seqname==input$chr,
-#                                       gene_id==gene,
-#                                       type%in%c("exon"))%>%
-#         dplyr::select(seqname,start,end,strand,transcript_id,gene_id,type)%>%
-#         collect()
-#       if(nrow(gene.exist)!=0){
-#         ranges$x <- c(as.numeric(min(gene.exist$start)-geneExtend),
-#                       as.numeric(max(gene.exist$end)+geneExtend))
-#         gene.exist <- gene.exist%>%
-#           mutate(gene_num=round(as.numeric(as.factor(gene_id)),3),
-#                  strand=as.factor(strand))
-#         gene_x <- gene.exist%>%
-#           group_by(gene_num)%>%
-#           summarise(start=(min(start)+max(end))/2,
-#                     end=(min(start)+max(end))/2,
-#                     gene_id=unique(gene_id))
-#         plots$plot3 <- gene.exist%>%
-#           ggplot(aes(xstart = start,xend = end,y = gene_num))+
-#           ggtranscript::geom_range(aes(fill = strand)) +
-#           ggtranscript::geom_intron(data = ggtranscript::to_intron(gene.exist, "gene_num"),aes(strand = strand))+
-#           geom_text(data=gene_x,aes(x=start,label=gene_id),vjust = -1.2,check_overlap = T,fontface="italic")+
-#           style_genes+scale_genes+
-#           scale_fill_manual(values = c("+"="#E69F00","-"="#39918C"))+
-#           scale_x_continuous(labels = scales::label_number())
-#       }else{
-#         goto_reg <- as.numeric(unlist(strsplit(input$goto_reg,"-|_")))
-#         validate(need(length(goto_reg)==2,"Check at least two coordinates"))
-#         ranges$x <- c(min(goto_reg)-geneExtend,max(goto_reg)+geneExtend)
-#         plots$genelabel <- genebase%>%
-#           filter(seqname==input$chr,
-#                  start>(min(ranges$x)-geneExtend),
-#                  end < (max(ranges$x)+geneExtend),
-#                  type%in%c("exon"))%>%
-#           dplyr::select(seqname,start,end,strand,transcript_id,gene_id,type)%>%
-#           dplyr::collect()%>%
-#           mutate(gene_num=round(as.numeric(as.factor(gene_id)),3),
-#                  strand=as.factor(strand))
-#         if(length(unique(plots$genelabel$gene_id))<maxtranscript){
-#           gene_x <- plots$genelabel%>%
-#             group_by(gene_num)%>%
-#             summarise(start=(min(start)+max(end))/2,
-#                       end=(min(start)+max(end))/2,
-#                       gene_id=unique(gene_id))
-#           plots$plot3 <- plots$genelabel%>%
-#             ggplot(aes(xstart = start,xend = end,y = gene_num))+
-#             ggtranscript::geom_range(aes(fill = strand)) +
-#             ggtranscript::geom_intron(data = ggtranscript::to_intron(plots$genelabel, "gene_num"),aes(strand = strand))+
-#             geom_text(data=gene_x,aes(x=start,label=gene_id),vjust = -1.2,check_overlap = T,fontface="italic")+
-#             style_genes+scale_genes+
-#             scale_fill_manual(values = c("+"="#E69F00","-"="#39918C"))+
-#             scale_x_continuous(labels = scales::label_number())
-#         }
-#         
-#       }
-#       
-#     }
-#   })
+
   observeEvent(input$btl_add,{
     brush <- input$plot1_brush
     if(!is.null(brush)){
@@ -617,6 +557,7 @@ server <- function(input, output,session) {
   ## Plots section
   ranges <- reactiveValues(x = NULL, y = NULL)
   
+  ## RD plots
   observeEvent(input$btn_plot,{
     req(nrow(plots$pr_rd) != 0)
     
@@ -640,11 +581,16 @@ server <- function(input, output,session) {
       style_rd+
       scale_x_continuous(labels = scales::label_number())
     
-    
+    test <-  data.frame(start = c(10000000, 20000000, 174572490), end = c(15000000, 25000000, 177304796))
+    # print(test)
+    # print(test$start)
+    # print(test$end)
     btnValrds <- mod_checkbox_Server("RD-static")
-    ranges <- mod_plot_switch_Server("RD-static", btnValrds$box_state, rd, ranges, zoom= F)
+    ranges <- mod_plot_switch_Server("RD-static", btnValrds$box_state, rd, ranges, zoom= F, show_dnCNV = test)
+    print("static")
     btnValrdd <- mod_checkbox_Server("RD-dynamic")
     ranges <- mod_plot_switch_Server("RD-dynamic", btnValrdd$box_state, rd, ranges)
+    print("dynamic")
   })
   
   
@@ -860,7 +806,7 @@ server <- function(input, output,session) {
   })
   
 
-
+  
   observe({
     output$cur_range <- renderText({
       req(!is.null(ranges$x))
@@ -868,6 +814,8 @@ server <- function(input, output,session) {
       })
     })
   
+  
+  ## btn_goto
   observeEvent(input$btn_go,{
     req(!is.null(input$goto_reg))
     str <- stringr::str_trim(input$goto_reg)

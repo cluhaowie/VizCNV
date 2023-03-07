@@ -42,20 +42,32 @@ mod_plot_output_UI <- function(id, height = 100) {
 #' mod_plot_output_server("plot", p, ranges, zoom = F)
 #'
 #' @export
-mod_plot_output_Server <- function(id, p, ranges, zoom = T){
+mod_plot_output_Server <- function(id, p, ranges, zoom = T, show_dnCNV = data.frame()){
   moduleServer(
     id,
     function(input, output, session) {
       if (isTRUE(zoom)){
+        print("asdf")
         output$plot <- renderPlot({
           p +
             coord_cartesian(xlim= ranges$x, ylim = ranges$y, expand = F)
         })
       } else {
-        output$plot <- renderPlot({
-          p +
-            coord_cartesian(expand = F)
-        })
+        if (nrow(show_dnCNV)!=0){
+          print("here")
+          print(show_dnCNV)
+          output$plot <- renderPlot({
+            p +
+              coord_cartesian(expand = F)+
+              annotate("rect", fill = "blue", alpha =0.3, xmin = show_dnCNV$start, xmax = show_dnCNV$end, ymin = -Inf, ymax = Inf)
+          })
+        } else {
+          print("here2")
+          output$plot <- renderPlot({
+            p +
+              coord_cartesian(expand = F)
+            })
+        }
       }
       
       observeEvent(input$dblclick, {
@@ -68,8 +80,10 @@ mod_plot_output_Server <- function(id, p, ranges, zoom = T){
       })
       return (ranges) 
     }
-  )
+)
 }
+  
+
 
 
 
@@ -119,11 +133,11 @@ mod_plot_switch_UI <- function(id, height = 70) {
 #'
 #' @export
 
-mod_plot_switch_Server <- function(id, cbox, p, ranges, zoom = T) {
+mod_plot_switch_Server <- function(id, cbox, p, ranges, zoom = T, show_dnCNV = data.frame()) {
   moduleServer(
     id,
     function(input, output, session) {
-      ranges <- mod_plot_output_Server("plot", p, ranges, zoom = zoom)
+      ranges <- mod_plot_output_Server("plot", p, ranges, zoom = zoom, show_dnCNV = show_dnCNV)
       observe({
         if (isTRUE(cbox())) {
           shinyjs::show(id = "panel")
