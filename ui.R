@@ -5,7 +5,15 @@ source("./mod/mod_dnCNV.R")
 
 ui <- dashboardPage(
   
-  dashboardHeader(title = "VizCNV-dev"),
+  dashboardHeader(title = "",
+                  leftUi = tagList(
+                    dropdownBlock(
+                      id="vizcnv",
+                      title="VizCNV",
+                      tags$a(href="https://github.com/BCM-Lupskilab/VizCNV", "Code on Github"),
+                      tags$a(href="https://github.com/BCM-Lupskilab/VizCNV", "Examples")
+                    )
+                  )),
   
   dashboardSidebar(
     sidebarMenu(
@@ -24,9 +32,29 @@ ui <- dashboardPage(
                        shinyWidgets::switchInput(inputId = "file_source",onLabel = "Local",offLabel = "Server", labelWidth = 20, handleWidth = 300),
                        radioButtons(inputId = "ref",label = h3("Reference Genome Build"),choices = list("GRCh37"="GRCh37","GRCh38"="GRCh38"),inline = T,selected = "GRCh37")
                     ),
-          box(title="File import",status="primary",width = 12,solidHeader = T,collapsible = T,
+          box(title="Step0: File import/upload",status="primary",width = 12,solidHeader = T,collapsible = T,
               fluidRow(
-                box(width = 6,uiOutput("file_source_ui1")),
+                box(width = 8,title ="Upload or import .bed files",solidHeader = T,uiOutput("file_source_ui1")),
+                box(width = 4,title = " Help",icon = icon("question-circle"),status = "secondary",solidHeader = T,
+                    bs4Dash::accordion(id="help_panel",
+                                       bs4Dash::accordionItem(
+                                         title = "Sample read depth file (.bed or .bed.gz)",
+                                         collapsed = F,
+                                         "chr start end rd"
+                                       )),
+                    bs4Dash::accordion(id="help_panel2",
+                                       bs4Dash::accordionItem(
+                                         title = "How to make .bed files",
+                                         collapsed = F,
+                                         "A output from",
+                                         tags$a(href="https://github.com/brentp/mosdepth","mosedepth"), 
+                                         "can be used example of generate the read depth file for 1Kb window size would be:",
+                                         br(),
+                                         code("mosdepth -n --fast-mode --by 1000 sample.wgs $sample.wgs.bam")
+                                         )
+                                       )
+                    ),
+
                 box(width = 6,uiOutput("file_source_ui2"))
               )),
           box(title="Filter parameters",status="primary",width = 12,solidHeader = T,collapsible = T,

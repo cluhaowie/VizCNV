@@ -59,15 +59,20 @@ server <- function(input, output,session) {
       )
     }else{
       tagList(
-        h5(strong("Select local sv file (optional):")),
-        shinyFilesButton(id = "local_sv_file", label = "Browse...", title = "Please select a file", multiple = F, viewtype = "detail"),
-        h5(strong("Select local proband read depth file (required)")),
+        h5(strong("Select local proband read depth file")),
+        dashboardBadge("required", color = "info"),
         shinyFilesButton(id = "local_pr_rd_file", label = "Browse...", title = "Please select a file", multiple = F, viewtype = "detail"),
-        h5(strong("Select local mom's read depth file (optional)")),
+        h5(strong("Select local mom's read depth file")),
+        dashboardBadge("optional", color = "secondary"),
         shinyFilesButton(id = "local_m_rd_file", label = "Browse...", title = "Please select a file", multiple = F, viewtype = "detail"),
-        h5(strong("Select local dad's read depth file (optional)")),
+        h5(strong("Select local dad's read depth file")),
+        dashboardBadge("optional", color = "secondary"),
         shinyFilesButton(id = "local_f_rd_file", label = "Browse...", title = "Please select a file", multiple = F, viewtype = "detail"),
-        h5(strong("Select local proband snv file (optional)")),
+        h5(strong("Select local sv file")),
+        dashboardBadge("optional", color = "secondary"),
+        shinyFilesButton(id = "local_sv_file", label = "Browse...", title = "Please select a file", multiple = F, viewtype = "detail"),
+        h5(strong("Select local proband snv file")),
+        dashboardBadge("optional", color = "secondary"),
         shinyFilesButton(id = "local_pr_snv_file", label = "Browse...", title = "Please select a file", multiple = F, viewtype = "detail")
       )
       
@@ -81,7 +86,7 @@ server <- function(input, output,session) {
         fileInput("f_rd_file",label = "Dad's read depth files (optional)",accept=c("*.bed","*.bed.gz"),multiple = F,buttonLabel = "Browse...")
       )
     }else{
-      verbatimTextOutput("filepaths")
+     # verbatimTextOutput("filepaths")
     }
   })
   

@@ -18,7 +18,7 @@ options(shiny.autoreload=TRUE)
 # Install missing packages from CRAN, 'arrow' may be a problem
 list.of.packages <- c("dplyr", "data.table", "shiny", "shinydashboard",
                       "tippy","DT","ggplot2","shinyWidgets","shinyFiles","waiter",
-                      "cowplot","devtools","BiocManager","arrow","colourpicker", "shinyjs") 
+                      "cowplot","devtools","BiocManager","arrow","colourpicker", "shinyjs","shinydashboardPlus") 
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
 if(length(new.packages)) install.packages(new.packages)
 
@@ -51,7 +51,9 @@ rm(list = ls())
 library(dplyr)
 library(data.table)
 library(shiny)
-library(shinydashboard)
+#library(shinydashboard)
+library(shinydashboardPlus)
+library(bs4Dash) ## support bootstrap 4
 library(shinyFiles)
 library(shinyWidgets)
 library(waiter)
