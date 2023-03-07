@@ -572,6 +572,7 @@ server <- function(input, output,session) {
     chrn = input$chr
     path = "./data/"
     
+    if (nrow(values$pr_sv) != 0){
     pr_sv <- values$pr_sv %>% 
       filter(CHROM == chrn) %>% 
       filter(AVGLEN > 10000 & AVGLEN < 100000000)
@@ -593,8 +594,10 @@ server <- function(input, output,session) {
       style_anno+
       scale_anno+
       ylab("pr_SV")
-    
-    
+    btnVal_prsv <- mod_checkbox_Server("pr_sv")
+    ranges <- mod_plot_switch_Server("pr_sv", btnVal_prsv$box_state, pr_sv_plot, ranges, dnCNV_table)
+    anno_table_Server("pr_sv", pr_sv, ranges, chrn)
+    }
     RefSeq <- read_parquet(paste0(path,p1_file))
     RefSeq <- RefSeq %>% 
       filter(seqname ==  chrn) %>%
@@ -710,8 +713,7 @@ server <- function(input, output,session) {
     
     
     showNotification("Annotating", type = "message", duration = 8)
-    btnVal_prsv <- mod_checkbox_Server("pr_sv")
-    ranges <- mod_plot_switch_Server("pr_sv", btnVal_prsv$box_state, pr_sv_plot, ranges, dnCNV_table)
+  
     btnVal1 <- mod_checkbox_Server("RefSeq")
     ranges <- mod_plot_switch_Server("RefSeq", btnVal1$box_state, p1, ranges, dnCNV_table)
     btnVal2 <- mod_checkbox_Server("IDR")
@@ -726,7 +728,6 @@ server <- function(input, output,session) {
     ranges <- mod_plot_switch_Server("RMSK", btnVal6$box_state, p6, ranges, dnCNV_table)
   
     removeNotification(id)
-    anno_table_Server("pr_sv", pr_sv, ranges, chrn)
     anno_table_Server("RefSeq", RefSeq, ranges, chrn)
     anno_table_Server("IDR", IDR, ranges, chrn)
     anno_table_Server("SegDup", SegDup, ranges, chrn)
