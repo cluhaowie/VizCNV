@@ -5,15 +5,7 @@ source("./mod/mod_dnCNV.R")
 
 ui <- dashboardPage(
   
-  dashboardHeader(title = "",
-                  leftUi = tagList(
-                    dropdownBlock(
-                      id="vizcnv",
-                      title="VizCNV",
-                      tags$a(href="https://github.com/BCM-Lupskilab/VizCNV", "Code on Github"),
-                      tags$a(href="https://github.com/BCM-Lupskilab/VizCNV", "Examples")
-                    )
-                  )),
+  dashboardHeader(title = "VizCNV-dev"),
   
   dashboardSidebar(
     sidebarMenu(
@@ -32,29 +24,9 @@ ui <- dashboardPage(
                        shinyWidgets::switchInput(inputId = "file_source",onLabel = "Local",offLabel = "Server", labelWidth = 20, handleWidth = 300),
                        radioButtons(inputId = "ref",label = h3("Reference Genome Build"),choices = list("GRCh37"="GRCh37","GRCh38"="GRCh38"),inline = T,selected = "GRCh37")
                     ),
-          box(title="Step0: File import/upload",status="primary",width = 12,solidHeader = T,collapsible = T,
+          box(title="File upload",status="primary",width = 12,solidHeader = T,collapsible = T,
               fluidRow(
-                box(width = 8,title ="Upload or import .bed files",solidHeader = T,uiOutput("file_source_ui1")),
-                box(width = 4,title = " Help",icon = icon("question-circle"),status = "secondary",solidHeader = T,
-                    bs4Dash::accordion(id="help_panel",
-                                       bs4Dash::accordionItem(
-                                         title = "Sample read depth file (.bed or .bed.gz)",
-                                         collapsed = F,
-                                         "chr start end rd"
-                                       )),
-                    bs4Dash::accordion(id="help_panel2",
-                                       bs4Dash::accordionItem(
-                                         title = "How to make .bed files",
-                                         collapsed = F,
-                                         "A output from",
-                                         tags$a(href="https://github.com/brentp/mosdepth","mosedepth"), 
-                                         "can be used example of generate the read depth file for 1Kb window size would be:",
-                                         br(),
-                                         code("mosdepth -n --fast-mode --by 1000 sample.wgs $sample.wgs.bam")
-                                         )
-                                       )
-                    ),
-
+                box(width = 6,uiOutput("file_source_ui1")),
                 box(width = 6,uiOutput("file_source_ui2"))
               )),
           box(title="Filter parameters",status="primary",width = 12,solidHeader = T,collapsible = T,
@@ -96,44 +68,44 @@ ui <- dashboardPage(
                     use_waiter(),
                     column(4, 
                            HTML("<b>Basic Plot Options: </b>"),
-                           mod_checkbox_UI("RD-static", value = F),
-                           mod_checkbox_UI("Read Depth Plot (dynamic)"),
+                           mod_checkbox_UI("RD-static"),
+                           mod_checkbox_UI("RD-dynamic"),
                            mod_checkbox_UI("Baf-B_allele"),
                            mod_checkbox_UI("Baf-A_allele", value = F),
                            uiOutput("blt_dnSNV_ui"),
                            actionButton("btn_plot", "Plot")),
                     column(6,
                            HTML("<b>Annotation Track Options:</b>"),
+                           mod_checkbox_UI("RefSeq"),
                            mod_checkbox_UI("IDR", value = F),
                            mod_checkbox_UI("SegDup"),
                            mod_checkbox_UI("OMIM"),
                            mod_checkbox_UI("gnomAD"),
                            mod_checkbox_UI("RMSK", value = F),
-                           actionButton("btn_anno", "Annotate"))
+                           actionButton("btn_anno", "Annotate")),
+                    actionButton("btn_dnCNV", "Show potential dnCNVs")
                     )
                   ),
+                  fluidRow(box(title = "Controls",width = 12,solidHeader = T, status = "success",collapsible = T,
+
+                             column(4,shiny::textInput("goto_reg",label = NULL,placeholder = "gene, chromosome range")),
+                             column(2,shiny::actionButton("btn_go","go")),
+                             verbatimTextOutput("cur_range")
+                          
+                        )
+                      ),
                   fluidRow(box(title = "Plots",width = 12,solidHeader = T, status = "success",collapsible = T,
-                               fluidRow(
-                                 column(width = 3,uiOutput("ui_btn_goto")),
-                                 column(width = 3,uiOutput("ui_btn_add")),
-                                 column(width = 6,verbatimTextOutput("brush_info"))),
-                               fluidRow(
-                                 mod_plot_switch_UI("RD-static", height = 300),
-                                 plotOutput(
-                                   "plot1",
-                                   height = 300,
-                                   dblclick = "plot1_dblclick",
-                                   brush = brushOpts(id = "plot1_brush",direction = "x",
-                                                     resetOnNew = TRUE)),
-                                 mod_plot_switch_UI("Baf-B_allele", height = 300),
-                                 mod_plot_switch_UI("Baf-A_allele", height = 300),
-                                 # uiOutput("ui_plot_anno"),
-                                 mod_plot_switch_UI("IDR"),
-                                 mod_plot_switch_UI("Segdup"),
-                                 mod_plot_switch_UI("OMIM"),
-                                 mod_plot_switch_UI("gnomAD"),
-                                 mod_plot_switch_UI("RMSK")
-                               ),
+                    mod_plot_switch_UI("RD-static", height = 200),
+                    mod_plot_switch_UI("RD-dynamic", height = 200),
+                    mod_plot_switch_UI("Baf-B_allele", height = 200),
+                    mod_plot_switch_UI("Baf-A_allele", height = 200),
+                    # uiOutput("ui_plot_anno"),
+                    mod_plot_switch_UI("RefSeq", height = 120),
+                    mod_plot_switch_UI("IDR"),
+                    mod_plot_switch_UI("Segdup"),
+                    mod_plot_switch_UI("OMIM"),
+                    mod_plot_switch_UI("gnomAD"),
+                    mod_plot_switch_UI("RMSK"),
                     fluidRow(column(1,uiOutput("ui_dlbtn_plt")),
                              column(1,uiOutput("ui_clbtn_plt")),
                              column(1,uiOutput("ui_dlbtn_dnsnv")))
@@ -142,7 +114,6 @@ ui <- dashboardPage(
                ),
         tabItem(tabName = "table",
                 fluidRow(box(title = "dnCNV Table",width = 12,solidHeader = T, status = "success",collapsible = T,
-                             actionButton("btn_dnCNV", "Get potential dnCNVs"),
                              mod_dnCNV_UI("dnCNV")),
                 box(title = "SV Table",width = 12,solidHeader = T, status = "success",collapsible = T,
                       DT::dataTableOutput("filter_sv_table"),
@@ -152,6 +123,7 @@ ui <- dashboardPage(
                       DT::dataTableOutput("Select_table")),
                 box(title = "Annotation Table",width = 12,solidHeader = T, status = "success",collapsible = T,
                 tabsetPanel(
+                  tabPanel("RefSeq",anno_table_UI("RefSeq")),
                   tabPanel("IDR",anno_table_UI("IDR")),
                   tabPanel("SegDup",anno_table_UI("SegDup")),
                   tabPanel("OMIM",anno_table_UI("OMIM")),

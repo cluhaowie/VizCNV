@@ -1,5 +1,4 @@
 
-
 source("./mod/mod_plot_output.R")
 source("./mod/mod_dnCNV.R")
 
@@ -59,20 +58,15 @@ server <- function(input, output,session) {
       )
     }else{
       tagList(
-        h5(strong("Select local proband read depth file")),
-        dashboardBadge("required", color = "info"),
-        shinyFilesButton(id = "local_pr_rd_file", label = "Browse...", title = "Please select a file", multiple = F, viewtype = "detail"),
-        h5(strong("Select local mom's read depth file")),
-        dashboardBadge("optional", color = "secondary"),
-        shinyFilesButton(id = "local_m_rd_file", label = "Browse...", title = "Please select a file", multiple = F, viewtype = "detail"),
-        h5(strong("Select local dad's read depth file")),
-        dashboardBadge("optional", color = "secondary"),
-        shinyFilesButton(id = "local_f_rd_file", label = "Browse...", title = "Please select a file", multiple = F, viewtype = "detail"),
-        h5(strong("Select local sv file")),
-        dashboardBadge("optional", color = "secondary"),
+        h5(strong("Select local sv file (optional):")),
         shinyFilesButton(id = "local_sv_file", label = "Browse...", title = "Please select a file", multiple = F, viewtype = "detail"),
-        h5(strong("Select local proband snv file")),
-        dashboardBadge("optional", color = "secondary"),
+        h5(strong("Select local proband read depth file (required)")),
+        shinyFilesButton(id = "local_pr_rd_file", label = "Browse...", title = "Please select a file", multiple = F, viewtype = "detail"),
+        h5(strong("Select local mom's read depth file (optional)")),
+        shinyFilesButton(id = "local_m_rd_file", label = "Browse...", title = "Please select a file", multiple = F, viewtype = "detail"),
+        h5(strong("Select local dad's read depth file (optional)")),
+        shinyFilesButton(id = "local_f_rd_file", label = "Browse...", title = "Please select a file", multiple = F, viewtype = "detail"),
+        h5(strong("Select local proband snv file (optional)")),
         shinyFilesButton(id = "local_pr_snv_file", label = "Browse...", title = "Please select a file", multiple = F, viewtype = "detail")
       )
       
@@ -86,7 +80,7 @@ server <- function(input, output,session) {
         fileInput("f_rd_file",label = "Dad's read depth files (optional)",accept=c("*.bed","*.bed.gz"),multiple = F,buttonLabel = "Browse...")
       )
     }else{
-     # verbatimTextOutput("filepaths")
+      verbatimTextOutput("filepaths")
     }
   })
   
@@ -330,17 +324,21 @@ server <- function(input, output,session) {
     }
     if(nrow(values$m_rd)==0){return(NULL)
     }else{
+      w$show()
       plots$m_rd <- values$m_rd%>%
         filter(V1==chr)%>%
         mutate(ratio=V4/median(V4+0.00001))
       plots$m_seg <- SegNormRD(plots$m_rd,id="Mother",seg.method = seg_option)
+      w$hide()
     }
     if(nrow(values$f_rd)==0){return(NULL)
     }else{
+      w$show()
       plots$f_rd <- values$f_rd%>%
         filter(V1==chr)%>%
         mutate(ratio=V4/median(V4+0.00001))
       plots$f_seg <- SegNormRD(plots$f_rd,id="Father",seg.method = seg_option)
+      w$hide()
     }
   })
   observeEvent(input$btn_filter,{
@@ -376,100 +374,14 @@ server <- function(input, output,session) {
     }
   })
   
-  observeEvent(input$btn_plot,{
-    req(nrow(plots$pr_rd) != 0)
-    
-    include_seg <- input$include_seg
-    df <- rbindlist(list(plots$pr_seg,plots$m_seg,plots$f_seg))%>%
-      filter(ID%in%include_seg)%>%
-      mutate(ID=as.factor(ID))%>%
-      mutate(seg.mean=ifelse(seg.mean < -2.5,-2.4,seg.mean))
-    plots$xlabel=unique(df$chrom)[1]
-    rds <- ggplot(plots$pr_rd, aes(x=V2, y=log2(ratio+0.00001))) +
-      geom_point(shape=".")+
-      #scattermore::geom_scattermore(shape=".",pixels=c(1024,1024))+
-      geom_point(data = subset(plots$pr_rd, ratio < 0.7),aes(V2,log2(ratio+0.00001)),shape=".",color="green")+
-      geom_point(data = subset(plots$pr_rd, ratio > 1.3),aes(V2,log2(ratio+0.00001)),shape=".",color="red")+
-      geom_segment(data = df,aes(x=loc.start,y=seg.mean,xend=loc.end,yend=seg.mean,color=factor(ID)),size=1)+
-      scale_color_manual(name="Segment",values = c("Proband"="blue","Mother"="#E69F00","Father"="#39918C"),)+
-      ylim(-4,4)+xlab(plots$xlabel)+
-      scale_rd+style_rd+scale_x_continuous(labels = scales::label_number())
-    
-    
-    btnValrds <- mod_checkbox_Server("RD-static")
-    ranges <- mod_plot_switch_Server("RD-static", btnValrds$box_state, rds, ranges, zoom= F)
-  })
-  
-  ext1 <- eventReactive(input$btn_plot,{
-    # from input
-    if(nrow(plots$pr_rd) == 0){
-      return(NULL)
-    }
-    include_seg <- input$include_seg
-    df <- rbindlist(list(plots$pr_seg,plots$m_seg,plots$f_seg))%>%
-      filter(ID%in%include_seg)%>%
-      mutate(ID=as.factor(ID))%>%
-      mutate(seg.mean=ifelse(seg.mean < -2.5,-2.4,seg.mean))
-    plots$xlabel=unique(df$chrom)[1]
-    ggplot(plots$pr_rd, aes(x=V2, y=log2(ratio+0.00001))) +
-      geom_point(shape=".")+
-      #scattermore::geom_scattermore(shape=".",pixels=c(1024,1024))+
-      geom_point(data = subset(plots$pr_rd, ratio < 0.7),aes(V2,log2(ratio+0.00001)),shape=".",color="green")+
-      geom_point(data = subset(plots$pr_rd, ratio > 1.3),aes(V2,log2(ratio+0.00001)),shape=".",color="red")+
-      geom_segment(data = df,aes(x=loc.start,y=seg.mean,xend=loc.end,yend=seg.mean,color=factor(ID)),size=1)+
-      scale_color_manual(name="Segment",values = c("Proband"="blue","Mother"="#E69F00","Father"="#39918C"),)+
-      ylim(-4,4)+xlab(plots$xlabel)+
-      scale_rd+style_rd+scale_x_continuous(labels = scales::label_number())
-  },ignoreInit = T)
   
   
-  
-  #Baf-B plot
-  observeEvent(input$btn_plot,{
-    req(nrow(plots$snp_chr) != 0)
-
-    df <- plots$snp_chr%>%filter(likelyDN%in%c(input$include_dnSNV,"FALSE"))
-    cols <- plots$SNPcols
-    xlabel=unique(df$chrom)[1]
-    
-    
-    snp_a <- ggplot(df, aes(x=start,y=pr_ALT_Freq,col=A_InhFrom))+
-      geom_point(shape=".")+
-      #scattermore::geom_scattermore(shape=".",pixels=c(1024,1024))+
-      geom_point(data = subset(df, likelyDN %in%c("TRUE")),size = 2,shape=8,color="red")+
-      scale_fill_manual("LikelyDN",limits=c("dnSNV"),values = "red")+
-      xlab(xlabel)+
-      scale_snp+
-      style_snp+
-      scale_colour_manual(values = cols)+
-      guides(color = guide_legend(override.aes = list(size = 4)))+
-      scale_x_continuous(labels = scales::label_number())
-    
-    btnVala <- mod_checkbox_Server("Baf-A_allele")
-    ranges <- mod_plot_switch_Server("Baf-A_allele", btnVala$box_state, snp_a, ranges)
-    
-    snp_b <- ggplot(df, aes(x=start,y=pr_ALT_Freq,col=B_InhFrom))+
-      geom_point(shape=".")+
-      #scattermore::geom_scattermore(shape=".",pixels=c(1024,1024))+
-      geom_point(data = subset(df, likelyDN %in%c("TRUE")),size = 2,shape=8,color="red")+
-      scale_fill_manual("LikelyDN",limits=c("dnSNV"),values = "red")+
-      xlab(xlabel)+
-      scale_snp+
-      style_snp+
-      scale_colour_manual(values = cols)+
-      guides(color = guide_legend(override.aes = list(size = 4)))+
-      scale_x_continuous(labels = scales::label_number())
-    
-    btnValb <- mod_checkbox_Server("Baf-B_allele")
-    ranges <- mod_plot_switch_Server("Baf-B_allele", btnValb$box_state, snp_b, ranges)
-    
-  })
+ 
 
 
   
   ## annotation panel
   # interactive plot regions-------
-  ranges <- reactiveValues(x = NULL, y = NULL)
   output$brush_info <- renderPrint({
     brush <- input$plot1_brush
     chr <- input$chr
@@ -481,172 +393,87 @@ server <- function(input, output,session) {
                  ", ",round(brush$xmax-brush$xmin,0),"bp"))
     }
   })
-  output$plot1 <- renderPlot({
-    if(nrow(plots$pr_rd) == 0){
-      return(NULL)
-    }
-    if(nrow(values$selected_record)==0){
-      dup.df <- data.frame()
-      del.df <- data.frame()
-      trp.df <- data.frame()
-      cpx.df <- data.frame()
-    }else{
-      dup.df <- subset(values$selected_record, ALT%in%c("<DUP>","DUP"))
-      del.df <- subset(values$selected_record, ALT%in%c("<DEL>","DEL"))
-      trp.df <- subset(values$selected_record, ALT%in%c("<TRP>","TRP"))
-      cpx.df <- subset(values$selected_record, ALT%in%c("<CPX>","CPX"))
-      dup.df$rowidx <- as.numeric(rownames(dup.df))
-      del.df$rowidx <- as.numeric(rownames(del.df))
-      trp.df$rowidx <- as.numeric(rownames(trp.df))
-      cpx.df$rowidx <- as.numeric(rownames(cpx.df))
-    }
-    if(nrow(values$anno_rect)==0){
-      anno_rect <- data.frame()
-    }else{
-      anno_rect <- values$anno_rect
-      anno_rect$rowidx <- as.numeric(rownames(anno_rect))
-    }
-    plots$plot1 <- ext1()+
-      coord_cartesian(xlim = ranges$x, ylim = ranges$y, expand = FALSE)+
-      ## pointer to the selected CNV call(suppressed)
-      #annotate("point",x=ifelse(is.null(values$selected_record$POS),-100,values$selected_record$POS),y=rep(1.8,length(values$selected_record$POS)),shape=25,fill="orange",size=2)+ 
-      geom_hline(yintercept=-2.5,col="black")+
-      annotate("text",x=ifelse(is.null(ranges$x),-100000,sum(ranges$x)/2),y=-2.3,label="SVTYPE")+
-      annotate("rect",xmin=dup.df$POS,xmax=dup.df$END,ymin=dup.df$rowidx%%4*0.1-3,ymax=(dup.df$rowidx%%4+1)*0.1-3,fill = CNVCOLOR6["DUP"])+
-      annotate("rect",xmin=del.df$POS,xmax=del.df$END,ymin=del.df$rowidx%%4*0.1-3,ymax=(del.df$rowidx%%4+1)*0.1-3,fill = CNVCOLOR6["DEL"])+
-      annotate("rect",xmin=trp.df$POS,xmax=trp.df$END,ymin=trp.df$rowidx%%4*0.1-3,ymax=(trp.df$rowidx%%4+1)*0.1-3,fill = CNVCOLOR6["TRP"])+
-      annotate("rect",xmin=cpx.df$POS,xmax=cpx.df$END,ymin=cpx.df$rowidx%%4*0.1-3,ymax=(cpx.df$rowidx%%4+1)*0.1-3,fill = CNVCOLOR6["CPX"])+
-      annotate("rect",xmin=anno_rect$xmin,xmax=anno_rect$xmax,fill=anno_rect$fill,ymin=anno_rect$rowidx*0-3,ymax=(anno_rect$rowidx-anno_rect$rowidx+2),alpha=0.3)+
-      ggtitle(paste0(plots$xlabel,":",paste0(round(as.numeric(ranges$x)),collapse = "-")))
-    plots$plot1
-  })
-  output$plot_anno <- renderPlot({
-    if(length(plots$plot3) == 0){
-      return(NULL)
-    }
-    if(nrow(values$anno_rect)==0){
-      anno_rect <- data.frame()
-    }else{
-      anno_rect <- values$anno_rect
-      anno_rect$rowidx <- as.numeric(rownames(anno_rect))
-    }
-    plots$plot3_dl <- plots$plot3+
-      annotate("rect",xmin=anno_rect$xmin,xmax=anno_rect$xmax,fill=anno_rect$fill,ymin=anno_rect$rowidx*0,ymax=(anno_rect$rowidx-anno_rect$rowidx+2)+length(unique(plots$genelabel$gene_id)),alpha=0.3)+
-      coord_cartesian(xlim = ranges$x, expand = FALSE)
-    plots$plot3_dl
-  })
-  #When a double-click happens, check if there's a brush on the plot.
-  #If so, zoom to the brush bounds; if not, reset the zoom.
-  observeEvent(input$plot1_dblclick, {
-    brush <- input$plot1_brush
-    chr <- input$chr
-    if (!is.null(brush)) {
-      ranges$x <- c(brush$xmin, brush$xmax)
-      #ranges$y <- c(brush$ymin, brush$ymax)
-      if(max(ranges$x)-min(ranges$x) > maxSize_anno) {
-        plots$genelabel <- data.frame(stringsAsFactors = F)
-      }else{
-        plots$genelabel <- genebase%>%
-          filter(seqname==input$chr,
-                 start>(min(ranges$x)-geneExtend),
-                 end < (max(ranges$x)+geneExtend),
-                 type%in%c("exon"))%>%
-          dplyr::select(seqname,start,end,strand,transcript_id,gene_id,type)%>%
-          dplyr::collect()%>%
-          mutate(gene_num=round(as.numeric(as.factor(gene_id)),3),
-                 strand=as.factor(strand))
-        if(length(unique(plots$genelabel$gene_id))<maxtranscript){
-          gene_x <- plots$genelabel%>%
-            group_by(gene_num)%>%
-            summarise(start=(min(start)+max(end))/2,
-                      end=(min(start)+max(end))/2,
-                      gene_id=unique(gene_id))
-          plots$plot3 <- plots$genelabel%>%
-            ggplot(aes(xstart = start,xend = end,y = gene_num))+
-            ggtranscript::geom_range(aes(fill = strand)) +
-            ggtranscript::geom_intron(data = ggtranscript::to_intron(plots$genelabel, "gene_num"),aes(strand = strand))+
-            geom_text(data=gene_x,aes(x=start,label=gene_id),vjust = -1.2,check_overlap = T,fontface="italic")+
-            style_genes+scale_genes+
-            scale_fill_manual(values = c("+"="#E69F00","-"="#39918C"))+
-            scale_x_continuous(labels = scales::label_number())
-        }
-      }
-      if(nrow(values$data)!=0){
-        values$work_data <- values$data%>%
-          filter(CHROM==chr)%>%
-          filter(POS>=brush$xmin,POS < brush$xmax)
-      }
-    } else {
-      ranges$x <- NULL
-      ranges$y <- NULL
-      plots$genelabel <- data.frame(stringsAsFactors = F)
-      plots$plot3 <- list()
-      if(nrow(values$data)!=0){
-        values$work_data <- values$data%>%filter(CHROM==chr)
-      }
-    }
-  })
+  
+  
+  ##work in progress
+  ## old plot1
+  # output$plot1 <- renderPlot({
+  #   if(nrow(plots$pr_rd) == 0){
+  #     return(NULL)
+  #   }
+  #   if(nrow(values$selected_record)==0){
+  #     dup.df <- data.frame()
+  #     del.df <- data.frame()
+  #     trp.df <- data.frame()
+  #     cpx.df <- data.frame()
+  #   }else{
+  #     dup.df <- subset(values$selected_record, ALT%in%c("<DUP>","DUP"))
+  #     del.df <- subset(values$selected_record, ALT%in%c("<DEL>","DEL"))
+  #     trp.df <- subset(values$selected_record, ALT%in%c("<TRP>","TRP"))
+  #     cpx.df <- subset(values$selected_record, ALT%in%c("<CPX>","CPX"))
+  #     dup.df$rowidx <- as.numeric(rownames(dup.df))
+  #     del.df$rowidx <- as.numeric(rownames(del.df))
+  #     trp.df$rowidx <- as.numeric(rownames(trp.df))
+  #     cpx.df$rowidx <- as.numeric(rownames(cpx.df))
+  #   }
+  #   if(nrow(values$anno_rect)==0){
+  #     anno_rect <- data.frame()
+  #   }else{
+  #     anno_rect <- values$anno_rect
+  #     anno_rect$rowidx <- as.numeric(rownames(anno_rect))
+  #   }
+  #   plots$plot1 <- ext1()+
+  #     coord_cartesian(xlim = ranges$x, ylim = ranges$y, expand = FALSE)+
+  #     ## pointer to the selected CNV call(suppressed)
+  #     #annotate("point",x=ifelse(is.null(values$selected_record$POS),-100,values$selected_record$POS),y=rep(1.8,length(values$selected_record$POS)),shape=25,fill="orange",size=2)+ 
+  #     geom_hline(yintercept=-2.5,col="black")+
+  #     annotate("text",x=ifelse(is.null(ranges$x),-100000,sum(ranges$x)/2),y=-2.3,label="SVTYPE")+
+  #     annotate("rect",xmin=dup.df$POS,xmax=dup.df$END,ymin=dup.df$rowidx%%4*0.1-3,ymax=(dup.df$rowidx%%4+1)*0.1-3,fill = CNVCOLOR6["DUP"])+
+  #     annotate("rect",xmin=del.df$POS,xmax=del.df$END,ymin=del.df$rowidx%%4*0.1-3,ymax=(del.df$rowidx%%4+1)*0.1-3,fill = CNVCOLOR6["DEL"])+
+  #     annotate("rect",xmin=trp.df$POS,xmax=trp.df$END,ymin=trp.df$rowidx%%4*0.1-3,ymax=(trp.df$rowidx%%4+1)*0.1-3,fill = CNVCOLOR6["TRP"])+
+  #     annotate("rect",xmin=cpx.df$POS,xmax=cpx.df$END,ymin=cpx.df$rowidx%%4*0.1-3,ymax=(cpx.df$rowidx%%4+1)*0.1-3,fill = CNVCOLOR6["CPX"])+
+  #     annotate("rect",xmin=anno_rect$xmin,xmax=anno_rect$xmax,fill=anno_rect$fill,ymin=anno_rect$rowidx*0-3,ymax=(anno_rect$rowidx-anno_rect$rowidx+2),alpha=0.3)+
+  #     ggtitle(paste0(plots$xlabel,":",paste0(round(as.numeric(ranges$x)),collapse = "-")))
+  #   plots$plot1
+  # })
+  # 
+  # 
+  
+  # output$plot_anno <- renderPlot({
+  #   if(length(plots$plot3) == 0){
+  #     return(NULL)
+  #   }
+  #   if(nrow(values$anno_rect)==0){
+  #     anno_rect <- data.frame()
+  #   }else{
+  #     anno_rect <- values$anno_rect
+  #     anno_rect$rowidx <- as.numeric(rownames(anno_rect))
+  #   }
+  #   plots$plot3_dl <- plots$plot3+
+  #     annotate("rect",xmin=anno_rect$xmin,xmax=anno_rect$xmax,fill=anno_rect$fill,ymin=anno_rect$rowidx*0,ymax=(anno_rect$rowidx-anno_rect$rowidx+2)+length(unique(plots$genelabel$gene_id)),alpha=0.3)+
+  #     coord_cartesian(xlim = ranges$x, expand = FALSE)
+  #   plots$plot3_dl
+  # })
 
-  observeEvent(input$btl_goto,{
-    if(!is.null(input$goto_reg)){
-      gene <- as.character(input$goto_reg)
-      gene.exist <- genebase%>%filter(seqname==input$chr,
-                                      gene_id==gene,
-                                      type%in%c("exon"))%>%
-        dplyr::select(seqname,start,end,strand,transcript_id,gene_id,type)%>%
-        collect()
-      if(nrow(gene.exist)!=0){
-        ranges$x <- c(as.numeric(min(gene.exist$start)-geneExtend),
-                      as.numeric(max(gene.exist$end)+geneExtend))
-        gene.exist <- gene.exist%>%
-          mutate(gene_num=round(as.numeric(as.factor(gene_id)),3),
-                 strand=as.factor(strand))
-        gene_x <- gene.exist%>%
-          group_by(gene_num)%>%
-          summarise(start=(min(start)+max(end))/2,
-                    end=(min(start)+max(end))/2,
-                    gene_id=unique(gene_id))
-        plots$plot3 <- gene.exist%>%
-          ggplot(aes(xstart = start,xend = end,y = gene_num))+
-          ggtranscript::geom_range(aes(fill = strand)) +
-          ggtranscript::geom_intron(data = ggtranscript::to_intron(gene.exist, "gene_num"),aes(strand = strand))+
-          geom_text(data=gene_x,aes(x=start,label=gene_id),vjust = -1.2,check_overlap = T,fontface="italic")+
-          style_genes+scale_genes+
-          scale_fill_manual(values = c("+"="#E69F00","-"="#39918C"))+
-          scale_x_continuous(labels = scales::label_number())
-      }else{
-        goto_reg <- as.numeric(unlist(strsplit(input$goto_reg,"-|_")))
-        validate(need(length(goto_reg)==2,"Check at least two coordinates"))
-        ranges$x <- c(min(goto_reg)-geneExtend,max(goto_reg)+geneExtend)
-        plots$genelabel <- genebase%>%
-          filter(seqname==input$chr,
-                 start>(min(ranges$x)-geneExtend),
-                 end < (max(ranges$x)+geneExtend),
-                 type%in%c("exon"))%>%
-          dplyr::select(seqname,start,end,strand,transcript_id,gene_id,type)%>%
-          dplyr::collect()%>%
-          mutate(gene_num=round(as.numeric(as.factor(gene_id)),3),
-                 strand=as.factor(strand))
-        if(length(unique(plots$genelabel$gene_id))<maxtranscript){
-          gene_x <- plots$genelabel%>%
-            group_by(gene_num)%>%
-            summarise(start=(min(start)+max(end))/2,
-                      end=(min(start)+max(end))/2,
-                      gene_id=unique(gene_id))
-          plots$plot3 <- plots$genelabel%>%
-            ggplot(aes(xstart = start,xend = end,y = gene_num))+
-            ggtranscript::geom_range(aes(fill = strand)) +
-            ggtranscript::geom_intron(data = ggtranscript::to_intron(plots$genelabel, "gene_num"),aes(strand = strand))+
-            geom_text(data=gene_x,aes(x=start,label=gene_id),vjust = -1.2,check_overlap = T,fontface="italic")+
-            style_genes+scale_genes+
-            scale_fill_manual(values = c("+"="#E69F00","-"="#39918C"))+
-            scale_x_continuous(labels = scales::label_number())
-        }
-        
-      }
-      
-    }
-  })
+  
+  #     if(nrow(values$data)!=0){
+  #       values$work_data <- values$data%>%
+  #         filter(CHROM==chr)%>%
+  #         filter(POS>=brush$xmin,POS < brush$xmax)
+  #     }
+  #   } else {
+  #     ranges$x <- NULL
+  #     ranges$y <- NULL
+  #     plots$genelabel <- data.frame(stringsAsFactors = F)
+  #     plots$plot3 <- list()
+  #     if(nrow(values$data)!=0){
+  #       values$work_data <- values$data%>%filter(CHROM==chr)
+  #     }
+  #   }
+  # })
+# 
+  
+
   observeEvent(input$btl_add,{
     brush <- input$plot1_brush
     if(!is.null(brush)){
@@ -725,12 +552,130 @@ server <- function(input, output,session) {
     }
   )
   
+  
+  ## Plots section
+  ranges <- reactiveValues(x = NULL, y = NULL)
+  dnCNV_table <- reactiveValues(t = data.frame(start = c(0), end = c(0), stringsAsFactors = F))
+  
+  ## RD plots
+  observeEvent(input$btn_plot,{
+    req(nrow(plots$pr_rd) != 0)
+    
+    showNotification("Plotting Read Depth Plot", duration = 8, type = "message")
+    include_seg <- input$include_seg
+    df <- rbindlist(list(plots$pr_seg,plots$m_seg,plots$f_seg))%>%
+      filter(ID%in%include_seg)%>%
+      mutate(ID=as.factor(ID))%>%
+      mutate(seg.mean=ifelse(seg.mean < -2.5,-2,seg.mean))
+    plots$xlabel=unique(df$chrom)[1]
+    rd <- ggplot(plots$pr_rd, aes(x=V2, y=log2(ratio+0.00001))) +
+      geom_point(shape=".")+
+      #scattermore::geom_scattermore(shape=".",pixels=c(1024,1024))+
+      geom_point(data = subset(plots$pr_rd, ratio < 0.7),aes(V2,log2(ratio+0.00001)),shape=".",color="green")+
+      geom_point(data = subset(plots$pr_rd, ratio > 1.3),aes(V2,log2(ratio+0.00001)),shape=".",color="red")+
+      geom_segment(data = df,aes(x=loc.start,y=seg.mean,xend=loc.end,yend=seg.mean,color=factor(ID)),size=1)+
+      scale_color_manual(name="Segment",values = c("Proband"="blue","Mother"="#E69F00","Father"="#39918C"),)+
+      ylim(-4,4)+
+      xlab(plots$xlabel)+
+      scale_rd+
+      style_rd+
+      scale_x_continuous(labels = scales::label_number())
+    
+ 
+    btnValrds <- mod_checkbox_Server("RD-static")
+    ranges <- mod_plot_switch_Server("RD-static", btnValrds$box_state, rd, ranges, dnCNV_table, zoom= F)
+    btnValrdd <- mod_checkbox_Server("RD-dynamic")
+    ranges <- mod_plot_switch_Server("RD-dynamic", btnValrdd$box_state, rd, ranges, dnCNV_table)
+
+  })
+  
+  
+  #Baf-B plot
+  observeEvent(input$btn_plot,{
+    
+    req(nrow(plots$snp_chr) != 0)
+    
+    noti_id <- showNotification("Plotting B-allele frequency plots", type = "message", duration = NULL)
+    df <- plots$snp_chr%>%filter(likelyDN%in%c(input$include_dnSNV,"FALSE"))
+    cols <- plots$SNPcols
+    xlabel=unique(df$chrom)[1]
+    
+    
+    snp_a <- ggplot(df, aes(x=start,y=pr_ALT_Freq,col=A_InhFrom))+
+      geom_point(shape=".")+
+      #scattermore::geom_scattermore(shape=".",pixels=c(1024,1024))+
+      geom_point(data = subset(df, likelyDN %in%c("TRUE")),size = 2,shape=8,color="red")+
+      scale_fill_manual("LikelyDN",limits=c("dnSNV"),values = "red")+
+      xlab(xlabel)+
+      scale_snp+
+      style_snp+
+      scale_colour_manual(values = cols)+
+      guides(color = guide_legend(override.aes = list(size = 4)))+
+      scale_x_continuous(labels = scales::label_number())
+    
+    btnVala <- mod_checkbox_Server("Baf-A_allele")
+    ranges <- mod_plot_switch_Server("Baf-A_allele", btnVala$box_state, snp_a, ranges)
+    
+    snp_b <- ggplot(df, aes(x=start,y=pr_ALT_Freq,col=B_InhFrom))+
+      geom_point(shape=".")+
+      #scattermore::geom_scattermore(shape=".",pixels=c(1024,1024))+
+      geom_point(data = subset(df, likelyDN %in%c("TRUE")),size = 2,shape=8,color="red")+
+      scale_fill_manual("LikelyDN",limits=c("dnSNV"),values = "red")+
+      xlab(xlabel)+
+      scale_snp+
+      style_snp+
+      scale_colour_manual(values = cols)+
+      guides(color = guide_legend(override.aes = list(size = 4)))+
+      scale_x_continuous(labels = scales::label_number())
+    
+    removeNotification(noti_id)
+    btnValb <- mod_checkbox_Server("Baf-B_allele")
+    ranges <- mod_plot_switch_Server("Baf-B_allele", btnValb$box_state, snp_b, ranges)
+    
+  })
+  
   ##Anno tracks
   observeEvent(input$btn_anno,{
-    print("Annotating")
+    if (input$ref == "GRCh37"){
+      p1_file = "NCBI_RefSeq_hg19_clean.bed.parquet"
+      p2_file = "Claudia_hg19_MergedInvDirRpts_sorted.bed"
+      p3_file = "SegDup_hg19_UCSC.bed"
+      p4_file = "OMIM_gene2_hg19_UCSC_all.bed"
+      p5_file = "gnomAD_allSV_hg19_UCSC.bed"
+      p6_file = "rmsk_hg19_UCSC.parquet"
+    } else {
+      p1_file = "MANE.GRCh38.v1.0.refseq.gz.parquet"
+      p2_file = NULL
+      p3_file = NULL
+      p4_file = NULL
+      p5_file = NULL
+      p6_file = NULL
+    }
+    id <- showNotification("Pulling Data", type = "message", duration = NULL)
     chrn = input$chr
     path = "./data/"
-    IDR<-data.table::fread(paste0(path,"Claudia_hg19_MergedInvDirRpts_sorted.bed")) %>% 
+    
+    RefSeq <- read_parquet(paste0(path,p1_file))
+    RefSeq <- RefSeq %>% 
+      filter(seqname ==  chrn) %>%
+      mutate(gene_num=round(as.numeric(as.factor(gene_id)),3)/100,
+             strand=as.factor(strand))
+      gene_x <- RefSeq%>%
+        group_by(gene_num)%>%
+        summarise(start=(min(start)+max(end))/2,
+                  end=(min(start)+max(end))/2,
+                  gene_id=unique(gene_id))
+    p1 <- RefSeq %>% 
+      ggplot(aes(xstart = start, xend = end, y = gene_num))+
+      geom_intron(data = to_intron(RefSeq, "gene_num"), arrow.min.intron.length = 400)+
+      geom_text(data=gene_x,aes(x=start,label=gene_id),vjust = -1.2,check_overlap = T,fontface="italic")+
+      ylab("RefSeq")+
+      style_anno+
+      scale_genes+
+      scale_fill_manual(values = c("+"="#E69F00","-"="#39918C"))+
+      scale_x_continuous(labels = scales::label_number())
+    
+    IDR<-data.table::fread(paste0(path, p2_file)) %>% 
       dplyr::select(V1,V2,V3,V4,V5,V6) %>% 
       dplyr::rename("chrom" = V1, "start" = V2, "end" = V3, "name" = V4, "score" = V5, "strand" = V6) %>%
       dplyr::filter(chrom == chrn)
@@ -745,7 +690,7 @@ server <- function(input, output,session) {
       geom_segment(data = IDR_neg, aes(x = end, y = idx, xend = start, yend = idx), arrow = arrow(length = unit(0.05, "inches")), color = "dodgerblue3")+
       style_anno+
       ylab("IDR")
-    SegDup <- data.table::fread(paste0(path, "SegDup_hg19_UCSC.bed"))
+    SegDup <- data.table::fread(paste0(path, p3_file))
     SegDup <- SegDup %>%
       dplyr::rename("chrom" = "#chrom", "start" = "chromStart", "end" = "chromEnd") %>%
       filter(chrom ==chrn)
@@ -766,7 +711,7 @@ server <- function(input, output,session) {
       ylab("SegDup")
     
     
-    OMIM <- data.table::fread(paste0(path, "OMIM_gene2_hg19_UCSC_all.bed"))
+    OMIM <- data.table::fread(paste0(path, p4_file))
     OMIM <- OMIM %>%
       filter(chrom == chrn) %>%
       mutate_at(vars(pheno_key), as.factor)
@@ -787,7 +732,7 @@ server <- function(input, output,session) {
       scale_anno+
       ylab("OMIM")
     
-    gnomAD <- data.table::fread(paste0(path, "gnomAD_allSV_hg19_UCSC.bed"))
+    gnomAD <- data.table::fread(paste0(path, p5_file))
     gnomAD <- gnomAD %>%
       dplyr::rename("chrom" = "#chrom", "start" = "chromStart", "end" = "chromEnd") %>%
       filter(chrom == chrn)
@@ -805,7 +750,7 @@ server <- function(input, output,session) {
       ylab("gnomAD")
     
     
-    rmsk <- read_parquet(paste0(path, "rmsk_hg19_UCSC.parquet"))
+    rmsk <- read_parquet(paste0(path, p6_file))
     rmsk <- rmsk %>%
       dplyr::rename("chrom" = "#chrom") %>%
       filter(chrom ==  chrn)
@@ -822,18 +767,24 @@ server <- function(input, output,session) {
       style_anno+
       scale_anno+
       ylab("RMSK")
-
+    
+    
+    showNotification("Annotating", type = "message", duration = 8)
+    btnVal1 <- mod_checkbox_Server("RefSeq")
     btnVal2 <- mod_checkbox_Server("IDR")
     btnVal3 <- mod_checkbox_Server("SegDup")
     btnVal4 <- mod_checkbox_Server("OMIM")
     btnVal5 <- mod_checkbox_Server("gnomAD")
     btnVal6 <- mod_checkbox_Server("RMSK")
-    ranges <- mod_plot_switch_Server("IDR", btnVal2$box_state, p2, ranges)
-    ranges <- mod_plot_switch_Server("Segdup", btnVal3$box_state, p3, ranges)
-    ranges <- mod_plot_switch_Server("OMIM", btnVal4$box_state, p4, ranges)
-    ranges <- mod_plot_switch_Server("gnomAD", btnVal5$box_state, p5, ranges)
-    ranges <- mod_plot_switch_Server("RMSK", btnVal6$box_state, p6, ranges)
+    ranges <- mod_plot_switch_Server("RefSeq", btnVal1$box_state, p1, ranges, dnCNV_table)
+    ranges <- mod_plot_switch_Server("IDR", btnVal2$box_state, p2, ranges, dnCNV_table)
+    ranges <- mod_plot_switch_Server("Segdup", btnVal3$box_state, p3, ranges, dnCNV_table)
+    ranges <- mod_plot_switch_Server("OMIM", btnVal4$box_state, p4, ranges, dnCNV_table)
+    ranges <- mod_plot_switch_Server("gnomAD", btnVal5$box_state, p5, ranges, dnCNV_table)
+    ranges <- mod_plot_switch_Server("RMSK", btnVal6$box_state, p6, ranges, dnCNV_table)
   
+    removeNotification(id)
+    anno_table_Server("RefSeq", RefSeq, ranges, chrn)
     anno_table_Server("IDR", IDR, ranges, chrn)
     anno_table_Server("SegDup", SegDup, ranges, chrn)
     anno_table_Server("OMIM", OMIM, ranges, chrn)
@@ -847,7 +798,49 @@ server <- function(input, output,session) {
     req(nrow(values$pr_rd)!=0)
     req(nrow(values$m_rd)!=0)
     req(nrow(values$f_rd)!=0)
-    mod_dnCNV_Server("dnCNV",plots$pr_seg, plots$m_seg, plots$f_seg)
+    dnCNV_table$t <- mod_dnCNV_Server("dnCNV",plots$pr_seg, plots$m_seg, plots$f_seg)
+    print("btn gen")
+    print(dnCNV_table$t)
   })
   
+
+  
+  observe({
+    output$cur_range <- renderText({
+      req(!is.null(ranges$x))
+      paste0("current range: ", round(ranges$x[1]), "-", round(ranges$x[2]), "    width: ", round(ranges$x[2])-round(ranges$x[1])+1)
+      })
+    })
+  
+  
+  ## btn_goto
+  observeEvent(input$btn_go,{
+    req(!is.null(input$goto_reg))
+    str <- stringr::str_trim(input$goto_reg)
+    str <- strsplit(str,"-|_")
+    if (length(str[[1]]) ==1) {
+      showNotification("Looking up gene name", type = "message")
+      path <- "./data/"
+      p1_file <- "NCBI_RefSeq_hg19_clean.bed.parquet"
+      RefSeq <- read_parquet(paste0(path,p1_file))
+      search <- as.character(str[[1]])
+      found <- RefSeq %>% 
+        filter(seqname == input$chr) %>% 
+        filter(grepl(search, gene_id, ignore.case = T))
+      if (nrow(found) != 0){
+        ranges$x <- c(as.numeric(min(found$start)-geneExtend),
+                      as.numeric(max(found$end)+geneExtend))
+      }
+    } else if (length(str[[1]]) == 2){
+      showNotification("Jumping to coordinates", type = "message")
+      from <- as.numeric(str[[1]][1])
+      to <- as.numeric(str[[1]][2])
+      ranges$x <- c(from, to)
+    }
+  }, ignoreInit = T)
+
+
+  
 }
+
+

@@ -42,21 +42,25 @@ mod_plot_output_UI <- function(id, height = 100) {
 #' mod_plot_output_server("plot", p, ranges, zoom = F)
 #'
 #' @export
-mod_plot_output_Server <- function(id, p, ranges, zoom = T){
+mod_plot_output_Server <- function(id, p, ranges, dnCNV_table, zoom = T){
   moduleServer(
     id,
     function(input, output, session) {
       if (isTRUE(zoom)){
         output$plot <- renderPlot({
           p +
-            coord_cartesian(xlim= ranges$x, ylim = ranges$y, expand = F)
+            coord_cartesian(xlim= ranges$x, ylim = ranges$y, expand = F)+
+            annotate("rect", fill = "orange", alpha =0.3, xmin = dnCNV_table$t$start, xmax = dnCNV_table$t$end, ymin = -Inf, ymax = Inf)
         })
       } else {
-        output$plot <- renderPlot({
-          p +
-            coord_cartesian(expand = F)
-        })
-      }
+          output$plot <- renderPlot({
+            p +
+              coord_cartesian(expand = F)+
+              annotate("rect", fill = "orange", alpha =0.3, xmin = dnCNV_table$t$start, xmax = dnCNV_table$t$end, ymin = -Inf, ymax = Inf)
+              # annotate("rect", fill = "blue", alpha =0.3, xmin = ranges$x[1], xmax = ranges$x[2], ymin = -Inf, ymax = Inf)
+          })
+        }
+      
       
       observeEvent(input$dblclick, {
         brush <- input$brush
@@ -68,8 +72,10 @@ mod_plot_output_Server <- function(id, p, ranges, zoom = T){
       })
       return (ranges) 
     }
-  )
+)
 }
+  
+
 
 
 
@@ -88,15 +94,16 @@ mod_plot_output_Server <- function(id, p, ranges, zoom = T){
 #'
 #' @export
 
-mod_plot_switch_UI <- function(id, height = 100) {
+mod_plot_switch_UI <- function(id, height = 70) {
   ns <- NS(id)
   shinyjs::useShinyjs()
   shinyjs::hidden(fluidRow(
     id =ns("panel"),
     tagList(
-      mod_plot_output_UI(ns("plot"), height)
+      column(12,mod_plot_output_UI(ns("plot"), height)
+        )
+      )
     )
-  )
   )
 }
 
@@ -118,11 +125,11 @@ mod_plot_switch_UI <- function(id, height = 100) {
 #'
 #' @export
 
-mod_plot_switch_Server <- function(id, cbox, p, ranges, zoom = T) {
+mod_plot_switch_Server <- function(id, cbox, p, ranges, dnCNV_table, zoom = T) {
   moduleServer(
     id,
     function(input, output, session) {
-      ranges <- mod_plot_output_Server("plot", p, ranges, zoom = zoom)
+      ranges <- mod_plot_output_Server("plot", p, ranges, dnCNV_table, zoom = zoom)
       observe({
         if (isTRUE(cbox())) {
           shinyjs::show(id = "panel")

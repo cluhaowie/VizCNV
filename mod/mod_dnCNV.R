@@ -14,7 +14,7 @@
 #' get_dnCNV(pr, mo, fa)
 #'
 #' @export
-get_dnCNV = function(pr, mo, fa, size_threshold = 150000){
+get_dnCNV = function(pr, mo, fa, size_threshold = 10000){
   
   # Essentially bedtools subtract
   tmp = unlist(subtract(pr, mo))
@@ -56,9 +56,9 @@ get_dnCNV_all = function(pr_seg, mo_seg, fa_seg){
   pr_dup <- pr_seg %>% filter(seg.mean > 0.3) %>% makeGRangesFromDataFrame(keep.extra.columns = T)
   mo_dup <- mo_seg %>% filter(seg.mean > 0.3) %>% makeGRangesFromDataFrame(keep.extra.columns = T)
   fa_dup <- fa_seg %>% filter(seg.mean > 0.3) %>% makeGRangesFromDataFrame(keep.extra.columns = T)
-  pr_del <- pr_seg %>% filter(seg.mean < -0.2 & seg.mean > -5) %>% makeGRangesFromDataFrame(keep.extra.columns = T)
-  mo_del <- mo_seg %>% filter(seg.mean < -0.2 & seg.mean > -5) %>% makeGRangesFromDataFrame(keep.extra.columns = T)
-  fa_del <- fa_seg %>% filter(seg.mean < -0.2 & seg.mean > -5) %>% makeGRangesFromDataFrame(keep.extra.columns = T)
+  pr_del <- pr_seg %>% filter(seg.mean < -0.2) %>% makeGRangesFromDataFrame(keep.extra.columns = T)
+  mo_del <- mo_seg %>% filter(seg.mean < -0.2) %>% makeGRangesFromDataFrame(keep.extra.columns = T)
+  fa_del <- fa_seg %>% filter(seg.mean < -0.2) %>% makeGRangesFromDataFrame(keep.extra.columns = T)
 
   
   dnCNV_gain = get_dnCNV(pr_dup, mo_dup, fa_dup)
@@ -115,6 +115,7 @@ mod_dnCNV_Server <- function(id, pr_seg, mo_seg, fa_seg) {
         get_dnCNV_all(pr_seg, mo_seg, fa_seg) 
       })
       output$table <- renderDataTable(table())
+      return(table() %>% as.data.frame())
     }
   )
 }
