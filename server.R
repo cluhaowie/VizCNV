@@ -1,5 +1,8 @@
 
 
+source("./mod/mod_plot_output.R")
+source("./mod/mod_dnCNV.R")
+
 server <- function(input, output,session) {
   # Reavtive Values --------------------------
   values <- reactiveValues()
@@ -37,7 +40,7 @@ server <- function(input, output,session) {
   plots$plot2 <- list()
   plots$plot3 <- list()
   plots$plot3_dl <- list()
-
+  
   toListen <- reactive({
     list(values$data,values$pr_rd)
   })
@@ -49,41 +52,66 @@ server <- function(input, output,session) {
   shinyFileChoose(input, "local_f_rd_file", roots = volumes, session = session)
   shinyFileChoose(input, "local_pr_snv_file", roots = volumes, session = session)
   output$file_source_ui1 <- renderUI({
+    if(input$file_source=="TRUE"){
       tagList(
-        radioButtons(inputId = "ref",label = h3("Reference genome"),choices = list("GRCh37"="GRCh37","GRCh38"="GRCh38"),inline = T,selected = "GRCh38"),
-        h5(strong("Select local proband read depth file (required)")),
-        shinyFilesButton(id = "local_pr_rd_file", label = "Browse...", title = "Please select a file", multiple = F, viewtype = "detail"),
-        h5(strong("Select local mom's read depth file (optional)")),
-        shinyFilesButton(id = "local_m_rd_file", label = "Browse...", title = "Please select a file", multiple = F, viewtype = "detail"),
-        h5(strong("Select local dad's read depth file (optional)")),
-        shinyFilesButton(id = "local_f_rd_file", label = "Browse...", title = "Please select a file", multiple = F, viewtype = "detail"),
-        h5(strong("Select local sv file (optional)")),
-        shinyFilesButton(id = "local_sv_file", label = "Browse...", title = "Please select a file", multiple = F, viewtype = "detail"),
-        h5(strong("Select local proband snv file (optional)")),
-        shinyFilesButton(id = "local_pr_snv_file", label = "Browse...", title = "Please select a file", multiple = F, viewtype = "detail")
-      )
-  })
-  output$file_source_ui2 <- renderUI({
-      tagList(
-        radioButtons(inputId = "ref",label = h3("Reference genome"),choices = list("GRCh37"="GRCh37","GRCh38"="GRCh38"),inline = T,selected = "GRCh38"),
-        fileInput("pr_rd_file",label = "Proband's read depth files (required)",accept=c("*.bed","*.bed.gz"),multiple = F,buttonLabel = "Browse..."),
-        fileInput("m_rd_file",label = "Mom's read depth files (optional)",accept=c("*.bed","*.bed.gz"),multiple = F,buttonLabel = "Browse..."),
-        fileInput("f_rd_file",label = "Dad's read depth files (optional)",accept=c("*.bed","*.bed.gz"),multiple = F,buttonLabel = "Browse..."),
         fileInput("sv_vcf_file",label = "Structual variant vcf files",accept=c("*.vcf","*.vcf.gz"),multiple = F,buttonLabel = "Browse..."),
         fileInput("snp_gvcf_file",label = "SNV gVCF file",accept=c("*.vcf","*.vcf.gz"),multiple = F,buttonLabel = "Browse...")
       )
+    }else{
+      tagList(
+        h5(strong("Select local proband read depth file")),
+        dashboardBadge("required", color = "info"),
+        shinyFilesButton(id = "local_pr_rd_file", label = "Browse...", title = "Please select a file", multiple = F, viewtype = "detail"),
+        h5(strong("Select local mom's read depth file")),
+        dashboardBadge("optional", color = "secondary"),
+        shinyFilesButton(id = "local_m_rd_file", label = "Browse...", title = "Please select a file", multiple = F, viewtype = "detail"),
+        h5(strong("Select local dad's read depth file")),
+        dashboardBadge("optional", color = "secondary"),
+        shinyFilesButton(id = "local_f_rd_file", label = "Browse...", title = "Please select a file", multiple = F, viewtype = "detail"),
+        h5(strong("Select local sv file")),
+        dashboardBadge("optional", color = "secondary"),
+        shinyFilesButton(id = "local_sv_file", label = "Browse...", title = "Please select a file", multiple = F, viewtype = "detail"),
+        h5(strong("Select local proband snv file")),
+        dashboardBadge("optional", color = "secondary"),
+        shinyFilesButton(id = "local_pr_snv_file", label = "Browse...", title = "Please select a file", multiple = F, viewtype = "detail")
+      )
+      
+    }
   })
-  output$btn_filter_plot <- renderUI({
-    tagList(
-      column(1,actionButton("btn_filter","Filter")),
-      column(1,actionButton("btn_plot","Plot"))
-    )
+  output$file_source_ui2 <- renderUI({
+    if(input$file_source=="TRUE"){
+      tagList(
+        fileInput("pr_rd_file",label = "Proband's read depth files (required)",accept=c("*.bed","*.bed.gz"),multiple = F,buttonLabel = "Browse..."),
+        fileInput("m_rd_file",label = "Mom's read depth files (optional)",accept=c("*.bed","*.bed.gz"),multiple = F,buttonLabel = "Browse..."),
+        fileInput("f_rd_file",label = "Dad's read depth files (optional)",accept=c("*.bed","*.bed.gz"),multiple = F,buttonLabel = "Browse...")
+      )
+    }else{
+      # verbatimTextOutput("filepaths")
+    }
   })
-
+  
+  output$filepaths <- renderPrint({
+    ifelse(is.integer(input$local_sv_file),
+           values$local_file_paths$datapath[1] <- "None",
+           values$local_file_paths$datapath[1] <- parseFilePaths(volumes, input$local_sv_file)$name)
+    ifelse(is.integer(input$local_pr_rd_file),
+           values$local_file_paths$datapath[2] <- "None",
+           values$local_file_paths$datapath[2] <- parseFilePaths(volumes, input$local_pr_rd_file)$name)
+    ifelse(is.integer(input$local_m_rd_file),
+           values$local_file_paths$datapath[3] <- "None",
+           values$local_file_paths$datapath[3] <- parseFilePaths(volumes, input$local_m_rd_file)$name)
+    ifelse(is.integer(input$local_f_rd_file),
+           values$local_file_paths$datapath[4] <- "None",
+           values$local_file_paths$datapath[4] <- parseFilePaths(volumes, input$local_f_rd_file)$name)
+    ifelse(is.integer(input$local_pr_snv_file),
+           values$local_file_paths$datapath[5] <- "None",
+           values$local_file_paths$datapath[5] <- parseFilePaths(volumes, input$local_pr_snv_file)$name)
+    values$local_file_paths
+  })
   output$blt_dnSNV_ui <- shiny::renderUI({
     if(is.null(input$snp_gvcf_file)&is.integer(input$local_pr_snv_file)){
       return(NULL)
-      }
+    }
     else{
       shiny::tagList(
         p(HTML("<b>Show de novo SNV ?</b>"),
@@ -103,18 +131,7 @@ server <- function(input, output,session) {
                           resetOnNew = TRUE))
     }
   })
-  output$ui_plot_snp <- shiny::renderUI({
-    if(is.null(input$snp_gvcf_file)&is.integer(input$local_pr_snv_file)){
-      helpText("")
-    } else {
-      plotOutput(
-        "plot2",
-        height = 400,
-        dblclick = "plot2_dblclick",
-        brush = brushOpts(id = "plot2_brush",direction = "x",
-                          resetOnNew = TRUE))
-    }
-  })
+  
   
   # observe file uploaded and save in SQLdatabase---------
   # local option
@@ -126,7 +143,7 @@ server <- function(input, output,session) {
                             "The sv file has been uploaded"))
     }
     
-  },ignoreInit = F)
+  },ignoreInit = T)
   observeEvent(input$local_pr_rd_file,{ 
     if(is.integer(input$local_pr_rd_file)){cat("no file\n")}else{
       local_pr_rd_file <- parseFilePaths(volumes, input$local_pr_rd_file)
@@ -139,7 +156,7 @@ server <- function(input, output,session) {
       showModal(modalDialog(title = "File upload",
                             "The proband read depth file has been uploaded"))
     }
-  },ignoreInit = F)
+  },ignoreInit = T)
   observeEvent(input$local_m_rd_file,{ 
     if(is.integer(input$local_m_rd_file)){cat("no file\n")}else{
       local_m_rd_file <- parseFilePaths(volumes, input$local_m_rd_file)
@@ -147,7 +164,7 @@ server <- function(input, output,session) {
       showModal(modalDialog(title = "File upload",
                             "The mom's read depth file has been uploaded"))
     }
-  },ignoreInit = F)
+  },ignoreInit = T)
   observeEvent(input$local_f_rd_file,{ 
     if(is.integer(input$local_f_rd_file)){cat("no file\n")}else{
       local_f_rd_file <- parseFilePaths(volumes, input$local_f_rd_file)
@@ -172,6 +189,7 @@ server <- function(input, output,session) {
       ))
     }
   },ignoreInit = T)
+  
   # cloud option
   observe({
     sv_vcf_file=input$sv_vcf_file
@@ -280,7 +298,7 @@ server <- function(input, output,session) {
   extensions=c("Responsive","Buttons"),
   server = T,editable = TRUE,filter = list(position = 'top', clear = T),options = list(dom = 'Bfrtip',buttons = c('txt','csv', 'excel')))
   w <- waiter::Waiter$new(html = spin_3(), 
-                  color = transparent(.5))
+                          color = transparent(.5))
   output$Select_table <- DT::renderDataTable({
     values$selected_record
   })
@@ -306,6 +324,8 @@ server <- function(input, output,session) {
         filter(V1==chr)%>%
         mutate(ratio=V4/median(V4+0.00001))
       plots$pr_seg <- SegNormRD(plots$pr_rd,id="Proband",seg.method = seg_option)
+      # print(class(plots$pr_seg))
+      # print(head(plots$pr_seg))
       w$hide()
     }
     if(nrow(values$m_rd)==0){return(NULL)
@@ -346,7 +366,7 @@ server <- function(input, output,session) {
       range.gr <- GenomicRanges::setdiff(range.gr, blacklist)
       plots$snp_chr <- ReadGVCF(snp_gvcf_file$datapath,ref_genome=input$ref,param = range.gr)%>%
         as.data.frame()
-      InhFrom <- unique(plots$snp_chr$InhFrom)
+      InhFrom <- unique(plots$snp_chr$B_InhFrom)
       if(length(InhFrom)==3){
         names(plots$SNPcols) <- InhFrom
         plots$SNPcols[names(plots$SNPcols)!="Notphased"] <- SNPCOLOR2
@@ -354,6 +374,30 @@ server <- function(input, output,session) {
       }
       w$hide()
     }
+  })
+  
+  observeEvent(input$btn_plot,{
+    req(nrow(plots$pr_rd) != 0)
+    
+    include_seg <- input$include_seg
+    df <- rbindlist(list(plots$pr_seg,plots$m_seg,plots$f_seg))%>%
+      filter(ID%in%include_seg)%>%
+      mutate(ID=as.factor(ID))%>%
+      mutate(seg.mean=ifelse(seg.mean < -2.5,-2.4,seg.mean))
+    plots$xlabel=unique(df$chrom)[1]
+    rds <- ggplot(plots$pr_rd, aes(x=V2, y=log2(ratio+0.00001))) +
+      geom_point(shape=".")+
+      #scattermore::geom_scattermore(shape=".",pixels=c(1024,1024))+
+      geom_point(data = subset(plots$pr_rd, ratio < 0.7),aes(V2,log2(ratio+0.00001)),shape=".",color="green")+
+      geom_point(data = subset(plots$pr_rd, ratio > 1.3),aes(V2,log2(ratio+0.00001)),shape=".",color="red")+
+      geom_segment(data = df,aes(x=loc.start,y=seg.mean,xend=loc.end,yend=seg.mean,color=factor(ID)),size=1)+
+      scale_color_manual(name="Segment",values = c("Proband"="blue","Mother"="#E69F00","Father"="#39918C"),)+
+      ylim(-4,4)+xlab(plots$xlabel)+
+      scale_rd+style_rd+scale_x_continuous(labels = scales::label_number())
+    
+    
+    btnValrds <- mod_checkbox_Server("RD-static")
+    ranges <- mod_plot_switch_Server("RD-static", btnValrds$box_state, rds, ranges, zoom= F)
   })
   
   ext1 <- eventReactive(input$btn_plot,{
@@ -377,14 +421,19 @@ server <- function(input, output,session) {
       ylim(-4,4)+xlab(plots$xlabel)+
       scale_rd+style_rd+scale_x_continuous(labels = scales::label_number())
   },ignoreInit = T)
-  ext2 <- eventReactive(input$btn_plot,{
-    if(nrow(plots$snp_chr) == 0){
-      return(NULL)
-    }
+  
+  
+  
+  #Baf-B plot
+  observeEvent(input$btn_plot,{
+    req(nrow(plots$snp_chr) != 0)
+    
     df <- plots$snp_chr%>%filter(likelyDN%in%c(input$include_dnSNV,"FALSE"))
     cols <- plots$SNPcols
     xlabel=unique(df$chrom)[1]
-    df %>% ggplot(aes(x=start,y=pr_ALT_Freq,col=InhFrom))+
+    
+    
+    snp_a <- ggplot(df, aes(x=start,y=pr_ALT_Freq,col=A_InhFrom))+
       geom_point(shape=".")+
       #scattermore::geom_scattermore(shape=".",pixels=c(1024,1024))+
       geom_point(data = subset(df, likelyDN %in%c("TRUE")),size = 2,shape=8,color="red")+
@@ -395,10 +444,30 @@ server <- function(input, output,session) {
       scale_colour_manual(values = cols)+
       guides(color = guide_legend(override.aes = list(size = 4)))+
       scale_x_continuous(labels = scales::label_number())
+    
+    btnVala <- mod_checkbox_Server("Baf-A_allele")
+    ranges <- mod_plot_switch_Server("Baf-A_allele", btnVala$box_state, snp_a, ranges)
+    
+    snp_b <- ggplot(df, aes(x=start,y=pr_ALT_Freq,col=B_InhFrom))+
+      geom_point(shape=".")+
+      #scattermore::geom_scattermore(shape=".",pixels=c(1024,1024))+
+      geom_point(data = subset(df, likelyDN %in%c("TRUE")),size = 2,shape=8,color="red")+
+      scale_fill_manual("LikelyDN",limits=c("dnSNV"),values = "red")+
+      xlab(xlabel)+
+      scale_snp+
+      style_snp+
+      scale_colour_manual(values = cols)+
+      guides(color = guide_legend(override.aes = list(size = 4)))+
+      scale_x_continuous(labels = scales::label_number())
+    
+    btnValb <- mod_checkbox_Server("Baf-B_allele")
+    ranges <- mod_plot_switch_Server("Baf-B_allele", btnValb$box_state, snp_b, ranges)
+    
   })
-  ## annotation panel
-
   
+  
+  
+  ## annotation panel
   # interactive plot regions-------
   ranges <- reactiveValues(x = NULL, y = NULL)
   output$brush_info <- renderPrint({
@@ -450,13 +519,6 @@ server <- function(input, output,session) {
       annotate("rect",xmin=anno_rect$xmin,xmax=anno_rect$xmax,fill=anno_rect$fill,ymin=anno_rect$rowidx*0-3,ymax=(anno_rect$rowidx-anno_rect$rowidx+2),alpha=0.3)+
       ggtitle(paste0(plots$xlabel,":",paste0(round(as.numeric(ranges$x)),collapse = "-")))
     plots$plot1
-  })
-  output$plot2 <- renderPlot({
-    if(nrow(plots$snp_chr) == 0){
-      return(NULL)
-    }
-    plots$plot2 <- ext2()+coord_cartesian(xlim = ranges$x, expand = FALSE)
-    plots$plot2
   })
   output$plot_anno <- renderPlot({
     if(length(plots$plot3) == 0){
@@ -524,16 +586,7 @@ server <- function(input, output,session) {
       }
     }
   })
-  observeEvent(input$plot2_dblclick, {
-    brush <- input$plot2_brush
-    if (!is.null(brush)) {
-      ranges$x <- c(brush$xmin, brush$xmax)
-     # ranges$y <- c(brush$ymin, brush$ymax)
-    } else {
-      ranges$x <- NULL
-      ranges$y <- NULL
-    }
-  })
+  
   observeEvent(input$btl_goto,{
     if(!is.null(input$goto_reg)){
       gene <- as.character(input$goto_reg)
@@ -589,7 +642,7 @@ server <- function(input, output,session) {
             scale_fill_manual(values = c("+"="#E69F00","-"="#39918C"))+
             scale_x_continuous(labels = scales::label_number())
         }
-
+        
       }
       
     }
@@ -606,7 +659,7 @@ server <- function(input, output,session) {
   observeEvent(input$btl_reset,{
     values$anno_rect <- data.frame(stringsAsFactors = F)
   })
-
+  
   ## buttons 
   output$ui_dlbtn_tbl <- renderUI({
     if(nrow(values$data) > 0){
@@ -649,14 +702,14 @@ server <- function(input, output,session) {
     plots$pr_rd <- data.frame(stringsAsFactors = F)
     input$filter_sv_table_rows_selected <- NULL
   })
-
+  
   ## Download handler
   output$dl_plt <- downloadHandler(
     filename = function(){
       paste0(input$chr,".pdf")
     },
     content = function(file){
-
+      
       mylist <- list(plots$plot1,plots$plot3_dl,plots$plot2)
       mylist <- mylist[lengths(mylist)!= 0]
       n <- length(mylist)
@@ -671,5 +724,130 @@ server <- function(input, output,session) {
       write.csv(df,file,row.names = F)
     }
   )
+  
+  ##Anno tracks
+  observeEvent(input$btn_anno,{
+    print("Annotating")
+    chrn = input$chr
+    path = "./data/"
+    IDR<-data.table::fread(paste0(path,"Claudia_hg19_MergedInvDirRpts_sorted.bed")) %>% 
+      dplyr::select(V1,V2,V3,V4,V5,V6) %>% 
+      dplyr::rename("chrom" = V1, "start" = V2, "end" = V3, "name" = V4, "score" = V5, "strand" = V6) %>%
+      dplyr::filter(chrom == chrn)
+    IDR <- IDR %>%
+      mutate(idx = sample(1:1, size = dim(IDR)[1], replace = T)/1000)
+    IDR_pos <- IDR %>%
+      filter(strand == "+")
+    IDR_neg <- IDR %>%
+      filter(strand == "-")
+    p2 <- ggplot(IDR, aes(x = start, y = idx)) +
+      geom_segment(data = IDR_pos, aes(x = start, y = idx, xend = end, yend = idx), arrow = arrow(length = unit(0.05, "inches")), color = "dodgerblue")+
+      geom_segment(data = IDR_neg, aes(x = end, y = idx, xend = start, yend = idx), arrow = arrow(length = unit(0.05, "inches")), color = "dodgerblue3")+
+      style_anno+
+      ylab("IDR")
+    SegDup <- data.table::fread(paste0(path, "SegDup_hg19_UCSC.bed"))
+    SegDup <- SegDup %>%
+      dplyr::rename("chrom" = "#chrom", "start" = "chromStart", "end" = "chromEnd") %>%
+      filter(chrom ==chrn)
+    SegDup <- SegDup %>%
+      mutate(idx = sample(1:100, size = dim(SegDup)[1], replace = T)/1000) %>%
+      mutate(color = case_when(level == "SD_low" ~ "gray40",
+                               level == "SD_mid" ~ "yellow2",
+                               level == "SD_high" ~ "darkorange"))
+    SegDup_pos <- SegDup %>%
+      filter(strand == "+")
+    SegDup_neg <- SegDup %>%
+      filter(strand == "-")
+    p3 <- ggplot(SegDup, aes(x = start, y = idx)) +
+      geom_segment(data = SegDup_pos, aes(x = start, y = idx, xend = end, yend = idx), arrow = arrow(length = unit(0.05, "inches")), color = SegDup_pos$color)+
+      geom_segment(data = SegDup_neg, aes(x = end, y = idx, xend = start, yend = idx), arrow = arrow(length = unit(0.05, "inches")), color = SegDup_neg$color)+
+      style_anno+
+      scale_anno+
+      ylab("SegDup")
+    
+    
+    OMIM <- data.table::fread(paste0(path, "OMIM_gene2_hg19_UCSC_all.bed"))
+    OMIM <- OMIM %>%
+      filter(chrom == chrn) %>%
+      mutate_at(vars(pheno_key), as.factor)
+    OMIM <- OMIM %>%
+      mutate(idx = sample(1:100, size = dim(OMIM)[1], replace = T)/1000) %>%
+      mutate(color = case_when(pheno_key == "0" ~ "grey",
+                               pheno_key == "1" ~ "lightgreen",
+                               pheno_key == "2" ~ "green3",
+                               pheno_key == "3" ~ "green4",
+                               pheno_key == "4" ~ "purple", ))
+    
+    OMIM_label <- OMIM %>%
+      filter(pheno_key  %in% c("3","4"))
+    p4 <- ggplot(OMIM, aes(x = start, y = idx)) +
+      annotate("rect", xmin = OMIM$start, xmax = OMIM$end, ymin = OMIM$idx, ymax = OMIM$idx+0.0001, color = OMIM$color)+
+      annotate("text", x = OMIM_label$start, y = OMIM_label$idx, label = OMIM_label$gene_symbol, size = 3.5, hjust = 1.1)+
+      style_anno+
+      scale_anno+
+      ylab("OMIM")
+    
+    gnomAD <- data.table::fread(paste0(path, "gnomAD_allSV_hg19_UCSC.bed"))
+    gnomAD <- gnomAD %>%
+      dplyr::rename("chrom" = "#chrom", "start" = "chromStart", "end" = "chromEnd") %>%
+      filter(chrom == chrn)
+    gnomAD <- gnomAD %>%
+      mutate(idx = sample(1:100, size = dim(gnomAD)[1], replace = T)/1000) %>%
+      mutate(color = case_when(svtype == "BND" ~ "grey",
+                               svtype == "DEL" ~ "red",
+                               svtype == "DUP" ~ "blue",
+                               svtype == "INS" ~ "darkorange",
+                               TRUE ~ "cyan4"))
+    p5 <- ggplot(gnomAD, aes(x = start, y = idx)) +
+      annotate("rect", xmin = gnomAD$start, xmax = gnomAD$end, ymin = gnomAD$idx, ymax = gnomAD$idx+0.0001, color = gnomAD$color)+
+      style_anno+
+      scale_anno+
+      ylab("gnomAD")
+    
+    
+    rmsk <- read_parquet(paste0(path, "rmsk_hg19_UCSC.parquet"))
+    rmsk <- rmsk %>%
+      dplyr::rename("chrom" = "#chrom") %>%
+      filter(chrom ==  chrn)
+    rmsk <- rmsk %>%
+      mutate(idx = case_when(repClass == "SINE" ~ 0.014*7,
+                             repClass == "LINE" ~ 0.014*6,
+                             repClass == "LTR" ~ 0.014*5,
+                             repClass == "DNA" ~ 0.014*4,
+                             repClass == "Simple_repeat" ~ 0.014*3,
+                             repClass == "Low_complexity" ~ 0.014*2,
+                             TRUE ~ 0.014))
+    p6 <- ggplot(rmsk, aes(x = start, y = idx)) +
+      annotate("rect", xmin = rmsk$start, xmax = rmsk$end, ymin = rmsk$idx, ymax = rmsk$idx+0.0001, color = "black")+
+      style_anno+
+      scale_anno+
+      ylab("RMSK")
+    
+    btnVal2 <- mod_checkbox_Server("IDR")
+    btnVal3 <- mod_checkbox_Server("SegDup")
+    btnVal4 <- mod_checkbox_Server("OMIM")
+    btnVal5 <- mod_checkbox_Server("gnomAD")
+    btnVal6 <- mod_checkbox_Server("RMSK")
+    ranges <- mod_plot_switch_Server("IDR", btnVal2$box_state, p2, ranges)
+    ranges <- mod_plot_switch_Server("Segdup", btnVal3$box_state, p3, ranges)
+    ranges <- mod_plot_switch_Server("OMIM", btnVal4$box_state, p4, ranges)
+    ranges <- mod_plot_switch_Server("gnomAD", btnVal5$box_state, p5, ranges)
+    ranges <- mod_plot_switch_Server("RMSK", btnVal6$box_state, p6, ranges)
+    
+    anno_table_Server("IDR", IDR, ranges, chrn)
+    anno_table_Server("SegDup", SegDup, ranges, chrn)
+    anno_table_Server("OMIM", OMIM, ranges, chrn)
+    anno_table_Server("gnomAD", gnomAD, ranges, chrn)
+    anno_table_Server("rmsk", rmsk, ranges, chrn)
+  })
+  
+  
+  ## dnCNV table
+  observeEvent(input$btn_dnCNV, {
+    req(nrow(values$pr_rd)!=0)
+    req(nrow(values$m_rd)!=0)
+    req(nrow(values$f_rd)!=0)
+    mod_dnCNV_Server("dnCNV",plots$pr_seg, plots$m_seg, plots$f_seg)
+  })
   
 }
