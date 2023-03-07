@@ -1,5 +1,6 @@
 
 
+
 #  ------------------------------------------------------------------------
 #
 # Title : App - VizCNV
@@ -340,3 +341,4 @@ style_genes <- style_rd+
         axis.ticks.y = element_blank(),
         axis.text.y = element_text(color = "white"))
 scale_genes <- scale_y_continuous(labels = scales::label_number(accuracy = 0.01))
+
