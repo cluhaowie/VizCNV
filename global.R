@@ -17,12 +17,12 @@ options(shiny.autoreload=TRUE)
 # Install missing packages from CRAN, 'arrow' may be a problem
 list.of.packages <- c("dplyr", "data.table", "shiny", "shinydashboard",
                       "tippy","DT","ggplot2","shinyWidgets","shinyFiles","waiter",
-                      "cowplot","devtools","BiocManager","arrow","colourpicker") 
+                      "cowplot","devtools","BiocManager","arrow","colourpicker", "shinyjs","shinydashboardPlus") 
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
 if(length(new.packages)) install.packages(new.packages)
 
 # Install missing packages from Bioconductor
-biocLitePackages <- c("DNAcopy", "GenomicRanges", "VariantAnnotation","bedr","ggtranscript") 
+biocLitePackages <- c("DNAcopy", "GenomicRanges", "VariantAnnotation","bedr") 
 new.biocLitePackage <- biocLitePackages[!(biocLitePackages %in% installed.packages()[,"Package"])]
 if (!require("BiocManager", quietly = TRUE))
   install.packages("BiocManager")
@@ -50,7 +50,9 @@ rm(list = ls())
 library(dplyr)
 library(data.table)
 library(shiny)
-library(shinydashboard)
+#library(shinydashboard)
+library(shinydashboardPlus)
+library(bs4Dash) ## support bootstrap 4
 library(shinyFiles)
 library(shinyWidgets)
 library(waiter)
@@ -63,12 +65,12 @@ library(bedr)
 library(Rsamtools)
 library(VariantAnnotation)
 library(arrow) ## read parquet data
-library(shinydashboardPlus)
+library(shinyjs)
 #library(colourpicker) ## required for picking annotation color
 # set up local database -------
 
 #sqlitePath="data/database.sqlite"
-genePath_hg38=here::here("data/MANE.GRCh38.v1.0.refseq.gz.parquet")
+genePath_hg38=("./data/MANE.GRCh38.v1.0.refseq.gz.parquet")
 #rmskPath_hg38="data/hg38_rmsk.gz.parquet"
 maxSize_anno <- 20e6 # max size to show the transcripts
 maxtranscript <- 30 # max number of transcript to show
@@ -153,6 +155,7 @@ SegNormRD <- function(df, id, seg.method = "cbs") {
     seg <- DNAcopy::segment(CNA.obj)
     seg.output <- seg$output
     seg.output$ID <- id
+    print("done")
     return(seg.output)
   }
   ##EDIT: include SLM segmentation
@@ -178,7 +181,10 @@ SegNormRD <- function(df, id, seg.method = "cbs") {
       end=c(df$V2[c(idx[-1],end(df$V2)[1])])
       res.dt <- data.table(ID=id,chrom=chr,loc.start=start,loc.end=end,num.mark=res$lengths,seg.mean=res$values)
     })
+    print("done")
+    
     res <- data.table::rbindlist(res)
+    return(res)
   }
   
 }
@@ -195,7 +201,7 @@ blacklist <- data.table::fread("GRCh38_unified_blacklist.bed.gz")%>%
   regioneR::toGRanges()
 
 ReadGVCF <- function(path_to_gVCF,ref_genome=ref_genome,param = param){
-  print("scaning the region")
+  print("Grabbing regions")
   vcf<- VariantAnnotation::readVcf(file = path_to_gVCF,genome = ref_genome,param = param)
   vcf.gr <- vcf@rowRanges
   GT <- VariantAnnotation::geno(vcf)$GT
@@ -209,13 +215,19 @@ ReadGVCF <- function(path_to_gVCF,ref_genome=ref_genome,param = param){
   G3=c('0/1',"0|1")
   GT <- as.data.table(GT)
   setnames(GT,colnames(GT),c("index","P1","P2"))
-  GT.anno <- GT %>% mutate(InhFrom=case_when(index%in%G3&P1%in%G1&P2%in%c(G2,G3) ~ P2_ID,
-                                             index%in%G3&P1%in%c(G2,G3)&P2%in%G1 ~ P1_ID,
-                                             index%in%G1&P1%in%G1&P2 %in% G2 ~ P1_ID, 
-                                             index%in%G1&P1%in%G2&P2 %in% G1 ~ P2_ID,
-                                             index%in%G2&P1%in%c(G2,G3)&P2 %in% G1 ~ P1_ID,
-                                             index%in%G2&P1%in%G1&P2 %in% c(G2,G3) ~ P2_ID, 
-                                             TRUE ~ "Notphased"))
+  GT.anno <- GT %>% 
+    mutate(B_InhFrom=case_when(index %in% G3 & P1 %in% G1 & P2  %in% c(G2,G3) ~ P2_ID, #cases 11,12
+                               index %in% G3 & P1 %in% G3 & P2  %in% G1 ~ P1_ID, #case 13
+                               index %in% G3 & P1 %in% G2 & P2  %in% G1 ~ P1_ID, #case 16
+                               index %in% G2 & P1 %in% G1 & P2  %in% c(G2,G3) ~ P2_ID, #cases 20,21
+                               index %in% G2 & P1 %in% G3 & P2  %in% G1 ~ P2_ID, #case 22
+                               index %in% G2 & P1 %in% G2 & P2  %in% G1 ~ P2_ID, #case 25
+                               TRUE ~ "Notphased")) %>% 
+    mutate(A_InhFrom=case_when(index %in% G1 & P1 %in% c(G1,G3) & P2  %in% G2 ~ P1_ID, #cases 3,6
+                               index %in% G1 & P1 %in% G2 & P2  %in% c(G1,G3) ~ P2_ID, #cases 7,8
+                               index %in% G2 & P1 %in% c(G1,G3) & P2  %in% G2 ~ P1_ID, #cases 12,15
+                               index %in% G2 & P1 %in% G2 & P2  %in% c(G1,G3) ~ P2_ID, #cases 16,17
+                               TRUE ~ "Notphased")) 
   AD <- as.data.table(AD)
   setnames(AD,colnames(AD),c("index","P1","P2"))
   AD.anno <- AD%>%
@@ -252,15 +264,15 @@ style_rd <- theme_classic()+
     panel.grid.major.y = element_line(linetype = 5,colour = "grey50"),
     panel.grid.major.x = element_line(linetype = 5,colour = "grey50"),
     panel.background = element_blank(),
-    axis.text = element_text(color = "black", size = 12),
-    axis.title = element_text(color = "black", size = 16,face = "bold"),
+    axis.text = element_text(color = "black"),
+    # axis.title = element_text(color = "black",face = "bold"),
     #axis.line.x = element_blank(),
     axis.ticks = element_line(color = "black"))
 style_genes <- style_rd+
   theme(panel.grid.major.y = element_blank(),
         axis.title.x = element_blank())
 scale_genes <- scale_y_continuous(labels = scales::label_number(accuracy = 0.01))
-  
+
 style_snp <- theme_classic()+
   theme(
     plot.title = element_text(face = "bold", size = 12),
@@ -274,12 +286,12 @@ style_snp <- theme_classic()+
     panel.grid.major.x = element_line(linetype = 5,colour = "grey50"),
     panel.background = element_blank(),
     axis.text = element_text(color = "black", size = 12),
-    axis.title = element_text(color = "black", size = 16,face = "bold"),
-    #axis.line.x = element_blank(),
+    axis.title = element_text(color = "black",face = "bold"),
+    axis.line.x = element_blank(),
     axis.ticks = element_line(color = "black"))
 
 scale_rd <- scale_y_continuous(name="Log2 Ratio",
-                               limits=c(-3, 2),
+                               limits=c(-2.5, 2),
                                breaks = c(round(log2(1/2),2),
                                           round(log2(2/2),2),
                                           round(log2(3/2),2),
@@ -307,4 +319,16 @@ names(chrom_id) <- paste0("chr",chrom_id)
 
 
 dir_create("~/Downloads/VizCNV")
+
+
+style_anno <- theme_classic()+
+  theme(axis.text.x=element_blank(), 
+        axis.ticks.x=element_blank(), #remove x axis ticks
+        axis.title.x = element_blank(),
+        axis.line.x = element_blank(),
+        axis.text.y=element_text(color = "white"),  #remove y axis labels
+        axis.ticks.y=element_blank()
+  )
+
+scale_anno <- scale_y_continuous(limits = c(-0.01,.11))
 
