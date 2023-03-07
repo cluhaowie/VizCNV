@@ -568,9 +568,6 @@ server <- function(input, output,session) {
       p5_file = NULL
       p6_file = NULL
     }
-    id <- showNotification("Pulling Data", type = "message", duration = NULL)
-    chrn = input$chr
-    path = "./data/"
     
     if (nrow(values$pr_sv) != 0){
     pr_sv <- values$pr_sv %>% 
@@ -598,6 +595,10 @@ server <- function(input, output,session) {
     ranges <- mod_plot_switch_Server("pr_sv", btnVal_prsv$box_state, pr_sv_plot, ranges, dnCNV_table)
     anno_table_Server("pr_sv", pr_sv, ranges, chrn)
     }
+    
+    id <- showNotification("Pulling Data", type = "message", duration = NULL)
+    chrn = input$chr
+    path = "./data/"
     RefSeq <- read_parquet(paste0(path,p1_file))
     RefSeq <- RefSeq %>% 
       filter(seqname ==  chrn) %>%
