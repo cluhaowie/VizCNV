@@ -7,9 +7,7 @@ server <- function(input, output,session) {
   # Reavtive Values --------------------------
   values <- reactiveValues()
   
-  values$data <- data.frame(stringsAsFactors = F)
-  #values$work_data, store sv call, must include ALT 
-  values$work_data <- data.frame(stringsAsFactors = F)
+  values$pr_sv <- data.frame(stringsAsFactors = F)
   values$pr_rd <- data.frame(stringsAsFactors = F)
   values$m_rd <- data.frame(stringsAsFactors = F)
   values$f_rd <- data.frame(stringsAsFactors = F)
@@ -42,7 +40,7 @@ server <- function(input, output,session) {
   plots$plot3_dl <- list()
   
   toListen <- reactive({
-    list(values$data,values$pr_rd)
+    list(values$pr_sv,values$pr_rd)
   })
   
   volumes <- c(Home="~/Downloads/","R installation" = R.home(),shinyFiles::getVolumes()())
@@ -133,7 +131,7 @@ server <- function(input, output,session) {
   observeEvent(input$local_sv_file,{ 
     if(is.integer(input$local_sv_file)){cat("no file\n")}else{
       local_sv_file <- parseFilePaths(volumes, input$local_sv_file)
-      values$data <- bedr::read.vcf(local_sv_file$datapath,split.info = T)$vcf
+      values$pr_sv <- bedr::read.vcf(local_sv_file$datapath,split.info = T)$vcf
       showModal(modalDialog(title = "File upload",
                             "The sv file has been uploaded"))
     }
@@ -190,8 +188,8 @@ server <- function(input, output,session) {
     sv_vcf_file=input$sv_vcf_file
     if(is.null(sv_vcf_file)){return(NULL)}
     req(sv_vcf_file)
-    values$data <- bedr::read.vcf(sv_vcf_file$datapath,split.info = T)$vcf
-    #saveData(values$data,"sv_vcf_file")
+    values$pr_sv <- bedr::read.vcf(sv_vcf_file$datapath,split.info = T)$vcf
+    #saveData(values$pr_sv,"sv_vcf_file")
     showModal(modalDialog(
       title = "File upload",
       "The sv file has been uploaded"
@@ -244,15 +242,15 @@ server <- function(input, output,session) {
     ))
   }) 
   
-  observeEvent(values$data,{
-    data <- values$data
+  observeEvent(values$pr_sv,{
+    data <- values$pr_sv
     ALTs <- unique(data$ALT)
     updateSelectizeInput(session, "type", choices = ALTs, server = TRUE)
   })
   
   observeEvent(toListen(),{
-    if(nrow(values$data)!=0){
-      data <- values$data
+    if(nrow(values$pr_sv)!=0){
+      data <- values$pr_sv
       chroms <- unique(data$CHROM)
       updateSelectizeInput(session, "chr", choices = chroms, server = TRUE)
     }else{
@@ -265,11 +263,11 @@ server <- function(input, output,session) {
   
   observeEvent(input$chr,{
     chr <- input$chr
-    if(nrow(values$data) == 0){
+    if(nrow(values$pr_sv) == 0){
       return(NULL)
     }else{
-      values$work_data <- values$data%>%filter(CHROM==chr)
-      return(values$work_data)
+      values$pr_sv <- values$pr_sv%>%filter(CHROM==chr)
+      return(values$pr_sv)
     }
   })
   observeEvent(input$ref,{
@@ -288,7 +286,7 @@ server <- function(input, output,session) {
   
   
   output$filter_sv_table <- DT::renderDataTable({ 
-    values$work_data
+    values$pr_sv
   },
   extensions=c("Responsive","Buttons"),
   server = T,editable = TRUE,filter = list(position = 'top', clear = T),options = list(dom = 'Bfrtip',buttons = c('txt','csv', 'excel')))
@@ -301,7 +299,7 @@ server <- function(input, output,session) {
   observeEvent(input$btl_select,{
     rows_selected <- input$filter_sv_table_rows_selected
     if(length(rows_selected)){
-      values$selected_record <- rbind(values$selected_record,values$work_data[rows_selected,])%>%
+      values$selected_record <- rbind(values$selected_record,values$pr_sv[rows_selected,])%>%
         distinct(across(everything()))
     }
   })
@@ -375,9 +373,6 @@ server <- function(input, output,session) {
     }
   })
   
-  
-  
- 
 
 
   
@@ -395,85 +390,6 @@ server <- function(input, output,session) {
     }
   })
   
-  
-  ##work in progress
-  ## old plot1
-  # output$plot1 <- renderPlot({
-  #   if(nrow(plots$pr_rd) == 0){
-  #     return(NULL)
-  #   }
-  #   if(nrow(values$selected_record)==0){
-  #     dup.df <- data.frame()
-  #     del.df <- data.frame()
-  #     trp.df <- data.frame()
-  #     cpx.df <- data.frame()
-  #   }else{
-  #     dup.df <- subset(values$selected_record, ALT%in%c("<DUP>","DUP"))
-  #     del.df <- subset(values$selected_record, ALT%in%c("<DEL>","DEL"))
-  #     trp.df <- subset(values$selected_record, ALT%in%c("<TRP>","TRP"))
-  #     cpx.df <- subset(values$selected_record, ALT%in%c("<CPX>","CPX"))
-  #     dup.df$rowidx <- as.numeric(rownames(dup.df))
-  #     del.df$rowidx <- as.numeric(rownames(del.df))
-  #     trp.df$rowidx <- as.numeric(rownames(trp.df))
-  #     cpx.df$rowidx <- as.numeric(rownames(cpx.df))
-  #   }
-  #   if(nrow(values$anno_rect)==0){
-  #     anno_rect <- data.frame()
-  #   }else{
-  #     anno_rect <- values$anno_rect
-  #     anno_rect$rowidx <- as.numeric(rownames(anno_rect))
-  #   }
-  #   plots$plot1 <- ext1()+
-  #     coord_cartesian(xlim = ranges$x, ylim = ranges$y, expand = FALSE)+
-  #     ## pointer to the selected CNV call(suppressed)
-  #     #annotate("point",x=ifelse(is.null(values$selected_record$POS),-100,values$selected_record$POS),y=rep(1.8,length(values$selected_record$POS)),shape=25,fill="orange",size=2)+ 
-  #     geom_hline(yintercept=-2.5,col="black")+
-  #     annotate("text",x=ifelse(is.null(ranges$x),-100000,sum(ranges$x)/2),y=-2.3,label="SVTYPE")+
-  #     annotate("rect",xmin=dup.df$POS,xmax=dup.df$END,ymin=dup.df$rowidx%%4*0.1-3,ymax=(dup.df$rowidx%%4+1)*0.1-3,fill = CNVCOLOR6["DUP"])+
-  #     annotate("rect",xmin=del.df$POS,xmax=del.df$END,ymin=del.df$rowidx%%4*0.1-3,ymax=(del.df$rowidx%%4+1)*0.1-3,fill = CNVCOLOR6["DEL"])+
-  #     annotate("rect",xmin=trp.df$POS,xmax=trp.df$END,ymin=trp.df$rowidx%%4*0.1-3,ymax=(trp.df$rowidx%%4+1)*0.1-3,fill = CNVCOLOR6["TRP"])+
-  #     annotate("rect",xmin=cpx.df$POS,xmax=cpx.df$END,ymin=cpx.df$rowidx%%4*0.1-3,ymax=(cpx.df$rowidx%%4+1)*0.1-3,fill = CNVCOLOR6["CPX"])+
-  #     annotate("rect",xmin=anno_rect$xmin,xmax=anno_rect$xmax,fill=anno_rect$fill,ymin=anno_rect$rowidx*0-3,ymax=(anno_rect$rowidx-anno_rect$rowidx+2),alpha=0.3)+
-  #     ggtitle(paste0(plots$xlabel,":",paste0(round(as.numeric(ranges$x)),collapse = "-")))
-  #   plots$plot1
-  # })
-  # 
-  # 
-  
-  # output$plot_anno <- renderPlot({
-  #   if(length(plots$plot3) == 0){
-  #     return(NULL)
-  #   }
-  #   if(nrow(values$anno_rect)==0){
-  #     anno_rect <- data.frame()
-  #   }else{
-  #     anno_rect <- values$anno_rect
-  #     anno_rect$rowidx <- as.numeric(rownames(anno_rect))
-  #   }
-  #   plots$plot3_dl <- plots$plot3+
-  #     annotate("rect",xmin=anno_rect$xmin,xmax=anno_rect$xmax,fill=anno_rect$fill,ymin=anno_rect$rowidx*0,ymax=(anno_rect$rowidx-anno_rect$rowidx+2)+length(unique(plots$genelabel$gene_id)),alpha=0.3)+
-  #     coord_cartesian(xlim = ranges$x, expand = FALSE)
-  #   plots$plot3_dl
-  # })
-
-  
-  #     if(nrow(values$data)!=0){
-  #       values$work_data <- values$data%>%
-  #         filter(CHROM==chr)%>%
-  #         filter(POS>=brush$xmin,POS < brush$xmax)
-  #     }
-  #   } else {
-  #     ranges$x <- NULL
-  #     ranges$y <- NULL
-  #     plots$genelabel <- data.frame(stringsAsFactors = F)
-  #     plots$plot3 <- list()
-  #     if(nrow(values$data)!=0){
-  #       values$work_data <- values$data%>%filter(CHROM==chr)
-  #     }
-  #   }
-  # })
-# 
-  
 
   observeEvent(input$btl_add,{
     brush <- input$plot1_brush
@@ -490,7 +406,7 @@ server <- function(input, output,session) {
   
   ## buttons 
   output$ui_dlbtn_tbl <- renderUI({
-    if(nrow(values$data) > 0){
+    if(nrow(values$pr_sv) > 0){
       tagList(shiny::actionButton("btl_select", "Select",icon("check")))
     }
   })
@@ -562,7 +478,7 @@ server <- function(input, output,session) {
   observeEvent(input$btn_plot,{
     req(nrow(plots$pr_rd) != 0)
     
-    showNotification("Plotting Read Depth Plot", duration = 8, type = "message")
+    showNotification("Plotting Read Depth Plot", duration = 12, type = "message")
     include_seg <- input$include_seg
     df <- rbindlist(list(plots$pr_seg,plots$m_seg,plots$f_seg))%>%
       filter(ID%in%include_seg)%>%
@@ -655,6 +571,32 @@ server <- function(input, output,session) {
     id <- showNotification("Pulling Data", type = "message", duration = NULL)
     chrn = input$chr
     path = "./data/"
+    
+    pr_sv <- values$pr_sv %>% 
+      filter(CHROM == chrn)
+    pr_sv <- pr_sv %>% 
+      mutate(color = case_when(SVTYPE == "DEL" ~ "darkblue",
+                               SVTYPE == "DUP" ~ "#8b0000",
+                               SVTYPE == "INS" ~ "darkgreen", 
+                               SVTYPE == "INV" ~ "darkorange", 
+                               TRUE ~ "magenta3")) %>% 
+      mutate(idx = case_when(SVTYPE == "DEL" ~ 0.015,
+                             SVTYPE == "DUP" ~ 0.03,
+                             SVTYPE == "INS" ~ 0.045,
+                             SVTYPE == "INV" ~ 0.06,
+                             TRUE ~ 0.075))
+    pr_sv <- pr_sv %>% 
+      mutate(start = POS, 
+             end = as.integer(END)) %>% 
+      relocate(CHROM, start, end) %>% 
+      filter(AVGLEN > 10000 & AVGLEN < 100000000) %>% 
+      dplyr::select(-c(POS, END, REF, ALT, AVGLEN, MAPQ, RE))
+    pr_sv_plot <- ggplot(pr_sv, aes(x = POS, y = idx)) +
+      annotate("rect", xmin = pr_sv$start, xmax = pr_sv$end, ymin = pr_sv$idx, ymax = pr_sv$idx+0.0001, color = pr_sv$color)+
+      style_anno+
+      scale_anno+
+      ylab("pr_SV")
+    
     
     RefSeq <- read_parquet(paste0(path,p1_file))
     RefSeq <- RefSeq %>% 
@@ -771,20 +713,23 @@ server <- function(input, output,session) {
     
     
     showNotification("Annotating", type = "message", duration = 8)
+    btnVal_prsv <- mod_checkbox_Server("pr_sv")
+    ranges <- mod_plot_switch_Server("pr_sv", btnVal_prsv$box_state, pr_sv_plot, ranges, dnCNV_table)
     btnVal1 <- mod_checkbox_Server("RefSeq")
-    btnVal2 <- mod_checkbox_Server("IDR")
-    btnVal3 <- mod_checkbox_Server("SegDup")
-    btnVal4 <- mod_checkbox_Server("OMIM")
-    btnVal5 <- mod_checkbox_Server("gnomAD")
-    btnVal6 <- mod_checkbox_Server("RMSK")
     ranges <- mod_plot_switch_Server("RefSeq", btnVal1$box_state, p1, ranges, dnCNV_table)
+    btnVal2 <- mod_checkbox_Server("IDR")
     ranges <- mod_plot_switch_Server("IDR", btnVal2$box_state, p2, ranges, dnCNV_table)
+    btnVal3 <- mod_checkbox_Server("SegDup")
     ranges <- mod_plot_switch_Server("Segdup", btnVal3$box_state, p3, ranges, dnCNV_table)
+    btnVal4 <- mod_checkbox_Server("OMIM")
     ranges <- mod_plot_switch_Server("OMIM", btnVal4$box_state, p4, ranges, dnCNV_table)
+    btnVal5 <- mod_checkbox_Server("gnomAD")
     ranges <- mod_plot_switch_Server("gnomAD", btnVal5$box_state, p5, ranges, dnCNV_table)
+    btnVal6 <- mod_checkbox_Server("RMSK")
     ranges <- mod_plot_switch_Server("RMSK", btnVal6$box_state, p6, ranges, dnCNV_table)
   
     removeNotification(id)
+    anno_table_Server("pr_sv", pr_sv, ranges, chrn)
     anno_table_Server("RefSeq", RefSeq, ranges, chrn)
     anno_table_Server("IDR", IDR, ranges, chrn)
     anno_table_Server("SegDup", SegDup, ranges, chrn)
@@ -805,7 +750,7 @@ server <- function(input, output,session) {
   })
   
 
-  
+  ## Show current ranges
   observe({
     output$cur_range <- renderText({
       req(!is.null(ranges$x))
