@@ -573,24 +573,21 @@ server <- function(input, output,session) {
     path = "./data/"
     
     pr_sv <- values$pr_sv %>% 
-      filter(CHROM == chrn)
+      filter(CHROM == chrn) %>% 
+      filter(AVGLEN > 10000 & AVGLEN < 100000000)
     pr_sv <- pr_sv %>% 
       mutate(color = case_when(SVTYPE == "DEL" ~ "darkblue",
                                SVTYPE == "DUP" ~ "#8b0000",
                                SVTYPE == "INS" ~ "darkgreen", 
                                SVTYPE == "INV" ~ "darkorange", 
                                TRUE ~ "magenta3")) %>% 
-      mutate(idx = case_when(SVTYPE == "DEL" ~ 0.015,
-                             SVTYPE == "DUP" ~ 0.03,
-                             SVTYPE == "INS" ~ 0.045,
-                             SVTYPE == "INV" ~ 0.06,
-                             TRUE ~ 0.075))
+      group_by(SVTYPE) %>% 
+      mutate(idx = sample.int(n())/1000)
     pr_sv <- pr_sv %>% 
       mutate(start = POS, 
              end = as.integer(END)) %>% 
       relocate(CHROM, start, end) %>% 
-      filter(AVGLEN > 10000 & AVGLEN < 100000000) %>% 
-      dplyr::select(-c(POS, END, REF, ALT, AVGLEN, MAPQ, RE))
+      dplyr::select(-c(POS, END, REF, ALT, AVGLEN, MAPQ, RE, CIEND, CIPOS))
     pr_sv_plot <- ggplot(pr_sv, aes(x = POS, y = idx)) +
       annotate("rect", xmin = pr_sv$start, xmax = pr_sv$end, ymin = pr_sv$idx, ymax = pr_sv$idx+0.0001, color = pr_sv$color)+
       style_anno+
@@ -623,7 +620,7 @@ server <- function(input, output,session) {
       dplyr::rename("chrom" = V1, "start" = V2, "end" = V3, "name" = V4, "score" = V5, "strand" = V6) %>%
       dplyr::filter(chrom == chrn)
     IDR <- IDR %>%
-      mutate(idx = sample(1:1, size = dim(IDR)[1], replace = T)/1000)
+      mutate(idx = sample(1:10, size = dim(IDR)[1], replace = T)/1000)
     IDR_pos <- IDR %>%
       filter(strand == "+")
     IDR_neg <- IDR %>%
