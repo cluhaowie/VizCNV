@@ -1,133 +1,170 @@
+source("./mod/mod_plot_output.R")
+source("./mod/mod_dnCNV.R")
+
 ui <- dashboardPage(
-  dashboardHeader(title = "VizCNV",
+  
+  dashboardHeader(title = "",
                   leftUi = tagList(
                     dropdownBlock(
-                      id = "input_dropdown_upload",
-                      title = "Upload",
-                      icon = icon("upload"),
-                      uiOutput("file_source_ui2"))
-                    )),
-  dashboardSidebar(sidebarMenu(
-    menuItem(tabName = "zoom", text = "Zoom", icon = icon("search"))
-  )),
-  dashboardBody(
-    fluidRow(
-      tabItems(
-        #Tab1
-        #------
-        tabItem(
-          tabName = "input",
-          h1("Upload")
-        ),
-        #-------
-        #Tab2
-        #--------
-        tabItem(tabName = "qc",
-                h1("Quality Control")
-        ),
-        #-------
-        #Tab3_wgv
-        #-------
-        tabItem(tabName = "wgv",
-                h1("Genome wide view")
-        ),
-        #-------
-        #Tab4_zoom
-        #-------
-        tabItem(tabName = "zoom",
-                fluidRow(
-                  box(title="File upload or select",status="primary",width = 12,solidHeader = T,collapsible = T,
-                      fluidRow(
-                        box(width = 6,uiOutput("file_source_ui1"))
-                      ))
-                ),
-                fluidRow(
-                  box(title="Filter parameters",status="primary",width = 12,solidHeader = T,collapsible = T,
-                      
-                      fluidRow(
-                        column(4, 
-                               p(HTML("<b>Chromosome</b>"),span(shiny::icon("info-circle"), id = "info_chr"),selectizeInput('chr', choice=NULL,label = NULL,options = list(maxItems = 1,placeholder="chr6")),
-                                 tippy::tippy_this(elementId = "info_chr",tooltip = "Selected chromosome",placement = "right")
-                               )),
-                        column(4,uiOutput("blt_dnSNV_ui"))
-                      ),
-                      fluidRow(
-                        column(4, 
-                               p(HTML("<b>Segment option</b>"),span(shiny::icon("info-circle"), id = "info_seg"),radioButtons('seg_option', 
-                                                                                                                              label = NULL,
-                                                                                                                              choiceNames = list("SLM","CBS"),
-                                                                                                                              choiceValues = list("slm","cbs")),
-                                 tippy::tippy_this(elementId = "info_seg",tooltip = "Select options for segment. 
-                                                               SLM is fast and tend to give more segment,can be used for high-quality data; 
-                                                               CBS is slow and give less segment, can be used for noisy data ",placement = "right")
-                               )),
-                        column(4, 
-                               p(HTML("<b>Choose segment to be included</b>"),span(shiny::icon("info-circle"), id = "info_include"),checkboxGroupInput(inputId="include_seg",
-                                                                                                                                                       label = NULL,
-                                                                                                                                                       c("index case"="Proband",
-                                                                                                                                                         "Mom"="Mother",
-                                                                                                                                                         "Dad"="Father"),selected = "Proband"),
-                                 tippy::tippy_this(elementId = "info_include",tooltip = "Choose to show segment from either or both parents",placement = "right")
-                               )),
-                        column(4, 
-                               p(HTML("<b>Annotation option</b>"),span(shiny::icon("info-circle"), id = "info_anno"),checkboxGroupInput(inputId="include_anno",
-                                                                                                                                        label = NULL,
-                                                                                                                                        c("GRCh38 v1.0 MANE refseq"="hg38_gene"),selected = "hg38_gene"),
-                                 tippy::tippy_this(elementId = "include_anno",tooltip = "Include MANE 1.0 transcripts
-                                                   in the annotation track",placement = "right")
-                               ))
-                      ),
-                      fluidRow(
-                        use_waiter(),
-                        uiOutput("btn_filter_plot")
-                      ))),
-                fluidRow(
-                  box(title = "Table",width = 12,solidHeader = T, status = "success",collapsible = T,
-                      DT::dataTableOutput("filter_sv_table"),
-                      fluidRow(
-                        column(1,uiOutput("ui_dlbtn_tbl"))
-                      ),
-                      DT::dataTableOutput("Select_table"))),
-                fluidRow(
-                  box(title ="Plot",width = 12,solidHeader = T, status = "success",collapsible = T,
-                      fluidRow(uiOutput("ui_plot_anno")),
-                      fluidRow(
-                        column(width = 4,uiOutput("ui_btn_goto")),
-                        column(width = 4,uiOutput("ui_btn_add")),
-                        column(width = 4,verbatimTextOutput("brush_info"))),
-                      fluidRow(
-                        plotOutput(
-                          "plot1",
-                          height = 400,
-                          dblclick = "plot1_dblclick",
-                          brush = brushOpts(id = "plot1_brush",direction = "x",
-                                            resetOnNew = TRUE))),
-                      fluidRow(uiOutput("ui_plot_snp")),
-                      fluidRow(
-                        column(1,uiOutput("ui_dlbtn_plt")),
-                        column(1,uiOutput("ui_clbtn_plt")),
-                        column(1,uiOutput("ui_dlbtn_dnsnv"))
-                      )
+                      id="vizcnv",
+                      title="VizCNV",
+                      tags$a(href="https://github.com/BCM-Lupskilab/VizCNV", "Code on Github"),
+                      tags$a(href="https://github.com/BCM-Lupskilab/VizCNV", "Examples")
+                    )
                   )),
-        ),
-        
-        #--------
-        #Tab5_hpo
-        #-------
-        tabItem(tabName = "pheno",
-                h1("Phenotype based priotization of SV")
-        )
-      )
+  
+  dashboardSidebar(
+    sidebarMenu(
+      menuItem(tabName = "input", text = "Input/Filtering", icon = icon("upload")),
+      menuItem(tabName = "plot", text = "Plots", icon = icon("search")),
+      menuItem(tabName = "table", text = "Tables", icon = icon("table")),
+      menuItem(tabName = "help", text = "Help", icon = icon("question-circle")),
+      menuItem(tabName = "about", text = "About", icon = icon("info-circle"))
+    )
+  ),
+  
+  dashboardBody(
+    tabItems(
+      tabItem(tabName = "input",
+              fluidRow(box(title=" ",status="primary",width = 12,solidHeader = T,collapsible = T,
+                           shinyWidgets::switchInput(inputId = "file_source",onLabel = "Local",offLabel = "Server", labelWidth = 20, handleWidth = 300),
+                           radioButtons(inputId = "ref",label = h3("Reference Genome Build"),choices = list("GRCh37"="GRCh37","GRCh38"="GRCh38"),inline = T,selected = "GRCh37")
+              ),
+              box(title="Step0: File import/upload",status="primary",width = 12,solidHeader = T,collapsible = T,
+                  fluidRow(
+                    box(width = 8,title ="Upload or import .bed files",solidHeader = T,uiOutput("file_source_ui1")),
+                    box(width = 4,title = " Help",icon = icon("question-circle"),status = "secondary",solidHeader = T,
+                        bs4Dash::accordion(id="help_panel",
+                                           bs4Dash::accordionItem(
+                                             title = "Sample read depth file (.bed or .bed.gz)",
+                                             collapsed = F,
+                                             "chr start end rd"
+                                           )),
+                        bs4Dash::accordion(id="help_panel2",
+                                           bs4Dash::accordionItem(
+                                             title = "How to make .bed files",
+                                             collapsed = F,
+                                             "A output from",
+                                             tags$a(href="https://github.com/brentp/mosdepth","mosedepth"), 
+                                             "can be used example of generate the read depth file for 1Kb window size would be:",
+                                             br(),
+                                             code("mosdepth -n --fast-mode --by 1000 sample.wgs $sample.wgs.bam")
+                                           )
+                        )
+                    ),
+                    
+                    box(width = 6,uiOutput("file_source_ui2"))
+                  )),
+              box(title="Filter parameters",status="primary",width = 12,solidHeader = T,collapsible = T,
+                  column(2, 
+                         p(HTML("<b>Chromosome</b>"),span(shiny::icon("info-circle"), id = "info_chr"),selectInput('chr', choice=c(paste0("chr", c(seq(1,22), "X"))),label = NULL, multiple = F),
+                           tippy::tippy_this(elementId = "info_chr",tooltip = "Selected chromosome",placement = "right")
+                         )),
+                  
+                  fluidRow(
+                    column(2,
+                           p(HTML("<b>Segment option</b>"),span(shiny::icon("info-circle"), id = "info_seg"),radioButtons('seg_option', 
+                                                                                                                          label = NULL,
+                                                                                                                          choiceNames = list("SLM","CBS"),
+                                                                                                                          choiceValues = list("slm","cbs")),
+                             tippy::tippy_this(elementId = "info_seg",tooltip = "Select options for segment. 
+                                                             SLM is fast and tend to give more segment,can be used for high-quality data; 
+                                                             CBS is slow and give less segment, can be used for noisy data ",placement = "right")
+                           )),
+                    column(3, 
+                           p(HTML("<b>Segments to be included</b>"),span(shiny::icon("info-circle"), id = "info_include"),checkboxGroupInput(inputId="include_seg",
+                                                                                                                                             label = NULL,
+                                                                                                                                             c("index case"="Proband",
+                                                                                                                                               "Mom"="Mother",
+                                                                                                                                               "Dad"="Father"),selected = "Proband"),
+                             tippy::tippy_this(elementId = "info_include",tooltip = "Choose to show segment from either or both parents",placement = "right")
+                           )),
+                  ),
+                  fluidRow(
+                    use_waiter(),
+                    column(1, actionButton("btn_filter", "Filter"))
+                  )
+              )
+              )
+      ),
+      tabItem(tabName = "plot",
+              shinyjs::useShinyjs(),
+              fluidRow(
+                box(title = "Customizations",width = 12,solidHeader = T, status = "success",collapsible = T,
+                    use_waiter(),
+                    column(4, 
+                           HTML("<b>Basic Plot Options: </b>"),
+                           mod_checkbox_UI("RD-static", value = F),
+                           mod_checkbox_UI("Read Depth Plot (dynamic)"),
+                           mod_checkbox_UI("Baf-B_allele"),
+                           mod_checkbox_UI("Baf-A_allele", value = F),
+                           uiOutput("blt_dnSNV_ui"),
+                           actionButton("btn_plot", "Plot")),
+                    column(6,
+                           HTML("<b>Annotation Track Options:</b>"),
+                           mod_checkbox_UI("IDR", value = F),
+                           mod_checkbox_UI("SegDup"),
+                           mod_checkbox_UI("OMIM"),
+                           mod_checkbox_UI("gnomAD"),
+                           mod_checkbox_UI("RMSK", value = F),
+                           actionButton("btn_anno", "Annotate"))
+                )
+              ),
+              fluidRow(box(title = "Plots",width = 12,solidHeader = T, status = "success",collapsible = T,
+                           fluidRow(
+                             column(width = 3,uiOutput("ui_btn_goto")),
+                             column(width = 3,uiOutput("ui_btn_add")),
+                             column(width = 6,verbatimTextOutput("brush_info"))),
+                           fluidRow(
+                             mod_plot_switch_UI("RD-static", height = 300),
+                             plotOutput(
+                               "plot1",
+                               height = 300,
+                               dblclick = "plot1_dblclick",
+                               brush = brushOpts(id = "plot1_brush",direction = "x",
+                                                 resetOnNew = TRUE)),
+                             mod_plot_switch_UI("Baf-B_allele", height = 300),
+                             mod_plot_switch_UI("Baf-A_allele", height = 300),
+                             # uiOutput("ui_plot_anno"),
+                             mod_plot_switch_UI("IDR"),
+                             mod_plot_switch_UI("Segdup"),
+                             mod_plot_switch_UI("OMIM"),
+                             mod_plot_switch_UI("gnomAD"),
+                             mod_plot_switch_UI("RMSK")
+                           ),
+                           fluidRow(column(1,uiOutput("ui_dlbtn_plt")),
+                                    column(1,uiOutput("ui_clbtn_plt")),
+                                    column(1,uiOutput("ui_dlbtn_dnsnv")))
+              )
+              )
+      ),
+      tabItem(tabName = "table",
+              fluidRow(box(title = "dnCNV Table",width = 12,solidHeader = T, status = "success",collapsible = T,
+                           actionButton("btn_dnCNV", "Get potential dnCNVs"),
+                           mod_dnCNV_UI("dnCNV")),
+                       box(title = "SV Table",width = 12,solidHeader = T, status = "success",collapsible = T,
+                           DT::dataTableOutput("filter_sv_table"),
+                           fluidRow(
+                             column(1,uiOutput("ui_dlbtn_tbl"))
+                           ),
+                           DT::dataTableOutput("Select_table")),
+                       box(title = "Annotation Table",width = 12,solidHeader = T, status = "success",collapsible = T,
+                           tabsetPanel(
+                             tabPanel("IDR",anno_table_UI("IDR")),
+                             tabPanel("SegDup",anno_table_UI("SegDup")),
+                             tabPanel("OMIM",anno_table_UI("OMIM")),
+                             tabPanel("gnomAD",anno_table_UI("gnomAD")),
+                             tabPanel("rmsk",anno_table_UI("rmsk"))
+                           )
+                       )
+              )
+      ),
+      tabItem(tabName = "help",
+              "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum"),
+      tabItem(tabName = "about",
+              "Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt. Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore et dolore magnam aliquam quaerat voluptatem. Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam, nisi ut aliquid ex ea commodi consequatur? Quis autem vel eum iure reprehenderit qui in ea voluptate velit esse quam nihil molestiae consequatur, vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?")
     )
   )
+  
 )
-
-
-
-
-#shiny::shinyApp(ui, server)
-
-
-
-
 
