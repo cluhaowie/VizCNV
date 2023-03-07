@@ -14,7 +14,7 @@
 #' get_dnCNV(pr, mo, fa)
 #'
 #' @export
-get_dnCNV = function(pr, mo, fa, size_threshold = 50000){
+get_dnCNV = function(pr, mo, fa, size_threshold = 10000){
   
   # Essentially bedtools subtract
   tmp = unlist(subtract(pr, mo))
@@ -115,6 +115,7 @@ mod_dnCNV_Server <- function(id, pr_seg, mo_seg, fa_seg) {
         get_dnCNV_all(pr_seg, mo_seg, fa_seg) 
       })
       output$table <- renderDataTable(table())
+      return(table() %>% as.data.frame())
     }
   )
 }

@@ -49,6 +49,7 @@ rm(list = ls())
 devtools::install_github("dzhang32/ggtranscript")
 
 # Loading ----
+library(plyranges)
 library(stringr)
 library(dplyr)
 library(data.table)

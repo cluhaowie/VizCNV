@@ -556,6 +556,7 @@ server <- function(input, output,session) {
   
   ## Plots section
   ranges <- reactiveValues(x = NULL, y = NULL)
+  dnCNV_table <- reactiveValues(t = data.frame(start = c(0), end = c(0), stringsAsFactors = F))
   
   ## RD plots
   observeEvent(input$btn_plot,{
@@ -581,16 +582,12 @@ server <- function(input, output,session) {
       style_rd+
       scale_x_continuous(labels = scales::label_number())
     
-    test <-  data.frame(start = c(10000000, 20000000, 174572490), end = c(15000000, 25000000, 177304796))
-    # print(test)
-    # print(test$start)
-    # print(test$end)
+ 
     btnValrds <- mod_checkbox_Server("RD-static")
-    ranges <- mod_plot_switch_Server("RD-static", btnValrds$box_state, rd, ranges, zoom= F, show_dnCNV = test)
-    print("static")
+    ranges <- mod_plot_switch_Server("RD-static", btnValrds$box_state, rd, ranges, dnCNV_table, zoom= F)
     btnValrdd <- mod_checkbox_Server("RD-dynamic")
-    ranges <- mod_plot_switch_Server("RD-dynamic", btnValrdd$box_state, rd, ranges)
-    print("dynamic")
+    ranges <- mod_plot_switch_Server("RD-dynamic", btnValrdd$box_state, rd, ranges, dnCNV_table)
+
   })
   
   
@@ -780,12 +777,12 @@ server <- function(input, output,session) {
     btnVal4 <- mod_checkbox_Server("OMIM")
     btnVal5 <- mod_checkbox_Server("gnomAD")
     btnVal6 <- mod_checkbox_Server("RMSK")
-    ranges <- mod_plot_switch_Server("RefSeq", btnVal1$box_state, p1, ranges)
-    ranges <- mod_plot_switch_Server("IDR", btnVal2$box_state, p2, ranges)
-    ranges <- mod_plot_switch_Server("Segdup", btnVal3$box_state, p3, ranges)
-    ranges <- mod_plot_switch_Server("OMIM", btnVal4$box_state, p4, ranges)
-    ranges <- mod_plot_switch_Server("gnomAD", btnVal5$box_state, p5, ranges)
-    ranges <- mod_plot_switch_Server("RMSK", btnVal6$box_state, p6, ranges)
+    ranges <- mod_plot_switch_Server("RefSeq", btnVal1$box_state, p1, ranges, dnCNV_table)
+    ranges <- mod_plot_switch_Server("IDR", btnVal2$box_state, p2, ranges, dnCNV_table)
+    ranges <- mod_plot_switch_Server("Segdup", btnVal3$box_state, p3, ranges, dnCNV_table)
+    ranges <- mod_plot_switch_Server("OMIM", btnVal4$box_state, p4, ranges, dnCNV_table)
+    ranges <- mod_plot_switch_Server("gnomAD", btnVal5$box_state, p5, ranges, dnCNV_table)
+    ranges <- mod_plot_switch_Server("RMSK", btnVal6$box_state, p6, ranges, dnCNV_table)
   
     removeNotification(id)
     anno_table_Server("RefSeq", RefSeq, ranges, chrn)
@@ -802,7 +799,9 @@ server <- function(input, output,session) {
     req(nrow(values$pr_rd)!=0)
     req(nrow(values$m_rd)!=0)
     req(nrow(values$f_rd)!=0)
-    mod_dnCNV_Server("dnCNV",plots$pr_seg, plots$m_seg, plots$f_seg)
+    dnCNV_table$t <- mod_dnCNV_Server("dnCNV",plots$pr_seg, plots$m_seg, plots$f_seg)
+    print("btn gen")
+    print(dnCNV_table$t)
   })
   
 
