@@ -57,6 +57,8 @@ library(dplyr)
 library(data.table)
 library(shiny)
 library(shinydashboard)
+library(shinydashboardPlus)
+library(bs4Dash) ## support bootstrap 4
 library(shinyFiles)
 library(shinyWidgets)
 library(waiter)
