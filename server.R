@@ -112,18 +112,6 @@ server <- function(input, output,session) {
           checkboxGroupInput(inputId="include_dnSNV",label = NULL,c("Show"="TRUE"))))
     }
   })
-  output$ui_plot_anno <- shiny::renderUI({
-    if(is.null(input$include_anno)){
-      helpText("")
-    } else {
-      plotOutput(
-        "plot_anno",
-        height = 200,
-        dblclick = "plot_anno_dblclick",
-        brush = brushOpts(id = "plot_anno_brush",direction = "x",
-                          resetOnNew = TRUE))
-    }
-  })
 
   
   # observe file uploaded and save in SQLdatabase---------
@@ -469,10 +457,75 @@ server <- function(input, output,session) {
     }
   )
   
-  
-  ## Plots section
+  ### "Global" reactive values
   ranges <- reactiveValues(x = NULL, y = NULL)
   dnCNV_table <- reactiveValues(t = data.frame(start = c(0), end = c(0), stringsAsFactors = F))
+  
+  ## WG Plot section
+  observeEvent(input$btn_wg_rd, {
+    req(!is.null(values$pr_rd))
+    
+    showNotification("Plotting WG Read depth plot", duration = 13, type = "message")
+    wg_pr_rd <- values$pr_rd
+    names(wg_pr_rd) <- c("chr", "start", "end", "coverage")
+    wg_pr_rd <- wg_pr_rd %>% 
+      group_by(chr) %>% 
+      mutate(ratio=(coverage/median(coverage+0.00001)))
+    wg_pr_seg <- getAllSeg(wg_pr_rd)
+    
+    wg_pr_seg <- wg_pr_seg %>% 
+      mutate(seg.mean=ifelse(seg.mean < -2.5,-2,seg.mean))
+    
+    temp <- wg_pr_seg %>% 
+      group_by(chr) %>% 
+      summarise(max_end = max(loc.end)) %>% 
+      mutate(across("chr", str_replace, "chr", "")) %>% 
+      arrange(as.numeric(chr)) %>% 
+      mutate(loc_add = (cumsum(as.numeric(max_end)))) %>% 
+      mutate(chr = paste0("chr", chr))
+    
+    wg_pr_seg <- wg_pr_seg %>% 
+      inner_join(temp, by = "chr") %>% 
+      mutate(end_cum = loc_add + loc.end) 
+    
+    wg_pr_seg <- wg_pr_seg %>% 
+      mutate(start_cum = end_cum- num.mark*1000)
+    
+    axis_set <- wg_pr_seg %>% 
+      group_by(chr) %>% 
+      summarize(center = mean(end_cum)) %>% 
+      arrange(as.numeric(chr))
+    
+    label_seg <- wg_pr_seg %>% 
+      filter(num.mark > 100) %>% 
+      filter(seg.mean > 0.4 | dplyr::between(seg.mean,-1.5, -0.3))
+    wg1 <- wg_pr_seg %>% 
+      ggplot(aes(x = end_cum, y = seg.mean, color = chr))+
+      geom_segment(aes(x = start_cum, y = seg.mean, xend = end_cum, yend = seg.mean+0.001))+
+      # geom_point(shape = ".")+
+      geom_point(data = label_seg, shape= 8, color = "red")+
+      scale_x_continuous(label = axis_set$chr, breaks = axis_set$center)+
+      theme_minimal() +
+      theme( 
+        legend.position = "none",
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        axis.text.x = element_text(angle = 60, size = 8, vjust = 0.5)
+      )+
+      scale_rd+
+      scale_size_continuous(range = c(0.5,3))+
+      labs(x = NULL)+
+      coord_cartesian(expand = F)
+    mod_plot_output_Server("wg_pr_rd", wg1, ranges, dnCNV_table)
+    output$wg_rd_table <- renderDataTable({
+      label_seg
+    })
+  })
+  
+  
+  ## Chr plot section
+  ## Plots section
+  
   
   ## RD plots
   observeEvent(input$btn_plot,{
@@ -505,7 +558,6 @@ server <- function(input, output,session) {
     ranges <- mod_plot_switch_Server("RD-dynamic", btnValrdd$box_state, rd, ranges, dnCNV_table)
 
   })
-  
   
   #Baf-B plot
   observeEvent(input$btn_plot,{
@@ -737,7 +789,6 @@ server <- function(input, output,session) {
     anno_table_Server("rmsk", rmsk, ranges, chrn)
   })
   
-  
   ## dnCNV table
   observeEvent(input$btn_dnCNV, {
     req(nrow(values$pr_rd)!=0)
@@ -747,7 +798,6 @@ server <- function(input, output,session) {
     print("btn gen")
     print(dnCNV_table$t)
   })
-  
 
   ## Show current ranges
   observe({
@@ -756,7 +806,6 @@ server <- function(input, output,session) {
       paste0("current range: ", round(ranges$x[1]), "-", round(ranges$x[2]), "    width: ", round(ranges$x[2])-round(ranges$x[1])+1)
       })
     })
-  
   
   ## btn_goto
   observeEvent(input$btn_go,{

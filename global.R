@@ -252,6 +252,36 @@ ReadGVCF <- function(path_to_gVCF,ref_genome=ref_genome,param = param){
   return(vcf.gr)
 }
 
+##for wg plots
+getSeg = function(df, idx){
+  df = df %>% 
+    filter(chr == idx)
+  slm = SLMSeg::SLM(
+    log2(df$ratio + 0.00001),
+    omega = 0.3,
+    FW = 0,
+    eta = 0.00001
+  )
+  res <- rle(slm[1, ])
+  idx <- sapply(seq_along(res$lengths),function(i){
+    if(i==1){return(1)}
+    start.idx=1+sum(res$lengths[1:(i-1)])
+    return(start.idx)
+  })
+  chr=df$chr[idx]
+  start=df$start[idx]
+  end=c(df$start[c(idx[-1],end(df$start)[1])])
+  res.dt <- data.table(chr=chr,loc.start=start,loc.end=end,num.mark=res$lengths,seg.mean=res$values)
+  return (res.dt)  
+}
+getAllSeg = function(df){
+  out = list()
+  for (c in paste0("chr", c(1:22,"X"))){
+    tmp = getSeg(df,c)
+    out = rbind(out, tmp)  
+  }
+  return(out)
+}
 
 ## plot parameter
 
@@ -292,7 +322,8 @@ style_snp <- theme_classic()+
 
 scale_rd <- scale_y_continuous(name="Log2 Ratio",
                                limits=c(-2.5, 2),
-                               breaks = c(round(log2(1/2),2),
+                               breaks = c(-2,
+                                          round(log2(1/2),2),
                                           round(log2(2/2),2),
                                           round(log2(3/2),2),
                                           round(log2(4/2),2),
@@ -310,15 +341,6 @@ scale_snp <- scale_y_continuous(name="B-allele frequency",
                                            round(2/5,2),
                                            round(3/5,2),
                                            1))
-SNPCOLOR2 <- c("#E69F00","#39918C")
-CNVCOLOR6 <- c("#00468b","#00468b","#8b0000","#8b0000","#008b46","#008b46")
-names(CNVCOLOR6) <- c("<TRP>","TRP","<DUP>","DUP","<DEL>","DEL")
-scale_SVType <- scale_fill_manual(CNVCOLOR6)
-chrom_id <- c(1:22,"X")
-names(chrom_id) <- paste0("chr",chrom_id)
-
-
-dir_create("~/Downloads/VizCNV")
 
 
 style_anno <- theme_classic()+
@@ -333,9 +355,8 @@ style_anno <- theme_classic()+
 scale_anno <- scale_y_continuous(limits = c(-0.01,.11))
 
 
-style_genes <- style_rd+
-  theme(panel.grid.major.y = element_blank(),
-        axis.title.x = element_blank(),
-        axis.ticks.y = element_blank(),
-        axis.text.y = element_text(color = "white"))
-scale_genes <- scale_y_continuous(labels = scales::label_number(accuracy = 0.01))
+SNPCOLOR2 <- c("#E69F00","#39918C")
+chrom_id <- c(1:22,"X")
+names(chrom_id) <- paste0("chr",chrom_id)
+
+dir_create("~/Downloads/VizCNV")

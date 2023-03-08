@@ -10,7 +10,8 @@ ui <- dashboardPage(
   dashboardSidebar(
     sidebarMenu(
       menuItem(tabName = "input", text = "Input/Filtering", icon = icon("upload")),
-      menuItem(tabName = "plot", text = "Plots", icon = icon("search")),
+      menuItem(tabName = "wg_plot", text = "WG Plots", icon = icon("chart-column")),
+      menuItem(tabName = "chr_plot", text = "Chromosomal Plots", icon = icon("search")),
       menuItem(tabName = "table", text = "Tables", icon = icon("table")),
       menuItem(tabName = "help", text = "Help", icon = icon("question-circle")),
       menuItem(tabName = "about", text = "About", icon = icon("info-circle"))
@@ -61,7 +62,15 @@ ui <- dashboardPage(
             )
           )
         ),
-        tabItem(tabName = "plot",
+        tabItem(tabName = "wg_plot",
+                fluidRow(
+                  box(title = "WG Plots",width = 12,solidHeader = T, status = "success",collapsible = T,
+                      actionButton("btn_wg_rd", "Show whole genome read depth"),
+                      mod_plot_output_UI("wg_pr_rd", height = 400),
+                      tableOutput("wg_rd_table"))
+                  )
+                ),
+        tabItem(tabName = "chr_plot",
                 shinyjs::useShinyjs(),
                 fluidRow(
                   box(title = "Customizations",width = 12,solidHeader = T, status = "success",collapsible = T,
@@ -76,7 +85,7 @@ ui <- dashboardPage(
                            actionButton("btn_plot", "Plot")),
                     column(6,
                            HTML("<b>Annotation Track Options:</b>"),
-                           mod_checkbox_UI("pr_sv"),
+                           mod_checkbox_UI("pr_sv", value = F),
                            mod_checkbox_UI("RefSeq"),
                            mod_checkbox_UI("IDR", value = F),
                            mod_checkbox_UI("SegDup"),

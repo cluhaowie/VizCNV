@@ -33,13 +33,15 @@ mod_plot_output_UI <- function(id, height = 100) {
 #'
 #' @param p a ggplot object
 #' @param ranges, a reactive object to store current plot brush values
+#' @param dnCNV_table, a reactive table to highlight potential dnCNV
 #' @param zoom, a boolean to switch from static to dynamic plot output (default = T) If False, the plot will not zoom in when doubleclicked brush area.
+#' 
 #' 
 #'
 #' @return reactive ranges for other plots
 #'
 #' @examples
-#' mod_plot_output_server("plot", p, ranges, zoom = F)
+#' mod_plot_output_Server("plot", p, ranges, dnCNV_table, zoom = F)
 #'
 #' @export
 mod_plot_output_Server <- function(id, p, ranges, dnCNV_table, zoom = T){
