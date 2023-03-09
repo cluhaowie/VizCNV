@@ -105,7 +105,7 @@ ui <- dashboardPage(
                   fluidRow(box(title = "Plots",width = 12,solidHeader = T, status = "success",collapsible = T,
                      fluidRow(column(4,shiny::textInput("goto_reg",label = NULL,placeholder = "gene, chromosome range")),
                               column(2,shiny::actionButton("btn_go","go")),
-                              verbatimTextOutput("cur_range")
+                              column(6,verbatimTextOutput("cur_range"))
                      
                     ),
                     mod_plot_switch_UI("RD-static", height = 200),

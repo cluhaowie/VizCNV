@@ -543,7 +543,6 @@ server <- function(input, output,session) {
       dplyr::filter(seqname == chrn) %>%
       dplyr::mutate(gene_num=round(as.numeric(as.factor(gene_id)),3)/100,
              strand=as.factor(strand)) 
-    print(head(RefSeq))
     gene_x <- RefSeq%>%
         dplyr::group_by(gene_num)%>%
         dplyr::summarise(start=(min(start)+max(end))/2,
