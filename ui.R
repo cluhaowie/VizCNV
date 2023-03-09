@@ -29,37 +29,7 @@ ui <- dashboardPage(
               fluidRow(
                 box(width = 6,uiOutput("file_source_ui1")),
                 box(width = 6,uiOutput("file_source_ui2"))
-              )),
-          box(title="Filter parameters",status="primary",width = 12,solidHeader = T,collapsible = T,
-                column(2, 
-                       p(HTML("<b>Chromosome</b>"),span(shiny::icon("info-circle"), id = "info_chr"),selectInput('chr', choice=c(paste0("chr", c(seq(1,22), "X"))),label = NULL, multiple = F),
-                         tippy::tippy_this(elementId = "info_chr",tooltip = "Selected chromosome",placement = "right")
-                       )),
-
-              fluidRow(
-                column(2,
-                       p(HTML("<b>Segment option</b>"),span(shiny::icon("info-circle"), id = "info_seg"),radioButtons('seg_option', 
-                                                                                                                      label = NULL,
-                                                                                                                      choiceNames = list("SLM","CBS"),
-                                                                                                                      choiceValues = list("slm","cbs")),
-                         tippy::tippy_this(elementId = "info_seg",tooltip = "Select options for segment. 
-                                                             SLM is fast and tend to give more segment,can be used for high-quality data; 
-                                                             CBS is slow and give less segment, can be used for noisy data ",placement = "right")
-                       )),
-                column(3, 
-                       p(HTML("<b>Segments to be included</b>"),span(shiny::icon("info-circle"), id = "info_include"),checkboxGroupInput(inputId="include_seg",
-                                                                                                                                               label = NULL,
-                                                                                                                                               c("index case"="Proband",
-                                                                                                                                                 "Mom"="Mother",
-                                                                                                                                                 "Dad"="Father"),selected = "Proband"),
-                         tippy::tippy_this(elementId = "info_include",tooltip = "Choose to show segment from either or both parents",placement = "right")
-                       )),
-              ),
-              fluidRow(
-                use_waiter(),
-                column(1, actionButton("btn_filter", "Filter"))
-              )
-            )
+              ))
           )
         ),
         tabItem(tabName = "wg_plot",
@@ -72,6 +42,42 @@ ui <- dashboardPage(
                 ),
         tabItem(tabName = "chr_plot",
                 shinyjs::useShinyjs(),
+                fluidRow(box(title="Filter parameters", status = "success", width = 12,solidHeader = T,collapsible = T,
+                    column(2, 
+                           p(HTML("<b>Chromosome</b>"),span(shiny::icon("info-circle"), id = "info_chr"),selectInput('chr', choice=c(paste0("chr", c(seq(1,22), "X"))),label = NULL, multiple = F),
+                             tippy::tippy_this(elementId = "info_chr",tooltip = "Selected chromosome",placement = "right")
+                           )),
+                    
+                    fluidRow(
+                      column(2,
+                             p(HTML("<b>Segment option</b>"),span(shiny::icon("info-circle"), id = "info_seg"),radioButtons('seg_option', 
+                                                                                                                            label = NULL,
+                                                                                                                            choiceNames = list("SLM","CBS"),
+                                                                                                                            choiceValues = list("slm","cbs")),
+                               tippy::tippy_this(elementId = "info_seg",tooltip = "Select options for segment. 
+                                                             SLM is fast and tend to give more segment,can be used for high-quality data; 
+                                                             CBS is slow and give less segment, can be used for noisy data ",placement = "right")
+                             )),
+                      column(3, 
+                             p(HTML("<b>Segments to be included</b>"),span(shiny::icon("info-circle"), id = "info_include"),checkboxGroupInput(inputId="include_seg",
+                                                                                                                                               label = NULL,
+                                                                                                                                               c("index case"="Proband",
+                                                                                                                                                 "Mom"="Mother",
+                                                                                                                                                 "Dad"="Father"),selected = "Proband"),
+                               tippy::tippy_this(elementId = "info_include",tooltip = "Choose to show segment from either or both parents",placement = "right")
+                             )),
+                      column(3, 
+                             radioButtons("norm_options",
+                                          label = "Normalization options", 
+                                          choiceNames = list("chromosomal median", "whole genome median"),
+                                          choiceValues = list("chr_med", "wg_med")))
+                    ),
+                    fluidRow(
+                      use_waiter(),
+                      column(1, actionButton("btn_filter", "Filter"))
+                    )
+                  )
+                ),
                 fluidRow(
                   box(title = "Customizations",width = 12,solidHeader = T, status = "success",collapsible = T,
                     use_waiter(),
@@ -96,15 +102,12 @@ ui <- dashboardPage(
                     actionButton("btn_dnCNV", "Show potential dnCNVs")
                     )
                   ),
-                  fluidRow(box(title = "Controls",width = 12,solidHeader = T, status = "success",collapsible = T,
-
-                             column(4,shiny::textInput("goto_reg",label = NULL,placeholder = "gene, chromosome range")),
-                             column(2,shiny::actionButton("btn_go","go")),
-                             verbatimTextOutput("cur_range")
-                          
-                        )
-                      ),
                   fluidRow(box(title = "Plots",width = 12,solidHeader = T, status = "success",collapsible = T,
+                     fluidRow(column(4,shiny::textInput("goto_reg",label = NULL,placeholder = "gene, chromosome range")),
+                              column(2,shiny::actionButton("btn_go","go")),
+                              verbatimTextOutput("cur_range")
+                     
+                    ),
                     mod_plot_switch_UI("RD-static", height = 200),
                     mod_plot_switch_UI("RD-dynamic", height = 200),
                     mod_plot_switch_UI("Baf-B_allele", height = 200),

@@ -664,7 +664,7 @@ server <- function(input, output,session) {
       dplyr::rename("chrom" = V1, "start" = V2, "end" = V3, "name" = V4, "score" = V5, "strand" = V6) %>%
       dplyr::filter(chrom == chrn)
     IDR <- IDR %>%
-      mutate(idx = sample(1:10, size = dim(IDR)[1], replace = T)/1000)
+      mutate(idx = sample(1:1, size = dim(IDR)[1], replace = T)/1000)
     IDR_pos <- IDR %>%
       filter(strand == "+")
     IDR_neg <- IDR %>%

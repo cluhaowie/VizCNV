@@ -353,7 +353,10 @@ style_anno <- theme_classic()+
   )
 
 scale_anno <- scale_y_continuous(limits = c(-0.01,.11))
-
+style_genes <- style_rd+
+  theme(panel.grid.major.y = element_blank(),
+        axis.title.x = element_blank())
+scale_genes <- scale_y_continuous(labels = scales::label_number(accuracy = 0.01))
 
 SNPCOLOR2 <- c("#E69F00","#39918C")
 chrom_id <- c(1:22,"X")
