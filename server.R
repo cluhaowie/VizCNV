@@ -297,33 +297,26 @@ server <- function(input, output,session) {
   
   observeEvent(input$btn_filter,{
     seg_option <- input$seg_option
+    norm_option <- input$norm_options
     chr <- input$chr
     if(nrow(values$pr_rd)==0){return(NULL)
     }else{
       w$show()
-      plots$pr_rd <- values$pr_rd%>%
-        filter(V1==chr)%>%
-        mutate(ratio=V4/median(V4+0.00001))
+      plots$pr_rd <- normalization_method(values$pr_rd, chr, norm_option)
       plots$pr_seg <- SegNormRD(plots$pr_rd,id="Proband",seg.method = seg_option)
-      # print(class(plots$pr_seg))
-      # print(head(plots$pr_seg))
       w$hide()
     }
     if(nrow(values$m_rd)==0){return(NULL)
     }else{
       w$show()
-      plots$m_rd <- values$m_rd%>%
-        filter(V1==chr)%>%
-        mutate(ratio=V4/median(V4+0.00001))
+      plots$m_rd <- normalization_method(values$m_rd, chr, norm_option)
       plots$m_seg <- SegNormRD(plots$m_rd,id="Mother",seg.method = seg_option)
       w$hide()
     }
     if(nrow(values$f_rd)==0){return(NULL)
     }else{
       w$show()
-      plots$f_rd <- values$f_rd%>%
-        filter(V1==chr)%>%
-        mutate(ratio=V4/median(V4+0.00001))
+      plots$f_rd <- normalization_method(values$f_rd, chr, norm_option)
       plots$f_seg <- SegNormRD(plots$f_rd,id="Father",seg.method = seg_option)
       w$hide()
     }
@@ -445,8 +438,8 @@ server <- function(input, output,session) {
   )
   
   ### "Global" reactive values
-  ranges <- reactiveValues(x = NULL, y = NULL)
-  dnCNV_table <- reactiveValues(t = data.frame(start = c(0), end = c(0), stringsAsFactors = F))
+  wg_ranges <- reactiveValues(x = NULL, y = NULL)
+  wg_dnCNV_table <- reactiveValues(t = data.frame(start = c(0), end = c(0), stringsAsFactors = F))
   
   ## WG Plot section
   observeEvent(input$btn_wg_rd, {
@@ -504,7 +497,7 @@ server <- function(input, output,session) {
       labs(x = NULL)+
       coord_cartesian(expand = F)
     w$hide()
-    mod_plot_output_Server("wg_pr_rd", wg1, ranges, dnCNV_table)
+    mod_plot_output_Server("wg_pr_rd", wg1, wg_ranges, wg_dnCNV_table)
     output$wg_rd_table <- renderTable({
       label_seg 
     })
@@ -513,7 +506,8 @@ server <- function(input, output,session) {
   
   ## Chr plot section
   ## Plots section
-  
+  ranges <- reactiveValues(x = NULL, y = NULL)
+  dnCNV_table <- reactiveValues(t = data.frame(start = c(0), end = c(0), stringsAsFactors = F))
   
   ## RD plots
   observeEvent(input$btn_plot,{

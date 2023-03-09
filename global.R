@@ -190,6 +190,20 @@ SegNormRD <- function(df, id, seg.method = "cbs") {
   }
   
 }
+
+normalization_method <- function(df, chr, norm_option = "chr_med"){
+  if (norm_option == "chr_med"){
+    tmp <- df%>%
+      filter(V1 == chr)%>%
+      mutate(ratio=V4/median(V4+0.00001))
+  } else if (norm_option == "wg_med"){
+    tmp <- df%>%
+      mutate(ratio=V4/median(V4+0.00001)) %>% 
+      filter(V1 == chr)
+  }
+  return(tmp)
+}
+
 #ref_genome="GRCh38"
 
 #hg38.info <- seqinfo(BSgenome.Hsapiens.UCSC.hg38::Hsapiens)%>%as.data.frame()
