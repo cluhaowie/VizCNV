@@ -297,8 +297,7 @@ getAllSeg = function(df){
   return(out)
 }
 
-## plot parameter
-
+## plot parameters
 
 style_rd <- theme_classic()+
   theme(

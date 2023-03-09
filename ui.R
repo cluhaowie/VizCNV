@@ -1,5 +1,3 @@
-
-
 source("./mod/mod_plot_output.R")
 source("./mod/mod_dnCNV.R")
 
@@ -74,12 +72,14 @@ ui <- dashboardPage(
                     ),
                     fluidRow(
                       use_waiter(),
-                      column(1, actionButton("btn_filter", "Filter"))
+                      column(1, actionButton("btn_filter", "Filter")),
+                      column(1, actionButton("btn_plot", "Plot")),
+                      column(1, actionButton("btn_anno", "Annotate"))
                     )
                   )
                 ),
                 fluidRow(
-                  box(title = "Customizations",width = 12,solidHeader = T, status = "success",collapsible = T,
+                  box(title = "Customizations",width = 12,solidHeader = T, status = "success",collapsible = T, collapsed = T,
                     use_waiter(),
                     column(4, 
                            HTML("<b>Basic Plot Options: </b>"),
@@ -87,8 +87,8 @@ ui <- dashboardPage(
                            mod_checkbox_UI("RD-dynamic"),
                            mod_checkbox_UI("Baf-B_allele"),
                            mod_checkbox_UI("Baf-A_allele", value = F),
-                           uiOutput("blt_dnSNV_ui"),
-                           actionButton("btn_plot", "Plot")),
+                           uiOutput("blt_dnSNV_ui")
+                           ),
                     column(6,
                            HTML("<b>Annotation Track Options:</b>"),
                            mod_checkbox_UI("pr_sv", value = F),
@@ -97,8 +97,8 @@ ui <- dashboardPage(
                            mod_checkbox_UI("SegDup"),
                            mod_checkbox_UI("OMIM"),
                            mod_checkbox_UI("gnomAD"),
-                           mod_checkbox_UI("RMSK", value = F),
-                           actionButton("btn_anno", "Annotate")),
+                           mod_checkbox_UI("RMSK", value = F)
+                           ),
                     actionButton("btn_dnCNV", "Show potential dnCNVs")
                     )
                   ),
@@ -128,12 +128,6 @@ ui <- dashboardPage(
         tabItem(tabName = "table",
                 fluidRow(box(title = "dnCNV Table",width = 12,solidHeader = T, status = "success",collapsible = T,
                              mod_dnCNV_UI("dnCNV")),
-                box(title = "SV Table",width = 12,solidHeader = T, status = "success",collapsible = T,
-                      DT::dataTableOutput("filter_sv_table"),
-                      fluidRow(
-                        column(1,uiOutput("ui_dlbtn_tbl"))
-                      ),
-                      DT::dataTableOutput("Select_table")),
                 box(title = "Annotation Table",width = 12,solidHeader = T, status = "success",collapsible = T,
                 tabsetPanel(
                   tabPanel("pr_sv",anno_table_UI("pr_sv")),

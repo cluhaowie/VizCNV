@@ -56,10 +56,17 @@ mod_plot_output_Server <- function(id, p, ranges, dnCNV_table, zoom = T){
         })
       } else {
           output$plot <- renderPlot({
+            if (is.null(ranges$x)){
+              from <- 0
+              to <- 0
+              } else {
+              from <- ranges$x[1]
+              to <- ranges$x[2]
+              }
             p +
               coord_cartesian(expand = F)+
-              annotate("rect", fill = "orange", alpha =0.3, xmin = dnCNV_table$t$start, xmax = dnCNV_table$t$end, ymin = -Inf, ymax = Inf)
-              # annotate("rect", fill = "blue", alpha =0.3, xmin = ranges$x[1], xmax = ranges$x[2], ymin = -Inf, ymax = Inf)
+              annotate("rect", fill = "orange", alpha =0.3, xmin = dnCNV_table$t$start, xmax = dnCNV_table$t$end, ymin = -Inf, ymax = Inf)+
+              annotate("rect", fill = "blue", alpha =0.3, xmin = from, xmax = to, ymin = -Inf, ymax = Inf)
           })
         }
       
