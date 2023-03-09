@@ -12,13 +12,13 @@ server <- function(input, output,session) {
   values$m_rd <- data.frame(stringsAsFactors = F)
   values$f_rd <- data.frame(stringsAsFactors = F)
   values$snp_gvcf_file <- data.frame(stringsAsFactors = F)
+  values$snp_gvcf_file_ref <- vector()
   values$local_file_paths <- data.frame(file=c("CNV call file",
                                                "Proband read depth file",
                                                "Mom's read depth file",
                                                "Dad's read depth file",
                                                "Joint SNP vcf file"),datapath=rep("None",5),stringsAsFactors = F)
   values$selected_record <- data.frame(stringsAsFactors = F)
-  values$snp_gvcf_file_ref <- vector()
   values$ref_info <- data.frame(stringsAsFactors = F)
   values$anno_rect <- data.frame(stringsAsFactors = F)
   
@@ -364,20 +364,7 @@ server <- function(input, output,session) {
 
 
   
-  ## annotation panel
-  # interactive plot regions-------
-  output$brush_info <- renderPrint({
-    brush <- input$plot1_brush
-    chr <- input$chr
-    if(!is.null(brush)){
-      cat(paste0("select region: ",chr,":",
-                 format(round(brush$xmin,0),big.mark=",",scientific = FALSE),
-                 "-",
-                 format(round(brush$xmax,0),big.mark=",",scientific = FALSE),
-                 ", ",round(brush$xmax-brush$xmin,0),"bp"))
-    }
-  })
-  
+
 
   observeEvent(input$btl_add,{
     brush <- input$plot1_brush
@@ -465,7 +452,7 @@ server <- function(input, output,session) {
   observeEvent(input$btn_wg_rd, {
     req(!is.null(values$pr_rd))
     
-    showNotification("Plotting WG Read depth plot", duration = 13, type = "message")
+    w$show()
     wg_pr_rd <- values$pr_rd
     names(wg_pr_rd) <- c("chr", "start", "end", "coverage")
     wg_pr_rd <- wg_pr_rd %>% 
@@ -481,7 +468,7 @@ server <- function(input, output,session) {
       summarise(max_end = max(loc.end)) %>% 
       mutate(across("chr", str_replace, "chr", "")) %>% 
       arrange(as.numeric(chr)) %>% 
-      mutate(loc_add = (cumsum(as.numeric(max_end)))) %>% 
+      mutate(loc_add = lag(cumsum(as.numeric(max_end)), default = 0)) %>% 
       mutate(chr = paste0("chr", chr))
     
     wg_pr_seg <- wg_pr_seg %>% 
@@ -516,9 +503,10 @@ server <- function(input, output,session) {
       scale_size_continuous(range = c(0.5,3))+
       labs(x = NULL)+
       coord_cartesian(expand = F)
+    w$hide()
     mod_plot_output_Server("wg_pr_rd", wg1, ranges, dnCNV_table)
-    output$wg_rd_table <- renderDataTable({
-      label_seg
+    output$wg_rd_table <- renderTable({
+      label_seg 
     })
   })
   
