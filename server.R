@@ -689,7 +689,7 @@ server <- function(input, output,session) {
   observe({
     output$cur_range <- renderText({
       req(!is.null(ranges$x))
-      paste0("current range: ", round(ranges$x[1]), "-", round(ranges$x[2]), "    width: ", round(ranges$x[2])-round(ranges$x[1])+1)
+      paste0("range: ", round(ranges$x[1]), "-", round(ranges$x[2]), "    width: ", round(ranges$x[2])-round(ranges$x[1])+1)
       })
     })
   
@@ -697,7 +697,7 @@ server <- function(input, output,session) {
   observe({
     output$cur_loc <- renderText({
       if(is.null(ranges$c)){ranges$c <- 0}
-      paste0("current location: ", round(ranges$c))
+      paste0("location: ", round(ranges$c))
     })
   })
   
