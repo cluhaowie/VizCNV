@@ -105,6 +105,7 @@ ui <- dashboardPage(
                   fluidRow(box(title = "Plots",width = 12,solidHeader = T, status = "success",collapsible = T,
                      fluidRow(column(4,shiny::textInput("goto_reg",label = NULL,placeholder = "gene symbol, chromosome location/range")),
                               column(2,shiny::actionButton("btn_go","go")),
+                              # column(2,verbatimTextOutput("cur_click")),
                               column(2,verbatimTextOutput("cur_loc")),
                               column(4,verbatimTextOutput("cur_range"))
                      

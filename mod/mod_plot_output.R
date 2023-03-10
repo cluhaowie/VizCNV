@@ -26,6 +26,7 @@ mod_plot_output_UI <- function(id, height = 100) {
                                  nullOutside = T, 
                                  delayType = "throttle", 
                                  delay = 100),
+               click = ns("click"),
                height = height)
   )
 }
@@ -83,7 +84,14 @@ mod_plot_output_Server <- function(id, p, ranges, dnCNV_table, zoom = T){
           })
         }
       observe({
-        ranges$c <- input$hover$x
+        ranges$cur <- input$hover$x
+      })
+      
+      observeEvent(input$click, {
+        pt <- input$click
+        if (!is.null(pt)){
+          ranges$click <- pt$x
+        }
       })
       
       observeEvent(input$dblclick, {

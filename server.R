@@ -407,7 +407,7 @@ server <- function(input, output,session) {
   
   ## Chr plot section
   ## Plots section
-  ranges <- reactiveValues(x = NULL, y = NULL, c = NULL)
+  ranges <- reactiveValues(x = NULL, y = NULL, cur = NULL, click = NULL)
   dnCNV_table <- reactiveValues(t = data.frame(start = c(0), end = c(0), stringsAsFactors = F))
  
   
@@ -696,10 +696,15 @@ server <- function(input, output,session) {
   ## Show cur location
   observe({
     output$cur_loc <- renderText({
-      if(is.null(ranges$c)){ranges$c <- 0}
-      paste0("location: ", round(ranges$c))
+      if(is.null(ranges$cur)){ranges$cur <- 0}
+      paste0("location: ", round(ranges$cur))
     })
   })
+  ## Show clicked location
+  observe({
+      if(is.null(ranges$click)){ranges$click <- 0}
+      clipr::write_clip(round(ranges$click))
+    })
   
   ## btn_goto
   observeEvent(input$btn_go,{
