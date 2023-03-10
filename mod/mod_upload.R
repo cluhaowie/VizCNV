@@ -55,30 +55,75 @@ mod_sv_upload_Server <- function(id) {
   )
 }
 
+#' shiny file input wrapper UI
+#'
+#' 
+#'
+#' 
+#'
+#' @return tagList of Shiny UI elements depends on type
+#'
+#' @examples
+#' mod_rd_upload_UI("plot", type = "required")
+#'
+#' @export
+
 mod_rd_upload_UI <- function(id) {
   ns <- NS(id)
-  tagList(
-    fileInput(ns("file"),label = paste0(id), accept=c("*.bed","*.bed.gz"),multiple = F, buttonLabel = "Browse...")
-  )
+    tagList(
+      fluidRow(
+        column(width = 6,
+               fileInput(ns("file"),label = NULL, accept=c("*.bed","*.bed.gz"),multiple = F, buttonLabel = "Browse...")
+        ),
+        column(width=1,h5("or")),
+        column(width = 4,
+               shinyFilesButton(id = ns("local_rd_file"), label = "Browse...", title = "Please select a file", multiple = F, viewtype = "detail")
+        )
+      )
+    )
+  
+  
 }
 
-mod_rd_upload_Server <- function(id) {
+#' shiny file input wrapper server
+#'
+#' 
+#'
+#' @param volumes a names vector with default local path to explore
+#' @param values, a reactivevalues object to store read depth information
+#' 
+#'
+#' @return no return, add a dataframe to values[[id]]
+#'
+#' @examples
+#' mod_rd_upload_Server("proband", volumes, values)
+#'
+#' @export
+mod_rd_upload_Server <- function(id,volumes,values) {
   moduleServer(
     id,
     function(input, output, session) {
-      observeEvent(input$file,{ 
-        df <- data.table::fread(input$file$datapath,header = F) %>% 
-          mutate(V1=ifelse(!V1%like%"chr",paste0("chr",V1),V1))%>%
-          regioneR::toGRanges()
-        # df <- df[!df%over%blacklist,]
-        df <-  df %>%
-          as.data.table()%>%
-          dplyr::select(-c("strand","width"))
-        setnames(df,c("seqnames","start","end"),c("V1","V2","V3"))
+      shinyFileChoose(input, "local_rd_file", roots = volumes, session=session)
+      observeEvent(input$file, {
+        values[[id]] <- data.table::fread(input$file$datapath,header = F) %>%
+          mutate(V1=ifelse(!V1%like%"chr",paste0("chr",V1),V1))
+        assign(id,values$rd_df)
         showModal(modalDialog(title = "File upload",
                               "The proband read depth file has been uploaded"))
-        
+      })
+      observeEvent(input$local_rd_file,{
+        if(is.integer(input$local_rd_file)){
+          cat("no file\n")
+        }else{
+          local_rd_file <- parseFilePaths(volumes, input$local_rd_file)
+          values[[id]]<- data.table::fread(local_rd_file$datapath,header = F)%>%
+            mutate(V1=ifelse(!V1%like%"chr",paste0("chr",V1),V1))
+          showModal(modalDialog(title = "File upload",
+                                paste0("The ", id," read depth file has been uploaded")))
+        }
       },ignoreInit = T)
-      return (df) }
+    }
   )
 }
+
+

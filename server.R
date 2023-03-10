@@ -2,6 +2,7 @@
 
 source("./mod/mod_plot_output.R")
 source("./mod/mod_dnCNV.R")
+source("./mod/mod_upload.R")
 
 server <- function(input, output,session) {
   # Reavtive Values --------------------------
@@ -46,63 +47,28 @@ server <- function(input, output,session) {
   })
   
   volumes <- c(Home="~/Downloads/","R installation" = R.home(),shinyFiles::getVolumes()())
-  shinyFileChoose(input, "local_sv_file", roots = volumes, session = session)
-  shinyFileChoose(input, "local_pr_rd_file", roots = volumes, session = session)
-  shinyFileChoose(input, "local_m_rd_file", roots = volumes, session = session)
-  shinyFileChoose(input, "local_f_rd_file", roots = volumes, session = session)
-  shinyFileChoose(input, "local_pr_snv_file", roots = volumes, session = session)
-  output$file_source_ui1 <- renderUI({
-    if(input$file_source=="TRUE"){
-      tagList(
-         fileInput("sv_vcf_file",label = "Structual variant vcf files",accept=c("*.vcf","*.vcf.gz"),multiple = F,buttonLabel = "Browse..."),
-        fileInput("snp_gvcf_file",label = "SNV gVCF file",accept=c("*.vcf","*.vcf.gz"),multiple = F,buttonLabel = "Browse...")
-      )
-    }else{
-      tagList(
-        h5(strong("Select local sv file (optional):")),
-        shinyFilesButton(id = "local_sv_file", label = "Browse...", title = "Please select a file", multiple = F, viewtype = "detail"),
-        h5(strong("Select local proband read depth file (required)")),
-        shinyFilesButton(id = "local_pr_rd_file", label = "Browse...", title = "Please select a file", multiple = F, viewtype = "detail"),
-        h5(strong("Select local mom's read depth file (optional)")),
-        shinyFilesButton(id = "local_m_rd_file", label = "Browse...", title = "Please select a file", multiple = F, viewtype = "detail"),
-        h5(strong("Select local dad's read depth file (optional)")),
-        shinyFilesButton(id = "local_f_rd_file", label = "Browse...", title = "Please select a file", multiple = F, viewtype = "detail"),
-        h5(strong("Select local proband snv file (optional)")),
-        shinyFilesButton(id = "local_pr_snv_file", label = "Browse...", title = "Please select a file", multiple = F, viewtype = "detail")
-      )
-      
-    }
-  })
-  output$file_source_ui2 <- renderUI({
-    if(input$file_source=="TRUE"){
-      tagList(
-        fileInput("pr_rd_file",label = "Proband's read depth files (required)",accept=c("*.bed","*.bed.gz"),multiple = F,buttonLabel = "Browse..."),
-        fileInput("m_rd_file",label = "Mom's read depth files (optional)",accept=c("*.bed","*.bed.gz"),multiple = F,buttonLabel = "Browse..."),
-        fileInput("f_rd_file",label = "Dad's read depth files (optional)",accept=c("*.bed","*.bed.gz"),multiple = F,buttonLabel = "Browse...")
-      )
-    }else{
-      verbatimTextOutput("filepaths")
-    }
-  })
-  
-  output$filepaths <- renderPrint({
-    ifelse(is.integer(input$local_sv_file),
-           values$local_file_paths$datapath[1] <- "None",
-           values$local_file_paths$datapath[1] <- parseFilePaths(volumes, input$local_sv_file)$name)
-    ifelse(is.integer(input$local_pr_rd_file),
-           values$local_file_paths$datapath[2] <- "None",
-           values$local_file_paths$datapath[2] <- parseFilePaths(volumes, input$local_pr_rd_file)$name)
-    ifelse(is.integer(input$local_m_rd_file),
-           values$local_file_paths$datapath[3] <- "None",
-           values$local_file_paths$datapath[3] <- parseFilePaths(volumes, input$local_m_rd_file)$name)
-    ifelse(is.integer(input$local_f_rd_file),
-           values$local_file_paths$datapath[4] <- "None",
-           values$local_file_paths$datapath[4] <- parseFilePaths(volumes, input$local_f_rd_file)$name)
-    ifelse(is.integer(input$local_pr_snv_file),
-           values$local_file_paths$datapath[5] <- "None",
-           values$local_file_paths$datapath[5] <- parseFilePaths(volumes, input$local_pr_snv_file)$name)
-    values$local_file_paths
-  })
+  mod_rd_upload_Server("pr_rd",volumes=volumes,values) 
+  mod_rd_upload_Server("m_rd",volumes=volumes,values) 
+  mod_rd_upload_Server("f_rd",volumes=volumes,values) 
+
+  # output$filepaths <- renderPrint({
+  #   ifelse(is.integer(input$local_sv_file),
+  #          values$local_file_paths$datapath[1] <- "None",
+  #          values$local_file_paths$datapath[1] <- parseFilePaths(volumes, input$local_sv_file)$name)
+  #   ifelse(is.integer(input$local_pr_rd_file),
+  #          values$local_file_paths$datapath[2] <- "None",
+  #          values$local_file_paths$datapath[2] <- parseFilePaths(volumes, input$local_pr_rd_file)$name)
+  #   ifelse(is.integer(input$local_m_rd_file),
+  #          values$local_file_paths$datapath[3] <- "None",
+  #          values$local_file_paths$datapath[3] <- parseFilePaths(volumes, input$local_m_rd_file)$name)
+  #   ifelse(is.integer(input$local_f_rd_file),
+  #          values$local_file_paths$datapath[4] <- "None",
+  #          values$local_file_paths$datapath[4] <- parseFilePaths(volumes, input$local_f_rd_file)$name)
+  #   ifelse(is.integer(input$local_pr_snv_file),
+  #          values$local_file_paths$datapath[5] <- "None",
+  #          values$local_file_paths$datapath[5] <- parseFilePaths(volumes, input$local_pr_snv_file)$name)
+  #   values$local_file_paths
+  # })
   output$blt_dnSNV_ui <- shiny::renderUI({
     if(is.null(input$snp_gvcf_file)&is.integer(input$local_pr_snv_file)){
       return(NULL)
@@ -139,35 +105,6 @@ server <- function(input, output,session) {
     }
     
   },ignoreInit = T)
-  observeEvent(input$local_pr_rd_file,{ 
-    if(is.integer(input$local_pr_rd_file)){cat("no file\n")}else{
-      local_pr_rd_file <- parseFilePaths(volumes, input$local_pr_rd_file)
-      values$pr_rd <- data.table::fread(local_pr_rd_file$datapath,header = F)%>%
-        mutate(V1=ifelse(!V1%like%"chr",paste0("chr",V1),V1))%>%regioneR::toGRanges()
-      values$pr_rd <- values$pr_rd[!values$pr_rd%over%blacklist,]%>%
-        as.data.table()%>%
-        dplyr::select(-c("strand","width"))
-      setnames(values$pr_rd,c("seqnames","start","end"),c("V1","V2","V3"))
-      showModal(modalDialog(title = "File upload",
-                            "The proband read depth file has been uploaded"))
-    }
-  },ignoreInit = T)
-  observeEvent(input$local_m_rd_file,{ 
-    if(is.integer(input$local_m_rd_file)){cat("no file\n")}else{
-      local_m_rd_file <- parseFilePaths(volumes, input$local_m_rd_file)
-      values$m_rd <- data.table::fread(local_m_rd_file$datapath,header = F)%>%mutate(V1=ifelse(!V1%like%"chr",paste0("chr",V1),V1))
-      showModal(modalDialog(title = "File upload",
-                            "The mom's read depth file has been uploaded"))
-    }
-  },ignoreInit = T)
-  observeEvent(input$local_f_rd_file,{ 
-    if(is.integer(input$local_f_rd_file)){cat("no file\n")}else{
-      local_f_rd_file <- parseFilePaths(volumes, input$local_f_rd_file)
-      values$f_rd <- data.table::fread(local_f_rd_file$datapath,header = F)%>%mutate(V1=ifelse(!V1%like%"chr",paste0("chr",V1),V1))
-      showModal(modalDialog(title = "File upload",
-                            "The dad's read depth file has been uploaded"))
-    }
-  },ignoreInit = T)
   observeEvent(input$local_pr_snv_file,{ 
     if(is.integer(input$local_pr_snv_file)){cat("no file\n")}else{
       values$snp_gvcf_file <- parseFilePaths(volumes, input$local_pr_snv_file)
@@ -197,40 +134,6 @@ server <- function(input, output,session) {
       "The sv file has been uploaded"
     ))
   })
-  observe({
-    pr_rd_file=input$pr_rd_file
-    if(is.null(pr_rd_file)){return(NULL)}
-    req(pr_rd_file)
-    values$pr_rd <- data.table::fread(pr_rd_file$datapath,header = F)%>%
-      mutate(V1=ifelse(!V1%like%"chr",paste0("chr",V1),V1))
-    #saveData(values$pr_rd,"pr_rd_file")
-    showModal(modalDialog(
-      title = "File upload",
-      "The proband bed file has been uploaded"
-    ))
-  }) 
-  observe({
-    m_rd_file=input$m_rd_file
-    if(is.null(m_rd_file)){return(NULL)}
-    req(m_rd_file)
-    values$m_rd <- data.table::fread(m_rd_file$datapath,header = F)%>%mutate(V1=ifelse(!V1%like%"chr",paste0("chr",V1),V1))
-    #saveData(values$m_rd,"m_rd_file")
-    showModal(modalDialog(
-      title = "File upload",
-      "The mom's bed file has been uploaded"
-    ))
-  }) 
-  observe({
-    f_rd_file=input$f_rd_file
-    if(is.null(f_rd_file)){return(NULL)}
-    req(f_rd_file)
-    values$f_rd <- data.table::fread(f_rd_file$datapath,header = F)%>%mutate(V1=ifelse(!V1%like%"chr",paste0("chr",V1),V1))
-    #saveData(values$f_rd,"f_rd_file")
-    showModal(modalDialog(
-      title = "File upload",
-      "The dad's bed file has been uploaded"
-    ))
-  }) 
   observeEvent(input$snp_gvcf_file,{
     values$snp_gvcf_file <- input$snp_gvcf_file
     if(is.null(values$snp_gvcf_file)){return(NULL)}
