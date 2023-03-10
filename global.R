@@ -19,12 +19,12 @@ options(shiny.autoreload=TRUE)
 # Install missing packages from CRAN, 'arrow' may be a problem
 list.of.packages <- c("dplyr", "data.table", "shiny", "shinydashboard", "shinyFeedback",
                       "tippy","DT","ggplot2","shinyWidgets","shinyFiles","waiter",
-                      "cowplot","devtools","BiocManager","arrow","colourpicker", "shinyjs") 
+                      "cowplot","devtools","BiocManager","arrow","colourpicker", "shinyjs", "data.table") 
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
 if(length(new.packages)) install.packages(new.packages)
 
 # Install missing packages from Bioconductor
-biocLitePackages <- c("DNAcopy", "GenomicRanges", "VariantAnnotation","bedr") 
+biocLitePackages <- c("DNAcopy", "GenomicRanges", "VariantAnnotation","bedr", "plyranges") 
 new.biocLitePackage <- biocLitePackages[!(biocLitePackages %in% installed.packages()[,"Package"])]
 if (!require("BiocManager", quietly = TRUE))
   install.packages("BiocManager")

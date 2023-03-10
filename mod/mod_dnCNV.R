@@ -17,8 +17,8 @@
 get_dnCNV = function(pr, mo, fa, size_threshold = 10000){
   
   # Essentially bedtools subtract
-  tmp = unlist(subtract(pr, mo))
-  dnCNV = unlist(subtract(tmp,fa))
+  tmp = unlist(GenomicRanges::subtract(pr, mo))
+  dnCNV = unlist(GenomicRanges::subtract(tmp,fa))
   mcols(dnCNV)$length = width(dnCNV)
   
   # Filtering for size above threshold (in kb)

@@ -700,18 +700,29 @@ server <- function(input, output,session) {
     req(!is.null(input$goto_reg))
     str <- stringr::str_trim(input$goto_reg)
     str <- strsplit(str,"-|_")
-    if (length(str[[1]]) ==1) {
-      showNotification("Looking up gene name", type = "message")
-      path <- "./data/"
-      p1_file <- "NCBI_RefSeq_hg19_clean.bed.parquet"
-      RefSeq <- read_parquet(paste0(path,p1_file))
-      search <- as.character(str[[1]])
-      found <- RefSeq %>% 
-        filter(seqname == input$chr) %>% 
-        filter(grepl(search, gene_id, ignore.case = T))
-      if (nrow(found) != 0){
-        ranges$x <- c(as.numeric(min(found$start)-geneExtend),
-                      as.numeric(max(found$end)+geneExtend))
+    print(str)
+    if (length(str[[1]]) == 1) {
+      if (!is.na(as.numeric(str[[1]]))){
+        showNotification("Jumping to coordinates", type = "message")
+        from <- as.numeric(str[[1]])-500000
+        if (from < 0){from <- 0}
+        to <- as.numeric(str[[1]])+500000
+        ranges$x <- c(from, to)
+      }else {
+        showNotification("Looking up gene name", type = "message")
+        path <- "./data/"
+        p1_file <- "NCBI_RefSeq_hg19_clean.bed.parquet"
+        RefSeq <- read_parquet(paste0(path,p1_file))
+        search <- as.character(str[[1]])
+        found <- RefSeq %>% 
+          filter(seqname == input$chr) %>% 
+          filter(grepl(search, gene_id, ignore.case = T))
+        if (nrow(found) != 0){
+          ranges$x <- c(as.numeric(min(found$start)-geneExtend),
+                        as.numeric(max(found$end)+geneExtend))
+        }else{
+          showNotification("Gene not found", type = "error")
+        }
       }
     } else if (length(str[[1]]) == 2){
       showNotification("Jumping to coordinates", type = "message")
