@@ -22,6 +22,10 @@ mod_plot_output_UI <- function(id, height = 100) {
                                  resetOnNew = T,
                                  direction = "x"),
                dblclick = ns("dblclick"),
+               hover = hoverOpts(id = ns("hover"), 
+                                 nullOutside = T, 
+                                 delayType = "throttle", 
+                                 delay = 100),
                height = height)
   )
 }
@@ -69,7 +73,9 @@ mod_plot_output_Server <- function(id, p, ranges, dnCNV_table, zoom = T){
               annotate("rect", fill = "blue", alpha =0.3, xmin = from, xmax = to, ymin = -Inf, ymax = Inf)
           })
         }
-      
+      observe({
+        ranges$c <- input$hover$x
+      })
       
       observeEvent(input$dblclick, {
         brush <- input$brush

@@ -407,7 +407,7 @@ server <- function(input, output,session) {
   
   ## Chr plot section
   ## Plots section
-  ranges <- reactiveValues(x = NULL, y = NULL)
+  ranges <- reactiveValues(x = NULL, y = NULL, c = NULL)
   dnCNV_table <- reactiveValues(t = data.frame(start = c(0), end = c(0), stringsAsFactors = F))
  
   
@@ -468,7 +468,7 @@ server <- function(input, output,session) {
       scale_x_continuous(labels = scales::label_number())
     
     btnVala <- mod_checkbox_Server("Baf-A_allele")
-    ranges <- mod_plot_switch_Server("Baf-A_allele", btnVala$box_state, snp_a, ranges)
+    ranges <- mod_plot_switch_Server("Baf-A_allele", btnVala$box_state, snp_a, ranges, dnCNV_table)
     
     snp_b <- ggplot(df, aes(x=start,y=pr_ALT_Freq,col=B_InhFrom))+
       geom_point(shape=".")+
@@ -484,7 +484,7 @@ server <- function(input, output,session) {
     
     removeNotification(noti_id)
     btnValb <- mod_checkbox_Server("Baf-B_allele")
-    ranges <- mod_plot_switch_Server("Baf-B_allele", btnValb$box_state, snp_b, ranges)
+    ranges <- mod_plot_switch_Server("Baf-B_allele", btnValb$box_state, snp_b, ranges, dnCNV_table)
     
   })
   
@@ -695,12 +695,19 @@ server <- function(input, output,session) {
       })
     })
   
+  ## Show cur location
+  observe({
+    output$cur_loc <- renderText({
+      req(!is.null(ranges$c))
+      paste0("current location: ", round(ranges$c))
+    })
+  })
+  
   ## btn_goto
   observeEvent(input$btn_go,{
     req(!is.null(input$goto_reg))
     str <- stringr::str_trim(input$goto_reg)
     str <- strsplit(str,"-|_")
-    print(str)
     if (length(str[[1]]) == 1) {
       if (!is.na(as.numeric(str[[1]]))){
         showNotification("Jumping to coordinates", type = "message")

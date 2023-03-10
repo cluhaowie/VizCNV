@@ -307,7 +307,7 @@ style_rd <- theme_classic()+
     legend.text = element_text(size = 12),
     panel.border = element_blank(),
     panel.grid.minor.y = element_blank(),
-    #panel.grid.minor.x = element_line(colour = "grey50"),
+    panel.grid.minor.x = element_line(linetype = 5,colour = "grey50"),
     panel.grid.major.y = element_line(linetype = 5,colour = "grey50"),
     panel.grid.major.x = element_line(linetype = 5,colour = "grey50"),
     panel.background = element_blank(),
