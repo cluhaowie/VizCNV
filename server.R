@@ -430,11 +430,9 @@ server <- function(input, output,session) {
       geom_point(data = subset(plots$pr_rd, ratio > 1.3),aes(V2,log2(ratio+0.00001)),shape=".",color="red")+
       geom_segment(data = df,aes(x=loc.start,y=seg.mean,xend=loc.end,yend=seg.mean,color=factor(ID)),size=1)+
       scale_color_manual(name="Segment",values = c("Proband"="blue","Mother"="#E69F00","Father"="#39918C"),)+
-      ylim(-4,4)+
       xlab(plots$xlabel)+
       scale_rd+
-      style_rd+
-      scale_x_continuous(labels = scales::label_number())
+      style_rd
     
  
     btnValrds <- mod_checkbox_Server("RD-static")
@@ -698,7 +696,7 @@ server <- function(input, output,session) {
   ## Show cur location
   observe({
     output$cur_loc <- renderText({
-      req(!is.null(ranges$c))
+      if(is.null(ranges$c)){ranges$c <- 0}
       paste0("current location: ", round(ranges$c))
     })
   })

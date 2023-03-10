@@ -54,9 +54,17 @@ mod_plot_output_Server <- function(id, p, ranges, dnCNV_table, zoom = T){
     function(input, output, session) {
       if (isTRUE(zoom)){
         output$plot <- renderPlot({
-          p +
-            coord_cartesian(xlim= ranges$x, ylim = ranges$y, expand = F)+
-            annotate("rect", fill = "orange", alpha =0.3, xmin = dnCNV_table$t$start, xmax = dnCNV_table$t$end, ymin = -Inf, ymax = Inf)
+          if (!is.null(ranges$x)){
+            p +
+              coord_cartesian(xlim= ranges$x, ylim = ranges$y, expand = F)+
+              scale_x_continuous(n.breaks = 20)+
+              annotate("rect", fill = "orange", alpha =0.3, xmin = dnCNV_table$t$start, xmax = dnCNV_table$t$end, ymin = -Inf, ymax = Inf)
+          } else {
+            p +
+              coord_cartesian(xlim= ranges$x, ylim = ranges$y, expand = F)+
+              scale_x_continuous(n.breaks = 10)+
+              annotate("rect", fill = "orange", alpha =0.3, xmin = dnCNV_table$t$start, xmax = dnCNV_table$t$end, ymin = -Inf, ymax = Inf)
+          }
         })
       } else {
           output$plot <- renderPlot({
@@ -69,6 +77,7 @@ mod_plot_output_Server <- function(id, p, ranges, dnCNV_table, zoom = T){
               }
             p +
               coord_cartesian(expand = F)+
+              scale_x_continuous(n.breaks = 10)+
               annotate("rect", fill = "orange", alpha =0.3, xmin = dnCNV_table$t$start, xmax = dnCNV_table$t$end, ymin = -Inf, ymax = Inf)+
               annotate("rect", fill = "blue", alpha =0.3, xmin = from, xmax = to, ymin = -Inf, ymax = Inf)
           })
