@@ -16,15 +16,10 @@ Shifting level models based segmentation is performed using
 Launch app on local with the main branch:
 
 ``` r
-shiny::runGitHub(repo = "BCM-Lupskilab/VizCNV")
+shiny::runGitHub(repo = "clifflun/VizCNV-dev")
 ```
 
 
-or Launch app on local with the dev branch:
-
-```r
-shiny::runGitHub(repo = "cluhaowie/VizCNV",ref="dev-annotrack")
-```
 
 
 Upload the required file from local file systerm:
