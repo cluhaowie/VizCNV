@@ -71,7 +71,7 @@ ui <- dashboardPage(
                            collapsed = F,
                            "A output from",
                            tags$a(href="https://github.com/brentp/mosdepth","mosedepth"), 
-                           "can be used example of generate the read depth file for 1Kb window size would be:",
+                           "can be used as the input. An example of generating the read depth file for 1Kb window size would be:",
                            br(),
                            code("mosdepth -n --fast-mode --by 1000 sample.wgs $sample.wgs.bam")
                          )
