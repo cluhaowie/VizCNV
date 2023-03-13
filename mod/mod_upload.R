@@ -33,7 +33,15 @@ mod_snp_upload_Server <- function(id) {
 mod_sv_upload_UI <- function(id) {
   ns <- NS(id)
   tagList(
-    fileInput(ns("file"),label = paste0(id),accept=c("*.vcf","*.vcf.gz"),multiple = F,buttonLabel = "Browse...")
+    fluidRow(
+      column(width = 6,
+             fileInput(ns("file"),label = NULL, accept=c("*.vcf","*.vcf.gz"),multiple = F, buttonLabel = "Browse...")
+      ),
+      column(width=1,h5("or")),
+      column(width = 4,
+             shinyFilesButton(id = ns("local_sv_file"), label = "Browse...", title = "Please select a file", multiple = F, viewtype = "detail")
+      )
+    )
   )
 }
 

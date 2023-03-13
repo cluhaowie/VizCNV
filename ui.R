@@ -26,7 +26,7 @@ ui <- dashboardPage(
         tabItem(tabName = "input",
           fluidRow(
             column(width=8,
-                   box(title="File import/upload",status="primary",width = 12,solidHeader = T,collapsible = T,
+                   box(title="Step 0: File import/upload",status="primary",width = 12,solidHeader = T,collapsible = T,
                        radioButtons(inputId = "ref",label = h3("Reference Genome Build"),choices = list("GRCh37"="GRCh37","GRCh38"="GRCh38"),inline = T,selected = "GRCh37"),
                        h5("Upload or select proband read depth file",dashboardBadge("required", color = "primary")),
                        mod_rd_upload_UI("pr_rd"),
@@ -79,7 +79,17 @@ ui <- dashboardPage(
 
                        )
                        )
+                   ),
+          fluidRow(
+            column(width=8,
+                   box(title="Advanced",status="primary",width = 12,solidHeader = T,collapsible = T,
+                       h5("Upload or select SV vcf",dashboardBadge("optional", color = "secondary")),
+                       mod_sv_upload_UI("sv_file"),
+                       h5("Upload or select joint snp vcf (maximun file size 3Gb)",dashboardBadge("optional", color = "secondary")),
+                       mod_sv_upload_UI("snp_file")
+                       )
                    )
+          )
           ),
         tabItem(tabName = "plot",
                 shinyjs::useShinyjs(),
