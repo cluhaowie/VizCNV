@@ -34,7 +34,7 @@ ui <- dashboardPage(
                 fluidRow(
                   box(title = "WG Plots",width = 12,solidHeader = T, status = "success",collapsible = T,
                       actionButton("btn_wg_rd", "Show whole genome read depth"),
-                      mod_plot_output_UI("wg_pr_rd", height = 400),
+                      mod_plot_wg_UI("wg_pr_rd", height = 400),
                       tableOutput("wg_rd_table"))
                   )
                 ),

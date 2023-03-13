@@ -108,6 +108,78 @@ mod_plot_output_Server <- function(id, p, ranges, dnCNV_table, zoom = T){
 }
   
 
+#' shiny plotOutput wrapper UI
+#'
+#' 
+#'
+#' @param height value to change the height of the plot (in pixels)
+#' 
+#'
+#' @return tagList of Shiny UI elements
+#'
+#' @examples
+#' mod_plot_output_UI("plot", height = 300)
+#'
+#' @export
+mod_plot_wg_UI <- function(id, height = 100) {
+  ns <- NS(id)
+  tagList(
+    plotOutput(ns("plot"),
+               brush = brushOpts(id = ns("brush"),
+                                 resetOnNew = T,
+                                 direction = "x"),
+               dblclick = ns("dblclick"),
+               height = height)
+  )
+}
+
+
+#' shiny plotOutput wrapper server
+#'
+#' 
+#'
+#' @param p a ggplot object
+#' @param ranges, a reactive object to store current plot brush values
+#' @param dnCNV_table, a reactive table to highlight potential dnCNV
+#' @param zoom, a boolean to switch from static to dynamic plot output (default = T) If False, the plot will not zoom in when doubleclicked brush area.
+#' 
+#' 
+#'
+#' @return reactive ranges for other plots
+#'
+#' @examples
+#' mod_plot_output_Server("plot", p, ranges, dnCNV_table, zoom = F)
+#'
+#' @export
+mod_plot_wg_Server <- function(id, p, ranges, dnCNV_table, zoom = T){
+  moduleServer(
+    id,
+    function(input, output, session) {
+      if (isTRUE(zoom)){
+        output$plot <- renderPlot({
+          
+            p +
+              coord_cartesian(xlim= ranges$x, ylim = ranges$y, expand = F)
+        })
+      } else{
+        output$plot <- renderPlot({
+          p +
+            coord_cartesian(expand = F)
+      })
+      }
+      
+      observeEvent(input$dblclick, {
+        brush <- input$brush
+        if (!is.null(brush)) {
+          ranges$x <- c(brush$xmin, brush$xmax)
+        } else {
+          ranges$x <- NULL
+        }
+      })
+      return (ranges) 
+    }
+  )
+}
 
 
 

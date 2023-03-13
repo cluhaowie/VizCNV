@@ -386,7 +386,6 @@ server <- function(input, output,session) {
       geom_segment(aes(x = start_cum, y = seg.mean, xend = end_cum, yend = seg.mean+0.001))+
       # geom_point(shape = ".")+
       geom_point(data = label_seg, shape= 8, color = "red")+
-      scale_x_continuous(label = axis_set$chr, breaks = axis_set$center)+
       theme_minimal() +
       theme( 
         legend.position = "none",
@@ -397,9 +396,10 @@ server <- function(input, output,session) {
       scale_rd+
       scale_size_continuous(range = c(0.5,3))+
       labs(x = NULL)+
+      scale_x_continuous(label = axis_set$chr, breaks = axis_set$center)+
       coord_cartesian(expand = F)
     w$hide()
-    mod_plot_output_Server("wg_pr_rd", wg1, wg_ranges, wg_dnCNV_table)
+    mod_plot_wg_Server("wg_pr_rd", wg1, wg_ranges, wg_dnCNV_table)
     output$wg_rd_table <- renderTable({
       label_seg 
     })
@@ -700,10 +700,11 @@ server <- function(input, output,session) {
       paste0("location: ", round(ranges$cur))
     })
   })
+  
   ## Show clicked location
   observe({
       if(is.null(ranges$click)){ranges$click <- 0}
-      clipr::write_clip(round(ranges$click))
+      clipr::write_clip(str_remove_all(as.character(round(ranges$click)), "[\r\n]"))
     })
   
   ## btn_goto
