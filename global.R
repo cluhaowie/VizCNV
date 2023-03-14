@@ -2,8 +2,8 @@
 #  ------------------------------------------------------------------------
 #
 # Title : App - VizCNV
-#    By : Haowei Du
-#  Date : April 2022
+#    By : Haowei Du, Cliff Lun
+#  Date : March 2023
 #    
 #  ------------------------------------------------------------------------
 options(timeout = 6000)
@@ -193,18 +193,7 @@ SegNormRD <- function(df, id, seg.method = "cbs") {
   
 }
 
-normalization_method <- function(df, chr, norm_option = "chr_med"){
-  if (norm_option == "chr_med"){
-    tmp <- df%>%
-      filter(V1 == chr)%>%
-      mutate(ratio=V4/median(V4+0.00001))
-  } else if (norm_option == "wg_med"){
-    tmp <- df%>%
-      mutate(ratio=V4/median(V4+0.00001)) %>% 
-      filter(V1 == chr)
-  }
-  return(tmp)
-}
+
 
 #ref_genome="GRCh38"
 
@@ -268,39 +257,20 @@ ReadGVCF <- function(path_to_gVCF,ref_genome=ref_genome,param = param){
   return(vcf.gr)
 }
 
-##for wg plots
-getSeg = function(df, idx){
-  df = df %>% 
-    filter(chr == idx)
-  slm = SLMSeg::SLM(
-    log2(df$ratio + 0.00001),
-    omega = 0.3,
-    FW = 0,
-    eta = 0.00001
-  )
-  res <- rle(slm[1, ])
-  idx <- sapply(seq_along(res$lengths),function(i){
-    if(i==1){return(1)}
-    start.idx=1+sum(res$lengths[1:(i-1)])
-    return(start.idx)
-  })
-  chr=df$chr[idx]
-  start=df$start[idx]
-  end=c(df$start[c(idx[-1],end(df$start)[1])])
-  res.dt <- data.table(chr=chr,loc.start=start,loc.end=end,num.mark=res$lengths,seg.mean=res$values)
-  return (res.dt)  
-}
-getAllSeg = function(df){
-  out = list()
-  for (c in paste0("chr", c(1:22,"X"))){
-    tmp = getSeg(df,c)
-    out = rbind(out, tmp)  
+normalization_method <- function(df, chr, norm_option = "chr_med"){
+  if (norm_option == "chr_med"){
+    tmp <- df%>%
+      filter(V1 == chr)%>%
+      mutate(ratio=V4/median(V4+0.00001))
+  } else if (norm_option == "wg_med"){
+    tmp <- df%>%
+      mutate(ratio=V4/median(V4+0.00001)) %>% 
+      filter(V1 == chr)
   }
-  return(out)
+  return(tmp)
 }
 
 ## plot parameters
-
 style_rd <- theme_classic()+
   theme(plot.title = element_text(face = "bold", size = 12),
         legend.position = "top",
