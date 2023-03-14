@@ -193,8 +193,6 @@ SegNormRD <- function(df, id, seg.method = "cbs") {
   
 }
 
-
-
 #ref_genome="GRCh38"
 
 #hg38.info <- seqinfo(BSgenome.Hsapiens.UCSC.hg38::Hsapiens)%>%as.data.frame()

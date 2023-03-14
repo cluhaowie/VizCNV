@@ -364,7 +364,7 @@ server <- function(input, output,session) {
   observeEvent(input$btn_wg_rd, {
     req(nrow(values$m_rd) != 0)
     w$show()
-    rd <- values$pr_m
+    rd <- values$m_rd
     rd <- wg_norm(rd, input$wg_norm_options)
     seg <- getAllSeg(rd)
     wg_m <- wg_seg2plot(seg)
