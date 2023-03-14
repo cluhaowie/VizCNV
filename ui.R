@@ -99,7 +99,8 @@ ui <- dashboardPage(
                            mod_checkbox_UI("gnomAD"),
                            mod_checkbox_UI("RMSK", value = F)
                            ),
-                    actionButton("btn_dnCNV", "Show potential dnCNVs")
+                    column(2, 
+                           actionButton("btn_dnCNV", "Show potential dnCNVs"))
                     )
                   ),
                   fluidRow(box(title = "Plots",width = 12,solidHeader = T, status = "success",collapsible = T,

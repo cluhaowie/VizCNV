@@ -31,7 +31,7 @@ server <- function(input, output,session) {
   plots$SNPcols <- vector(length = 3) ## placeholder for color in SNP plot
 
   
-  
+
   
   # File input --------
   volumes <- c(Home="~/Downloads/","R installation" = R.home(),shinyFiles::getVolumes()())
@@ -378,14 +378,18 @@ server <- function(input, output,session) {
       summarize(center = mean(end_cum)) %>% 
       arrange(as.numeric(chr))
     
-    label_seg <- wg_pr_seg %>% 
+    label_seg_gain <- wg_pr_seg %>% 
       filter(num.mark > 100) %>% 
-      filter(seg.mean > 0.4 | dplyr::between(seg.mean,-1.5, -0.3))
+      filter(seg.mean >0.4)
+    label_seg_loss <- wg_pr_seg %>% 
+      filter(num.mark > 100) %>% 
+      filter(dplyr::between(seg.mean,-1.5, -0.3))
     wg1 <- wg_pr_seg %>% 
       ggplot(aes(x = end_cum, y = seg.mean, color = chr))+
-      geom_segment(aes(x = start_cum, y = seg.mean, xend = end_cum, yend = seg.mean+0.001))+
+      geom_segment(aes(x = start_cum, y = seg.mean, xend = end_cum, yend = seg.mean+0.001), linewidth = 1.25)+
       # geom_point(shape = ".")+
-      geom_point(data = label_seg, shape= 8, color = "red")+
+      geom_point(data = label_seg_gain, shape= 8, color = "red")+
+      geom_point(data = label_seg_loss, shape= 8, color = "green")+
       theme_minimal() +
       theme( 
         legend.position = "none",
@@ -401,7 +405,7 @@ server <- function(input, output,session) {
     w$hide()
     mod_plot_wg_Server("wg_pr_rd", wg1, wg_ranges, wg_dnCNV_table)
     output$wg_rd_table <- renderTable({
-      label_seg 
+      rbind(label_seg_gain, label_seg_loss)
     })
   })
   
@@ -411,6 +415,11 @@ server <- function(input, output,session) {
   dnCNV_table <- reactiveValues(t = data.frame(start = c(0), end = c(0), stringsAsFactors = F))
  
   
+  ## reset plots upon changing chr
+  observeEvent(input$btn_plot, {
+    ranges$x <-  NULL
+    dnCNV_table$t <-  data.frame(start = c(0), end = c(0), stringsAsFactors = F)
+  })
   
   ## RD plots
   observeEvent(input$btn_plot,{
@@ -652,7 +661,6 @@ server <- function(input, output,session) {
       scale_anno+
       ylab("RMSK")
 
-    
     showNotification("Annotating", type = "message", duration = 8)
   
     btnVal1 <- mod_checkbox_Server("RefSeq")

@@ -318,21 +318,21 @@ style_rd <- theme_classic()+
         axis.ticks = element_line(color = "black"))
 
 style_snp <- theme_classic()+
-  theme(
-    plot.title = element_text(face = "bold", size = 12),
-    legend.position = "top",
-    legend.title = element_text(colour="black", size=12, face="bold"),
-    legend.text = element_text(size = 12),
-    panel.border = element_blank(),
-    panel.grid.minor.y = element_blank(),
-    #panel.grid.minor.x = element_line(colour = "grey50"),
-    panel.grid.major.y = element_line(linetype = 5,colour = "grey50"),
-    panel.grid.major.x = element_line(linetype = 5,colour = "grey50"),
-    panel.background = element_blank(),
-    axis.text = element_text(color = "black", size = 12),
-    axis.title = element_text(color = "black",face = "bold"),
-    axis.line.x = element_blank(),
-    axis.ticks = element_line(color = "black"))
+  theme(plot.title = element_text(face = "bold", size = 12),
+        legend.position = "top",
+        legend.title = element_text(colour="black", size=12),
+        legend.text = element_text(size = 12),
+        panel.border = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        panel.grid.minor.x = element_line(linetype = 4,colour = "grey85"),
+        panel.grid.major.y = element_line(linetype = 5,colour = "grey70"),
+        panel.grid.major.x = element_line(linetype = 5,colour = "grey50"),
+        panel.background = element_blank(),
+        axis.text.y = element_text(color = "black", size = 10),
+        axis.text.x = element_text(color = c("black", "white"), size = 10),
+        axis.title.y = element_text(color = "black", size = 12),
+        axis.title.x = element_blank(),
+        axis.ticks = element_line(color = "black"))
 
 scale_rd <- scale_y_continuous(name="Log2 Ratio",
                                limits=c(-2.5, 2),
@@ -372,7 +372,7 @@ style_genes <- style_rd+
         axis.title.x = element_blank())
 scale_genes <- scale_y_continuous(labels = scales::label_number(accuracy = 0.01))
 
-SNPCOLOR2 <- c("#E69F00","#39918C")
+SNPCOLOR2 <- c("#39918C","#E69F00")
 chrom_id <- c(1:22,"X")
 names(chrom_id) <- paste0("chr",chrom_id)
 
