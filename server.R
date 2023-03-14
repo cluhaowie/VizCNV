@@ -431,7 +431,7 @@ server <- function(input, output,session) {
       filter(ID%in%include_seg)%>%
       mutate(ID=as.factor(ID))%>%
       mutate(seg.mean=ifelse(seg.mean < -2.5,-2,seg.mean))
-    plots$xlabel=unique(df$chrom)[1]
+    plots$xlabel=input$chr
     rd <- ggplot(plots$pr_rd, aes(x=V2, y=log2(ratio+0.00001))) +
       geom_point(shape=".")+
       #scattermore::geom_scattermore(shape=".",pixels=c(1024,1024))+
@@ -497,6 +497,11 @@ server <- function(input, output,session) {
   
   ##Anno tracks
   observeEvent(input$btn_anno,{
+    
+    id <- showNotification("Pulling Data", type = "message", duration = NULL)
+    chrn = input$chr
+    path = "./data/"
+    
     if (input$ref == "GRCh37"){
       p1_file = "NCBI_RefSeq_hg19_clean.bed.parquet"
       p2_file = "Claudia_hg19_MergedInvDirRpts_sorted.bed"
@@ -540,9 +545,6 @@ server <- function(input, output,session) {
     anno_table_Server("pr_sv", pr_sv, ranges, chrn)
     }
     
-    id <- showNotification("Pulling Data", type = "message", duration = NULL)
-    chrn = input$chr
-    path = "./data/"
     
   
     RefSeq <-
