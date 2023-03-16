@@ -85,9 +85,9 @@ ui <- dashboardPage(
             column(width=8,
                    box(title="Advanced",status="primary",width = 12,solidHeader = T,collapsible = T,
                        h5("Upload or select SV vcf",dashboardBadge("optional", color = "secondary")),
-                       mod_sv_upload_UI("sv_file"),
+                       mod_sv_upload_UI("pr_sv"),
                        h5("Upload or select joint snp vcf (maximun file size 3Gb)",dashboardBadge("optional", color = "secondary")),
-                       mod_sv_upload_UI("snp_file")
+                       mod_snp_upload_UI("snp_file")
                        )
                    )
           )

@@ -37,7 +37,7 @@ mod_snp_upload_Server <- function(id) {
 #' to select for local path to file
 #'
 #' @examples
-#' mod_sv_upload_UI("plot")
+#' mod_sv_upload_UI("pr_sv")
 #'
 #' @export
 
@@ -56,11 +56,11 @@ mod_sv_upload_UI <- function(id) {
   )
 }
 
-mod_sv_upload_Server <- function(id) {
+mod_sv_upload_Server <- function(id,volumes,values) {
   moduleServer(
     id,
     function(input, output, session) {
-
+      shinyFileChoose(input, "local_sv_file", roots = volumes, session=session)
       observeEvent(input$file, {
         values[[id]] <- bedr::read.vcf(input$file$datapath,split.info = T)$vcf
         showModal(modalDialog(title = "File upload",

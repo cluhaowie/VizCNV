@@ -13,6 +13,7 @@ server <- function(input, output,session) {
   values$m_rd <- data.frame(stringsAsFactors = F)
   values$f_rd <- data.frame(stringsAsFactors = F)
   values$snp_gvcf_file_ref <- vector()
+  values$snp_gvcf_file_path <- vector()
   values$snp_gvcf_file <- data.frame(stringsAsFactors = F)
   values$local_file_paths <- data.frame(file=c("CNV call file",
                                                "Proband read depth file",
@@ -40,25 +41,10 @@ server <- function(input, output,session) {
   mod_rd_upload_Server("pr_rd",volumes=volumes,values) 
   mod_rd_upload_Server("m_rd",volumes=volumes,values) 
   mod_rd_upload_Server("f_rd",volumes=volumes,values) 
+  
+  mod_sv_upload_Server("pr_sv",volumes=volumes,values) 
+  mod_snp_upload_Server("snp_file",volumes=volumes,values)
 
-  # output$filepaths <- renderPrint({
-  #   ifelse(is.integer(input$local_sv_file),
-  #          values$local_file_paths$datapath[1] <- "None",
-  #          values$local_file_paths$datapath[1] <- parseFilePaths(volumes, input$local_sv_file)$name)
-  #   ifelse(is.integer(input$local_pr_rd_file),
-  #          values$local_file_paths$datapath[2] <- "None",
-  #          values$local_file_paths$datapath[2] <- parseFilePaths(volumes, input$local_pr_rd_file)$name)
-  #   ifelse(is.integer(input$local_m_rd_file),
-  #          values$local_file_paths$datapath[3] <- "None",
-  #          values$local_file_paths$datapath[3] <- parseFilePaths(volumes, input$local_m_rd_file)$name)
-  #   ifelse(is.integer(input$local_f_rd_file),
-  #          values$local_file_paths$datapath[4] <- "None",
-  #          values$local_file_paths$datapath[4] <- parseFilePaths(volumes, input$local_f_rd_file)$name)
-  #   ifelse(is.integer(input$local_pr_snv_file),
-  #          values$local_file_paths$datapath[5] <- "None",
-  #          values$local_file_paths$datapath[5] <- parseFilePaths(volumes, input$local_pr_snv_file)$name)
-  #   values$local_file_paths
-  # })
   output$blt_dnSNV_ui <- shiny::renderUI({
     if(is.null(input$snp_gvcf_file)&is.integer(input$local_pr_snv_file)){
       return(NULL)
@@ -75,14 +61,7 @@ server <- function(input, output,session) {
   
   # observe file uploaded and save in SQLdatabase---------
   # local option
-  observeEvent(input$local_sv_file,{ 
-    if(is.integer(input$local_sv_file)){cat("no file\n")}else{
-      local_sv_file <- parseFilePaths(volumes, input$local_sv_file)
-      values$pr_sv <- bedr::read.vcf(local_sv_file$datapath,split.info = T)$vcf
-      showModal(modalDialog(title = "File upload",
-                            "The sv file has been uploaded"))
-    }
-  },ignoreInit = T)
+
   observeEvent(input$local_pr_snv_file,{ 
     if(is.integer(input$local_pr_snv_file)){cat("no file\n")}else{
       values$snp_gvcf_file <- parseFilePaths(volumes, input$local_pr_snv_file)
@@ -101,17 +80,7 @@ server <- function(input, output,session) {
   },ignoreInit = T)
   
   # cloud option
-  observe({
-    sv_vcf_file=input$sv_vcf_file
-    if(is.null(sv_vcf_file)){return(NULL)}
-    req(sv_vcf_file)
-    values$pr_sv <- bedr::read.vcf(sv_vcf_file$datapath,split.info = T)$vcf
-    #saveData(values$pr_sv,"sv_vcf_file")
-    showModal(modalDialog(
-      title = "File upload",
-      "The sv file has been uploaded"
-    ))
-  })
+
   observeEvent(input$snp_gvcf_file,{
     values$snp_gvcf_file <- input$snp_gvcf_file
     if(is.null(values$snp_gvcf_file)){return(NULL)}
