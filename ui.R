@@ -94,7 +94,9 @@ ui <- dashboardPage(
         tabItem( tabName = "wg_plot",
                  fluidRow(
                    box(title = "Options",width = 12,solidHeader = T, status = "success",collapsible = T,
-                       fluidRow(column(3, actionButton("btn_wg_rd", "Show whole genome read depth")),
+                       fluidRow(column(3, 
+                                       actionButton("btn_wg_rd", "Show whole genome read depth"),
+                                       actionButton("btn_wg_dnCNV", "Show potential dnCNVs")),
                        column(3, 
                               radioButtons("wg_norm_options",
                                            label = "Normalization options", 
@@ -106,7 +108,7 @@ ui <- dashboardPage(
                        mod_plot_wg_UI("wg_m_rd", height = 270),
                        mod_plot_wg_UI("wg_f_rd", height = 270)),
                    box(title = "WG Table",width = 12,solidHeader = T, status = "success",collapsible = T,
-                       tableOutput("wg_rd_table"))
+                       mod_dnCNV_UI("wg_dnCNV"))
                  )
         ),
         tabItem(tabName = "chr_plot",

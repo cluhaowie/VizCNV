@@ -198,8 +198,14 @@ server <- function(input, output,session) {
   
   # Plots -----
   ### "Global" reactive values
-  wg_ranges <- reactiveValues(x = NULL, y = NULL)
+  wg_ranges <- reactiveValues(x = NULL, pr = NULL, m = NULL, f = NULL)
   wg_dnCNV_table <- reactiveValues(t = data.frame(start = c(0), end = c(0), stringsAsFactors = F))
+  
+  ## reset plots upon changing chr
+  observeEvent(input$btn_plot, {
+    wg_ranges$x <-  NULL
+    wg_dnCNV_table$t <-  data.frame(start = c(0), end = c(0), stringsAsFactors = F)
+  })
   
   ## WG Plot section
   observeEvent(input$btn_wg_rd, {
@@ -207,8 +213,8 @@ server <- function(input, output,session) {
     w$show()
     rd <- values$pr_rd
     rd <- wg_norm(rd, input$wg_norm_options)
-    seg <- getAllSeg(rd)
-    wg_pr <- wg_seg2plot(seg)
+    wg_ranges$pr <- getAllSeg(rd)
+    wg_pr <- wg_seg2plot(wg_ranges$pr)
     w$hide()
     wg_ranges <- mod_plot_wg_Server("wg_pr_rd", wg_pr, wg_ranges, wg_dnCNV_table)
     output$wg_rd_table <- renderTable({
@@ -223,8 +229,8 @@ server <- function(input, output,session) {
     w$show()
     rd <- values$m_rd
     rd <- wg_norm(rd, input$wg_norm_options)
-    seg <- getAllSeg(rd)
-    wg_m <- wg_seg2plot(seg)
+    wg_ranges$m <- getAllSeg(rd)
+    wg_m <- wg_seg2plot(wg_ranges$m)
     w$hide()
     wg_ranges <- mod_plot_wg_Server("wg_m_rd", wg_m, wg_ranges, wg_dnCNV_table)
   })
@@ -233,13 +239,19 @@ server <- function(input, output,session) {
     w$show()
     rd <- values$f_rd
     rd <- wg_norm(rd, input$wg_norm_options)
-    seg <- getAllSeg(rd)
-    wg_f <- wg_seg2plot(seg)
+    wg_ranges$f <- getAllSeg(rd)
+    wg_f <- wg_seg2plot(wg_ranges$f)
     w$hide()
     wg_ranges <- mod_plot_wg_Server("wg_f_rd", wg_f, wg_ranges, wg_dnCNV_table)
   })
 
-
+  ## dnCNV table
+  observeEvent(input$btn_wg_dnCNV, {
+    req(nrow(values$pr_rd)!=0)
+    req(nrow(values$m_rd)!=0)
+    req(nrow(values$f_rd)!=0)
+    wg_dnCNV_table$t <- mod_dnCNV_Server("wg_dnCNV",wg_ranges$pr, wg_ranges$m, wg_ranges$f)
+  })
   
 
   
@@ -523,8 +535,6 @@ server <- function(input, output,session) {
     req(nrow(values$m_rd)!=0)
     req(nrow(values$f_rd)!=0)
     dnCNV_table$t <- mod_dnCNV_Server("dnCNV",plots$pr_seg, plots$m_seg, plots$f_seg)
-    print("btn gen")
-    print(dnCNV_table$t)
   })
   
   ## Show current ranges
