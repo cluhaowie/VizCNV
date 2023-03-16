@@ -60,16 +60,22 @@ mod_sv_upload_Server <- function(id) {
   moduleServer(
     id,
     function(input, output, session) {
-      observe({
-        if(is.null(input$file)){return(NULL)}
-        req(input$file)
-        df <- bedr::read.vcf(input$file$datapath,split.info = T)$vcf
-        showModal(modalDialog(
-          title = "File upload",
-          "The sv file has been uploaded"
-        ))
+
+      observeEvent(input$file, {
+        values[[id]] <- bedr::read.vcf(input$file$datapath,split.info = T)$vcf
+        showModal(modalDialog(title = "File upload",
+                              "The SV file has been uploaded"))
       })
-      return (df)
+      observeEvent(input$local_sv_file,{
+        if(is.integer(input$local_sv_file)){
+          cat("no file\n")
+        }else{
+          local_sv_file <- parseFilePaths(volumes, input$local_sv_file)
+          values[[id]]<- bedr::read.vcf(local_sv_file$datapath,split.info = T)$vcf
+          showModal(modalDialog(title = "File upload",
+                                paste0("The SV file has been uploaded")))
+        }
+      },ignoreInit = T)
     }
   )
 }
@@ -123,9 +129,8 @@ mod_rd_upload_Server <- function(id,volumes,values) {
       observeEvent(input$file, {
         values[[id]] <- data.table::fread(input$file$datapath,header = F) %>%
           mutate(V1=ifelse(!V1%like%"chr",paste0("chr",V1),V1))
-        assign(id,values$rd_df)
         showModal(modalDialog(title = "File upload",
-                              "The proband read depth file has been uploaded"))
+                              "The read depth file has been uploaded"))
       })
       observeEvent(input$local_rd_file,{
         if(is.integer(input$local_rd_file)){
