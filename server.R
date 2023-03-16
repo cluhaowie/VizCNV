@@ -3,17 +3,16 @@
 source("./mod/mod_plot_output.R")
 source("./mod/mod_dnCNV.R")
 source("./mod/mod_upload.R")
+source("./helper/wg_plot.R")
 
 server <- function(input, output,session) {
   # Reavtive Values --------------------------
   values <- reactiveValues()
-  
-  values$data <- data.frame(stringsAsFactors = F)
-  #values$work_data, store sv call, must include ALT 
-  values$work_data <- data.frame(stringsAsFactors = F)
+  values$pr_sv <- data.frame(stringsAsFactors = F)
   values$pr_rd <- data.frame(stringsAsFactors = F)
   values$m_rd <- data.frame(stringsAsFactors = F)
   values$f_rd <- data.frame(stringsAsFactors = F)
+  values$snp_gvcf_file_ref <- vector()
   values$snp_gvcf_file <- data.frame(stringsAsFactors = F)
   values$local_file_paths <- data.frame(file=c("CNV call file",
                                                "Proband read depth file",
@@ -21,7 +20,7 @@ server <- function(input, output,session) {
                                                "Dad's read depth file",
                                                "Joint SNP vcf file"),datapath=rep("None",5),stringsAsFactors = F)
   values$selected_record <- data.frame(stringsAsFactors = F)
-  values$snp_gvcf_file_ref <- vector()
+  
   values$ref_info <- data.frame(stringsAsFactors = F)
   values$anno_rect <- data.frame(stringsAsFactors = F)
   
@@ -35,16 +34,7 @@ server <- function(input, output,session) {
   plots$snp_chr <- data.frame(stringsAsFactors = F)
   plots$xlabel <- character()
   plots$SNPcols <- vector(length = 3) ## placeholder for color in SNP plot
-  plots$genelabel <- data.frame(stringsAsFactors = F)
   
-  plots$plot1 <- list()
-  plots$plot2 <- list()
-  plots$plot3 <- list()
-  plots$plot3_dl <- list()
-  
-  toListen <- reactive({
-    list(values$data,values$pr_rd)
-  })
   
   volumes <- c(Home="~/Downloads/","R installation" = R.home(),shinyFiles::getVolumes()())
   mod_rd_upload_Server("pr_rd",volumes=volumes,values) 
@@ -80,18 +70,7 @@ server <- function(input, output,session) {
           checkboxGroupInput(inputId="include_dnSNV",label = NULL,c("Show"="TRUE"))))
     }
   })
-  output$ui_plot_anno <- shiny::renderUI({
-    if(is.null(input$include_anno)){
-      helpText("")
-    } else {
-      plotOutput(
-        "plot_anno",
-        height = 200,
-        dblclick = "plot_anno_dblclick",
-        brush = brushOpts(id = "plot_anno_brush",direction = "x",
-                          resetOnNew = TRUE))
-    }
-  })
+
 
   
   # observe file uploaded and save in SQLdatabase---------
@@ -99,11 +78,10 @@ server <- function(input, output,session) {
   observeEvent(input$local_sv_file,{ 
     if(is.integer(input$local_sv_file)){cat("no file\n")}else{
       local_sv_file <- parseFilePaths(volumes, input$local_sv_file)
-      values$data <- bedr::read.vcf(local_sv_file$datapath,split.info = T)$vcf
+      values$pr_sv <- bedr::read.vcf(local_sv_file$datapath,split.info = T)$vcf
       showModal(modalDialog(title = "File upload",
                             "The sv file has been uploaded"))
     }
-    
   },ignoreInit = T)
   observeEvent(input$local_pr_snv_file,{ 
     if(is.integer(input$local_pr_snv_file)){cat("no file\n")}else{
@@ -127,8 +105,8 @@ server <- function(input, output,session) {
     sv_vcf_file=input$sv_vcf_file
     if(is.null(sv_vcf_file)){return(NULL)}
     req(sv_vcf_file)
-    values$data <- bedr::read.vcf(sv_vcf_file$datapath,split.info = T)$vcf
-    #saveData(values$data,"sv_vcf_file")
+    values$pr_sv <- bedr::read.vcf(sv_vcf_file$datapath,split.info = T)$vcf
+    #saveData(values$pr_sv,"sv_vcf_file")
     showModal(modalDialog(
       title = "File upload",
       "The sv file has been uploaded"
@@ -147,32 +125,13 @@ server <- function(input, output,session) {
     ))
   }) 
   
-  observeEvent(values$data,{
-    data <- values$data
-    ALTs <- unique(data$ALT)
-    updateSelectizeInput(session, "type", choices = ALTs, server = TRUE)
-  })
-  
-  observeEvent(toListen(),{
-    if(nrow(values$data)!=0){
-      data <- values$data
-      chroms <- unique(data$CHROM)
-      updateSelectizeInput(session, "chr", choices = chroms, server = TRUE)
-    }else{
-      data <- values$pr_rd
-      chroms <- unique(data$V1)
-      updateSelectizeInput(session, "chr", choices = chroms, server = TRUE)
-    }
-    
-  })
-  
   observeEvent(input$chr,{
     chr <- input$chr
-    if(nrow(values$data) == 0){
+    if(nrow(values$pr_sv) == 0){
       return(NULL)
     }else{
-      values$work_data <- values$data%>%filter(CHROM==chr)
-      return(values$work_data)
+      values$pr_sv <- values$pr_sv%>%filter(CHROM==chr)
+      return(values$pr_sv)
     }
   })
   observeEvent(input$ref,{
@@ -188,10 +147,8 @@ server <- function(input, output,session) {
   })
   
   # button to filter range---------
-  
-  
   output$filter_sv_table <- DT::renderDataTable({ 
-    values$work_data
+    values$pr_sv
   },
   extensions=c("Responsive","Buttons"),
   server = T,editable = TRUE,filter = list(position = 'top', clear = T),options = list(dom = 'Bfrtip',buttons = c('txt','csv', 'excel')))
@@ -204,7 +161,7 @@ server <- function(input, output,session) {
   observeEvent(input$btl_select,{
     rows_selected <- input$filter_sv_table_rows_selected
     if(length(rows_selected)){
-      values$selected_record <- rbind(values$selected_record,values$work_data[rows_selected,])%>%
+      values$selected_record <- rbind(values$selected_record,values$pr_sv[rows_selected,])%>%
         distinct(across(everything()))
     }
   })
@@ -214,33 +171,26 @@ server <- function(input, output,session) {
   
   observeEvent(input$btn_filter,{
     seg_option <- input$seg_option
+    norm_option <- input$norm_options
     chr <- input$chr
     if(nrow(values$pr_rd)==0){return(NULL)
     }else{
       w$show()
-      plots$pr_rd <- values$pr_rd%>%
-        filter(V1==chr)%>%
-        mutate(ratio=V4/median(V4+0.00001))
+      plots$pr_rd <- normalization_method(values$pr_rd, chr, norm_option)
       plots$pr_seg <- SegNormRD(plots$pr_rd,id="Proband",seg.method = seg_option)
-      # print(class(plots$pr_seg))
-      # print(head(plots$pr_seg))
       w$hide()
     }
     if(nrow(values$m_rd)==0){return(NULL)
     }else{
       w$show()
-      plots$m_rd <- values$m_rd%>%
-        filter(V1==chr)%>%
-        mutate(ratio=V4/median(V4+0.00001))
+      plots$m_rd <- normalization_method(values$m_rd, chr, norm_option)
       plots$m_seg <- SegNormRD(plots$m_rd,id="Mother",seg.method = seg_option)
       w$hide()
     }
     if(nrow(values$f_rd)==0){return(NULL)
     }else{
       w$show()
-      plots$f_rd <- values$f_rd%>%
-        filter(V1==chr)%>%
-        mutate(ratio=V4/median(V4+0.00001))
+      plots$f_rd <- normalization_method(values$f_rd, chr, norm_option)
       plots$f_seg <- SegNormRD(plots$f_rd,id="Father",seg.method = seg_option)
       w$hide()
     }
@@ -279,199 +229,75 @@ server <- function(input, output,session) {
   })
   
   
+  # Plots -----
+  ### "Global" reactive values
+  wg_ranges <- reactiveValues(x = NULL, y = NULL)
+  wg_dnCNV_table <- reactiveValues(t = data.frame(start = c(0), end = c(0), stringsAsFactors = F))
   
- 
+  ## WG Plot section
+  observeEvent(input$btn_wg_rd, {
+    req(nrow(values$pr_rd) != 0)
+    w$show()
+    rd <- values$pr_rd
+    rd <- wg_norm(rd, input$wg_norm_options)
+    seg <- getAllSeg(rd)
+    wg_pr <- wg_seg2plot(seg)
+    w$hide()
+    wg_ranges <- mod_plot_wg_Server("wg_pr_rd", wg_pr, wg_ranges, wg_dnCNV_table)
+    output$wg_rd_table <- renderTable({
+      names(seg) <- c("chr", "start", "end", "width_100kb", "Log2Ratio")
+      seg %>%
+        filter(width_100kb > 100) %>%
+        filter(Log2Ratio >0.4 | dplyr::between(Log2Ratio,-1.5, -0.3))
+    })
+  })
+  observeEvent(input$btn_wg_rd, {
+    req(nrow(values$m_rd) != 0)
+    w$show()
+    rd <- values$m_rd
+    rd <- wg_norm(rd, input$wg_norm_options)
+    seg <- getAllSeg(rd)
+    wg_m <- wg_seg2plot(seg)
+    w$hide()
+    wg_ranges <- mod_plot_wg_Server("wg_m_rd", wg_m, wg_ranges, wg_dnCNV_table)
+  })
+  observeEvent(input$btn_wg_rd, {
+    req(nrow(values$f_rd) != 0)
+    w$show()
+    rd <- values$f_rd
+    rd <- wg_norm(rd, input$wg_norm_options)
+    seg <- getAllSeg(rd)
+    wg_f <- wg_seg2plot(seg)
+    w$hide()
+    wg_ranges <- mod_plot_wg_Server("wg_f_rd", wg_f, wg_ranges, wg_dnCNV_table)
+  })
 
 
   
-  ## annotation panel
-  # interactive plot regions-------
-  output$brush_info <- renderPrint({
-    brush <- input$plot1_brush
-    chr <- input$chr
-    if(!is.null(brush)){
-      cat(paste0("select region: ",chr,":",
-                 format(round(brush$xmin,0),big.mark=",",scientific = FALSE),
-                 "-",
-                 format(round(brush$xmax,0),big.mark=",",scientific = FALSE),
-                 ", ",round(brush$xmax-brush$xmin,0),"bp"))
-    }
-  })
-  
-  
-  ##work in progress
-  ## old plot1
-  # output$plot1 <- renderPlot({
-  #   if(nrow(plots$pr_rd) == 0){
-  #     return(NULL)
-  #   }
-  #   if(nrow(values$selected_record)==0){
-  #     dup.df <- data.frame()
-  #     del.df <- data.frame()
-  #     trp.df <- data.frame()
-  #     cpx.df <- data.frame()
-  #   }else{
-  #     dup.df <- subset(values$selected_record, ALT%in%c("<DUP>","DUP"))
-  #     del.df <- subset(values$selected_record, ALT%in%c("<DEL>","DEL"))
-  #     trp.df <- subset(values$selected_record, ALT%in%c("<TRP>","TRP"))
-  #     cpx.df <- subset(values$selected_record, ALT%in%c("<CPX>","CPX"))
-  #     dup.df$rowidx <- as.numeric(rownames(dup.df))
-  #     del.df$rowidx <- as.numeric(rownames(del.df))
-  #     trp.df$rowidx <- as.numeric(rownames(trp.df))
-  #     cpx.df$rowidx <- as.numeric(rownames(cpx.df))
-  #   }
-  #   if(nrow(values$anno_rect)==0){
-  #     anno_rect <- data.frame()
-  #   }else{
-  #     anno_rect <- values$anno_rect
-  #     anno_rect$rowidx <- as.numeric(rownames(anno_rect))
-  #   }
-  #   plots$plot1 <- ext1()+
-  #     coord_cartesian(xlim = ranges$x, ylim = ranges$y, expand = FALSE)+
-  #     ## pointer to the selected CNV call(suppressed)
-  #     #annotate("point",x=ifelse(is.null(values$selected_record$POS),-100,values$selected_record$POS),y=rep(1.8,length(values$selected_record$POS)),shape=25,fill="orange",size=2)+ 
-  #     geom_hline(yintercept=-2.5,col="black")+
-  #     annotate("text",x=ifelse(is.null(ranges$x),-100000,sum(ranges$x)/2),y=-2.3,label="SVTYPE")+
-  #     annotate("rect",xmin=dup.df$POS,xmax=dup.df$END,ymin=dup.df$rowidx%%4*0.1-3,ymax=(dup.df$rowidx%%4+1)*0.1-3,fill = CNVCOLOR6["DUP"])+
-  #     annotate("rect",xmin=del.df$POS,xmax=del.df$END,ymin=del.df$rowidx%%4*0.1-3,ymax=(del.df$rowidx%%4+1)*0.1-3,fill = CNVCOLOR6["DEL"])+
-  #     annotate("rect",xmin=trp.df$POS,xmax=trp.df$END,ymin=trp.df$rowidx%%4*0.1-3,ymax=(trp.df$rowidx%%4+1)*0.1-3,fill = CNVCOLOR6["TRP"])+
-  #     annotate("rect",xmin=cpx.df$POS,xmax=cpx.df$END,ymin=cpx.df$rowidx%%4*0.1-3,ymax=(cpx.df$rowidx%%4+1)*0.1-3,fill = CNVCOLOR6["CPX"])+
-  #     annotate("rect",xmin=anno_rect$xmin,xmax=anno_rect$xmax,fill=anno_rect$fill,ymin=anno_rect$rowidx*0-3,ymax=(anno_rect$rowidx-anno_rect$rowidx+2),alpha=0.3)+
-  #     ggtitle(paste0(plots$xlabel,":",paste0(round(as.numeric(ranges$x)),collapse = "-")))
-  #   plots$plot1
-  # })
-  # 
-  # 
-  
-  # output$plot_anno <- renderPlot({
-  #   if(length(plots$plot3) == 0){
-  #     return(NULL)
-  #   }
-  #   if(nrow(values$anno_rect)==0){
-  #     anno_rect <- data.frame()
-  #   }else{
-  #     anno_rect <- values$anno_rect
-  #     anno_rect$rowidx <- as.numeric(rownames(anno_rect))
-  #   }
-  #   plots$plot3_dl <- plots$plot3+
-  #     annotate("rect",xmin=anno_rect$xmin,xmax=anno_rect$xmax,fill=anno_rect$fill,ymin=anno_rect$rowidx*0,ymax=(anno_rect$rowidx-anno_rect$rowidx+2)+length(unique(plots$genelabel$gene_id)),alpha=0.3)+
-  #     coord_cartesian(xlim = ranges$x, expand = FALSE)
-  #   plots$plot3_dl
-  # })
 
-  
-  #     if(nrow(values$data)!=0){
-  #       values$work_data <- values$data%>%
-  #         filter(CHROM==chr)%>%
-  #         filter(POS>=brush$xmin,POS < brush$xmax)
-  #     }
-  #   } else {
-  #     ranges$x <- NULL
-  #     ranges$y <- NULL
-  #     plots$genelabel <- data.frame(stringsAsFactors = F)
-  #     plots$plot3 <- list()
-  #     if(nrow(values$data)!=0){
-  #       values$work_data <- values$data%>%filter(CHROM==chr)
-  #     }
-  #   }
-  # })
-# 
-  
-
-  observeEvent(input$btl_add,{
-    brush <- input$plot1_brush
-    if(!is.null(brush)){
-      xmin <- round(brush$xmin,0)
-      xmax <- round(brush$xmax,0)
-      fill <- input$add_col
-      values$anno_rect <- rbindlist(list(values$anno_rect,data.frame(xmin,xmax,fill)))
-    }
-  })
-  observeEvent(input$btl_reset,{
-    values$anno_rect <- data.frame(stringsAsFactors = F)
-  })
-  
-  ## buttons 
-  output$ui_dlbtn_tbl <- renderUI({
-    if(nrow(values$data) > 0){
-      tagList(shiny::actionButton("btl_select", "Select",icon("check")))
-    }
-  })
-  output$ui_dlbtn_plt <- renderUI({
-    if(length(plots$plot1) > 0){
-      downloadButton("dl_plt", "Download")
-    }
-  })
-  output$ui_clbtn_plt <- renderUI({
-    if(length(plots$plot1) > 0){
-      shiny::actionButton("cl_btn","Clear plot",icon("trash"))
-    }
-  })
-  output$ui_dlbtn_dnsnv <- renderUI({
-    if(length(plots$plot2) > 0){
-      shiny::downloadButton("dl_btn_dnsnv","Download dnSNV")
-    }
-  })
-  output$ui_btn_goto <- renderUI({
-    if(length(plots$plot1)>0){
-      tagList(
-        fluidRow(
-          column(1,shiny::actionButton("btl_goto","goto")),
-          column(8,shiny::textInput("goto_reg",label = NULL,placeholder = "e.g, 10000-20000 or GENE"))))
-    }
-  })
-  output$ui_btn_add <- renderUI({
-    if(length(plots$plot1)>0){
-      tagList(
-        fluidRow(column(1,shiny::actionButton("btl_add","Add")),
-                 column(4,colourpicker::colourInput("add_col",NULL,"yellow",palette = "limited")),
-                 column(1,shiny::actionButton("btl_reset","Reset"))))
-    }
-  })
-  observeEvent(input$cl_btn,{
-    plots$snp_chr <- data.frame(stringsAsFactors = F)
-    plots$pr_rd <- data.frame(stringsAsFactors = F)
-    input$filter_sv_table_rows_selected <- NULL
-  })
-  
-  ## Download handler
-  output$dl_plt <- downloadHandler(
-    filename = function(){
-      paste0(input$chr,".pdf")
-    },
-    content = function(file){
-      
-      mylist <- list(plots$plot1,plots$plot3_dl,plots$plot2)
-      mylist <- mylist[lengths(mylist)!= 0]
-      n <- length(mylist)
-      p <- cowplot::plot_grid(plotlist=mylist,ncol = 1,align = 'v',axis = 'lr')
-      ggplot2::ggsave(filename =file, plot = p,device = "pdf",width =12 ,height = n*4,units = "in")
-    }
-  )
-  output$dl_btn_dnsnv <- downloadHandler(
-    filename = function(){paste("dnSNV_",input$chr,".csv")},
-    content = function(file){
-      df <- plots$snp_chr%>%filter(likelyDN%in%c(input$include_dnSNV))
-      write.csv(df,file,row.names = F)
-    }
-  )
   
   
   ## Plots section
-  ranges <- reactiveValues(x = NULL, y = NULL)
+  ranges <- reactiveValues(x = NULL, y = NULL,cur = NULL, click = NULL)
   dnCNV_table <- reactiveValues(t = data.frame(start = c(0), end = c(0), stringsAsFactors = F))
+  
+  ## reset plots upon changing chr
+  observeEvent(input$btn_plot, {
+    ranges$x <-  NULL
+    dnCNV_table$t <-  data.frame(start = c(0), end = c(0), stringsAsFactors = F)
+  })
   
   ## RD plots
   observeEvent(input$btn_plot,{
     req(nrow(plots$pr_rd) != 0)
     
-    showNotification("Plotting Read Depth Plot", duration = 8, type = "message")
+    showNotification("Plotting Read Depth Plot", duration = 12, type = "message")
     include_seg <- input$include_seg
     df <- rbindlist(list(plots$pr_seg,plots$m_seg,plots$f_seg))%>%
       filter(ID%in%include_seg)%>%
       mutate(ID=as.factor(ID))%>%
       mutate(seg.mean=ifelse(seg.mean < -2.5,-2,seg.mean))
-    plots$xlabel=unique(df$chrom)[1]
+    plots$xlabel=input$chr
     rd <- ggplot(plots$pr_rd, aes(x=V2, y=log2(ratio+0.00001))) +
       geom_point(shape=".")+
       #scattermore::geom_scattermore(shape=".",pixels=c(1024,1024))+
@@ -479,11 +305,9 @@ server <- function(input, output,session) {
       geom_point(data = subset(plots$pr_rd, ratio > 1.3),aes(V2,log2(ratio+0.00001)),shape=".",color="red")+
       geom_segment(data = df,aes(x=loc.start,y=seg.mean,xend=loc.end,yend=seg.mean,color=factor(ID)),size=1)+
       scale_color_manual(name="Segment",values = c("Proband"="blue","Mother"="#E69F00","Father"="#39918C"),)+
-      ylim(-4,4)+
       xlab(plots$xlabel)+
       scale_rd+
-      style_rd+
-      scale_x_continuous(labels = scales::label_number())
+      style_rd
     
  
     btnValrds <- mod_checkbox_Server("RD-static")
@@ -518,7 +342,7 @@ server <- function(input, output,session) {
       scale_x_continuous(labels = scales::label_number())
     
     btnVala <- mod_checkbox_Server("Baf-A_allele")
-    ranges <- mod_plot_switch_Server("Baf-A_allele", btnVala$box_state, snp_a, ranges)
+    ranges <- mod_plot_switch_Server("Baf-A_allele", btnVala$box_state, snp_a, ranges, dnCNV_table)
     
     snp_b <- ggplot(df, aes(x=start,y=pr_ALT_Freq,col=B_InhFrom))+
       geom_point(shape=".")+
@@ -534,12 +358,15 @@ server <- function(input, output,session) {
     
     removeNotification(noti_id)
     btnValb <- mod_checkbox_Server("Baf-B_allele")
-    ranges <- mod_plot_switch_Server("Baf-B_allele", btnValb$box_state, snp_b, ranges)
+    ranges <- mod_plot_switch_Server("Baf-B_allele", btnValb$box_state, snp_b, ranges, dnCNV_table)
     
   })
   
   ##Anno tracks
   observeEvent(input$btn_anno,{
+    id <- showNotification("Pulling Data", type = "message", duration = NULL)
+    chrn = input$chr
+    path = "./data/"
     if (input$ref == "GRCh37"){
       p1_file = "NCBI_RefSeq_hg19_clean.bed.parquet"
       p2_file = "Claudia_hg19_MergedInvDirRpts_sorted.bed"
@@ -555,20 +382,46 @@ server <- function(input, output,session) {
       p5_file = NULL
       p6_file = NULL
     }
-    id <- showNotification("Pulling Data", type = "message", duration = NULL)
-    chrn = input$chr
-    path = "./data/"
+
+    if (nrow(values$pr_sv) != 0){
+      pr_sv <- values$pr_sv %>% 
+        filter(CHROM == chrn) %>% 
+        filter(AVGLEN > 10000 & AVGLEN < 100000000)
+      pr_sv <- pr_sv %>% 
+        mutate(color = case_when(SVTYPE == "DEL" ~ "darkblue",
+                                 SVTYPE == "DUP" ~ "#8b0000",
+                                 SVTYPE == "INS" ~ "darkgreen", 
+                                 SVTYPE == "INV" ~ "darkorange", 
+                                 TRUE ~ "magenta3")) %>% 
+        group_by(SVTYPE) %>% 
+        mutate(idx = sample.int(n())/1000)
+      pr_sv <- pr_sv %>% 
+        mutate(start = POS, 
+               end = as.integer(END)) %>% 
+        relocate(CHROM, start, end) %>% 
+        dplyr::select(-c(POS, END, REF, ALT, AVGLEN, MAPQ, RE, CIEND, CIPOS))
+      pr_sv_plot <- ggplot(pr_sv, aes(x = POS, y = idx)) +
+        annotate("rect", xmin = pr_sv$start, xmax = pr_sv$end, ymin = pr_sv$idx, ymax = pr_sv$idx+0.0001, color = pr_sv$color)+
+        style_anno+
+        scale_anno+
+        ylab("pr_SV")
+      btnVal_prsv <- mod_checkbox_Server("pr_sv")
+      ranges <- mod_plot_switch_Server("pr_sv", btnVal_prsv$box_state, pr_sv_plot, ranges, dnCNV_table)
+      anno_table_Server("pr_sv", pr_sv, ranges, chrn)
+    }
+    
     
     RefSeq <- read_parquet(paste0(path,p1_file))
     RefSeq <- RefSeq %>% 
       filter(seqname ==  chrn) %>%
       mutate(gene_num=round(as.numeric(as.factor(gene_id)),3)/100,
              strand=as.factor(strand))
-      gene_x <- RefSeq%>%
-        group_by(gene_num)%>%
-        summarise(start=(min(start)+max(end))/2,
-                  end=(min(start)+max(end))/2,
-                  gene_id=unique(gene_id))
+    gene_x <- RefSeq%>%
+      group_by(gene_num)%>%
+      summarise(start=(min(start)+max(end))/2,
+                end=(min(start)+max(end))/2,
+                gene_id=unique(gene_id))
+    
     p1 <- RefSeq %>% 
       ggplot(aes(xstart = start, xend = end, y = gene_num))+
       geom_intron(data = to_intron(RefSeq, "gene_num"), arrow.min.intron.length = 400)+
@@ -707,14 +560,30 @@ server <- function(input, output,session) {
     print(dnCNV_table$t)
   })
   
-
-  
+  ## Show current ranges
   observe({
     output$cur_range <- renderText({
       req(!is.null(ranges$x))
-      paste0("current range: ", round(ranges$x[1]), "-", round(ranges$x[2]), "    width: ", round(ranges$x[2])-round(ranges$x[1])+1)
-      })
+      paste0("range: ", round(ranges$x[1]), "-", round(ranges$x[2]), "    width: ", round(ranges$x[2])-round(ranges$x[1])+1)
     })
+  })
+  
+  ## Show cur location
+  observe({
+    output$cur_loc <- renderText({
+      if(is.null(ranges$cur)){ranges$cur <- 0}
+      paste0("location: ", round(ranges$cur))
+    })
+  })
+  
+  ## Show clicked location
+  observe({
+    if(is.null(ranges$click)){ranges$click <- 0}
+    clipr::write_clip(str_remove_all(as.character(round(ranges$click)), "[\r\n]"))
+  })
+
+  
+
   
   
   ## btn_goto
@@ -722,18 +591,29 @@ server <- function(input, output,session) {
     req(!is.null(input$goto_reg))
     str <- stringr::str_trim(input$goto_reg)
     str <- strsplit(str,"-|_")
-    if (length(str[[1]]) ==1) {
-      showNotification("Looking up gene name", type = "message")
-      path <- "./data/"
-      p1_file <- "NCBI_RefSeq_hg19_clean.bed.parquet"
-      RefSeq <- read_parquet(paste0(path,p1_file))
-      search <- as.character(str[[1]])
-      found <- RefSeq %>% 
-        filter(seqname == input$chr) %>% 
-        filter(grepl(search, gene_id, ignore.case = T))
-      if (nrow(found) != 0){
-        ranges$x <- c(as.numeric(min(found$start)-geneExtend),
-                      as.numeric(max(found$end)+geneExtend))
+    if (length(str[[1]]) == 1) {
+      if (!is.na(as.numeric(str[[1]]))){
+        showNotification("Jumping to coordinates", type = "message")
+        from <- as.numeric(str[[1]])-500000
+        if (from < 0){from <- 0}
+        to <- as.numeric(str[[1]])+500000
+        ranges$x <- c(from, to)
+      }else {
+        showNotification("Looking up gene name", type = "message")
+        path <- "./data/"
+        p1_file <- "NCBI_RefSeq_hg19_clean.bed.parquet"
+        RefSeq <- read_parquet(paste0(path,p1_file))
+        search <- as.character(str[[1]])
+        found <- RefSeq %>% 
+          filter(seqname == input$chr) %>% 
+          filter(grepl(search, gene_id, ignore.case = T))
+        if (nrow(found) != 0){
+          ranges$x <- c(as.numeric(min(found$start)-geneExtend),
+                        as.numeric(max(found$end)+geneExtend))
+        }else{
+          showNotification("Gene not found", type = "error")
+        }
+
       }
     } else if (length(str[[1]]) == 2){
       showNotification("Jumping to coordinates", type = "message")
@@ -742,8 +622,58 @@ server <- function(input, output,session) {
       ranges$x <- c(from, to)
     }
   }, ignoreInit = T)
-
-
+  
+  # ## buttons 
+  # output$ui_dlbtn_tbl <- renderUI({
+  #   if(nrow(values$pr_sv) > 0){
+  #     tagList(shiny::actionButton("btl_select", "Select",icon("check")))
+  #   }
+  # })
+  # output$ui_dlbtn_plt <- renderUI({
+  #   if(length(plots$plot1) > 0){
+  #     downloadButton("dl_plt", "Download")
+  #   }
+  # })
+  # output$ui_clbtn_plt <- renderUI({
+  #   if(length(plots$plot1) > 0){
+  #     shiny::actionButton("cl_btn","Clear plot",icon("trash"))
+  #   }
+  # })
+  # output$ui_dlbtn_dnsnv <- renderUI({
+  #   if(length(plots$plot2) > 0){
+  #     shiny::downloadButton("dl_btn_dnsnv","Download dnSNV")
+  #   }
+  # })
+  # 
+  
+  # observeEvent(input$cl_btn,{
+  #   plots$snp_chr <- data.frame(stringsAsFactors = F)
+  #   plots$pr_rd <- data.frame(stringsAsFactors = F)
+  #   input$filter_sv_table_rows_selected <- NULL
+  # })
+  # 
+  # ## Download handler
+  # output$dl_plt <- downloadHandler(
+  #   filename = function(){
+  #     paste0(input$chr,".pdf")
+  #   },
+  #   content = function(file){
+  #     
+  #     mylist <- list(plots$plot1,plots$plot3_dl,plots$plot2)
+  #     mylist <- mylist[lengths(mylist)!= 0]
+  #     n <- length(mylist)
+  #     p <- cowplot::plot_grid(plotlist=mylist,ncol = 1,align = 'v',axis = 'lr')
+  #     ggplot2::ggsave(filename =file, plot = p,device = "pdf",width =12 ,height = n*4,units = "in")
+  #   }
+  # )
+  # output$dl_btn_dnsnv <- downloadHandler(
+  #   filename = function(){paste("dnSNV_",input$chr,".csv")},
+  #   content = function(file){
+  #     df <- plots$snp_chr%>%filter(likelyDN%in%c(input$include_dnSNV))
+  #     write.csv(df,file,row.names = F)
+  #   }
+  # )
+  # 
   
 }
 

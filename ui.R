@@ -14,7 +14,8 @@ ui <- dashboardPage(
   dashboardSidebar(
     sidebarMenu(
       menuItem(tabName = "input", text = "Input/Filtering", icon = icon("upload")),
-      menuItem(tabName = "plot", text = "Plots", icon = icon("search")),
+      menuItem(tabName = "wg_plot", text = "WG Plots", icon = icon("chart-column")),
+      menuItem(tabName = "chr_plot", text = "Chromosomal Plots", icon = icon("search")),
       menuItem(tabName = "table", text = "Tables", icon = icon("table")),
       menuItem(tabName = "help", text = "Help", icon = icon("question-circle")),
       menuItem(tabName = "about", text = "About", icon = icon("info-circle"))
@@ -23,6 +24,25 @@ ui <- dashboardPage(
   
   dashboardBody(
       tabItems(
+        tabItem( tabName = "wg_plot",
+                 fluidRow(
+                   box(title = "Options",width = 12,solidHeader = T, status = "success",collapsible = T,
+                       column(3, actionButton("btn_wg_rd", "Show whole genome read depth")),
+                       column(3, 
+                              radioButtons("wg_norm_options",
+                                           label = "Normalization options", 
+                                           choiceNames = list("chromosomal median", "whole genome median"),
+                                           choiceValues = list("chr_med", "wg_med")))
+                   ),
+                   box(title = "WG Plots",width = 12,solidHeader = T, status = "success",collapsible = T,
+                       mod_plot_wg_UI("wg_pr_rd", height = 270),
+                       mod_plot_wg_UI("wg_m_rd", height = 270),
+                       mod_plot_wg_UI("wg_f_rd", height = 270)),
+                   box(title = "WG Table",width = 12,solidHeader = T, status = "success",collapsible = T,
+                       tableOutput("wg_rd_table"))
+                 )
+        ),
+        
         tabItem(tabName = "input",
           fluidRow(
             column(width=8,
@@ -91,7 +111,7 @@ ui <- dashboardPage(
                    )
           )
           ),
-        tabItem(tabName = "plot",
+        tabItem(tabName = "chr_plot",
                 shinyjs::useShinyjs(),
                 fluidRow(
                   box(title = "Customizations",width = 12,solidHeader = T, status = "success",collapsible = T,
@@ -125,6 +145,7 @@ ui <- dashboardPage(
 
                       column(2,
                              HTML("<b>Annotation Track Options:</b>"),
+                             mod_checkbox_UI("pr_sv", value = F),
                              mod_checkbox_UI("RefSeq"),
                              mod_checkbox_UI("IDR", value = F),
                              mod_checkbox_UI("SegDup"),
@@ -135,7 +156,12 @@ ui <- dashboardPage(
                       column(2,
                              uiOutput("blt_dnSNV_ui"),
                              actionButton("btn_dnCNV", "Show potential dnCNVs")
-                             )
+                             ),
+                      column(3, 
+                             radioButtons("norm_options",
+                                          label = "Normalization options", 
+                                          choiceNames = list("chromosomal median", "whole genome median"),
+                                          choiceValues = list("chr_med", "wg_med")))
                       ),
                     fluidRow(
                       column(1, actionButton("btn_filter", "Filter")),
@@ -154,15 +180,17 @@ ui <- dashboardPage(
                                  mod_checkbox_UI("Baf-A_allele", value = F),
                                ),
                                fluidRow(
-                                 column(4,shiny::textInput("goto_reg",label = NULL,placeholder = "gene, chromosome range")),
+                                 column(4,shiny::textInput("goto_reg",label = NULL,placeholder = "gene symbol, chromosome location/range")),
                                  column(2,shiny::actionButton("btn_go","go")),
-                                 verbatimTextOutput("cur_range")
+                                 column(2,verbatimTextOutput("cur_loc")),
+                                 column(4,verbatimTextOutput("cur_range"))
                                ),
                     mod_plot_switch_UI("RD-static", height = 200),
                     mod_plot_switch_UI("RD-dynamic", height = 200),
                     mod_plot_switch_UI("Baf-B_allele", height = 200),
                     mod_plot_switch_UI("Baf-A_allele", height = 200),
-                    # uiOutput("ui_plot_anno"),
+                    
+                    mod_plot_switch_UI("pr_sv"),
                     mod_plot_switch_UI("RefSeq", height = 120),
                     mod_plot_switch_UI("IDR"),
                     mod_plot_switch_UI("Segdup"),
@@ -186,6 +214,7 @@ ui <- dashboardPage(
                       DT::dataTableOutput("Select_table")),
                 box(title = "Annotation Table",width = 12,solidHeader = T, status = "success",collapsible = T,
                 tabsetPanel(
+                  tabPanel("pr_sv",anno_table_UI("pr_sv")),
                   tabPanel("RefSeq",anno_table_UI("RefSeq")),
                   tabPanel("IDR",anno_table_UI("IDR")),
                   tabPanel("SegDup",anno_table_UI("SegDup")),
