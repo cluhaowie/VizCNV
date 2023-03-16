@@ -117,13 +117,12 @@ ui <- dashboardPage(
                     use_waiter(),
                     fluidRow(
                       use_waiter(),
-                      column(2, 
+                      column(1, 
                              p(HTML("<b>Chromosome</b>"),span(shiny::icon("info-circle"), id = "info_chr"),selectInput('chr', choice=c(paste0("chr", c(seq(1,22), "X"))),label = NULL, multiple = F),
                                tippy::tippy_this(elementId = "info_chr",tooltip = "Selected chromosome",placement = "right")
-                             ))
-                    ),
-                    fluidRow(
+                             )),
                       column(2,
+                             offset = 1,
                              p(HTML("<b>Segment option</b>"),span(shiny::icon("info-circle"), id = "info_seg"),radioButtons('seg_option', 
                                                                                                                             label = NULL,
                                                                                                                             choiceNames = list("SLM","CBS"),
@@ -141,7 +140,13 @@ ui <- dashboardPage(
                                                     "Dad"="Father"),selected = "Proband"),
                                tippy::tippy_this(elementId = "info_include",tooltip = "Choose to show segment from either or both parents",placement = "right")
                              )),
-
+                      column(2, 
+                             uiOutput("blt_dnSNV_ui")),
+                      column(2, 
+                             radioButtons("norm_options",
+                                          label = "Normalization options", 
+                                          choiceNames = list("chromosomal median", "whole genome median"),
+                                          choiceValues = list("chr_med", "wg_med"))),
                       column(2,
                              HTML("<b>Annotation Track Options:</b>"),
                              mod_checkbox_UI("pr_sv", value = F),
@@ -150,21 +155,14 @@ ui <- dashboardPage(
                              mod_checkbox_UI("SegDup"),
                              mod_checkbox_UI("OMIM"),
                              mod_checkbox_UI("gnomAD"),
-                             mod_checkbox_UI("RMSK", value = F),
-                             actionButton("btn_anno", "Annotate")),
-                      column(2,
-                             uiOutput("blt_dnSNV_ui"),
-                             actionButton("btn_dnCNV", "Show potential dnCNVs")
-                             ),
-                      column(3, 
-                             radioButtons("norm_options",
-                                          label = "Normalization options", 
-                                          choiceNames = list("chromosomal median", "whole genome median"),
-                                          choiceValues = list("chr_med", "wg_med")))
+                             mod_checkbox_UI("RMSK", value = F)
+                             )
                       ),
                     fluidRow(
                       column(1, actionButton("btn_filter", "Filter")),
-                      column(1, actionButton("btn_plot", "Plot"))
+                      column(1, actionButton("btn_plot", "Plot")),
+                      column(1, actionButton("btn_anno", "Annotate")),
+                      column(2, actionButton("btn_dnCNV", "Show potential dnCNVs"))
                       )
                     )
                   ),
