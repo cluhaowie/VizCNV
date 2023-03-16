@@ -199,12 +199,12 @@ server <- function(input, output,session) {
   # Plots -----
   ### "Global" reactive values
   wg_ranges <- reactiveValues(x = NULL, pr = NULL, m = NULL, f = NULL)
-  wg_dnCNV_table <- reactiveValues(t = data.frame(start = c(0), end = c(0), stringsAsFactors = F))
+  wg_dnCNV_table <- reactiveValues(t = data.frame(start_cum = c(0), end_cum = c(0), stringsAsFactors = F))
   
   ## reset plots upon changing chr
   observeEvent(input$btn_plot, {
     wg_ranges$x <-  NULL
-    wg_dnCNV_table$t <-  data.frame(start = c(0), end = c(0), stringsAsFactors = F)
+    wg_dnCNV_table$t <-  data.frame(start_cum = c(0), end_cum = c(0), stringsAsFactors = F)
   })
   
   ## WG Plot section
@@ -217,12 +217,6 @@ server <- function(input, output,session) {
     wg_pr <- wg_seg2plot(wg_ranges$pr)
     w$hide()
     wg_ranges <- mod_plot_wg_Server("wg_pr_rd", wg_pr, wg_ranges, wg_dnCNV_table)
-    output$wg_rd_table <- renderTable({
-      names(seg) <- c("chr", "start", "end", "width_100kb", "Log2Ratio")
-      seg %>%
-        filter(width_100kb > 100) %>%
-        filter(Log2Ratio >0.4 | dplyr::between(Log2Ratio,-1.5, -0.3))
-    })
   })
   observeEvent(input$btn_wg_rd, {
     req(nrow(values$m_rd) != 0)
@@ -247,10 +241,25 @@ server <- function(input, output,session) {
 
   ## dnCNV table
   observeEvent(input$btn_wg_dnCNV, {
-    req(nrow(values$pr_rd)!=0)
-    req(nrow(values$m_rd)!=0)
-    req(nrow(values$f_rd)!=0)
-    wg_dnCNV_table$t <- mod_dnCNV_Server("wg_dnCNV",wg_ranges$pr, wg_ranges$m, wg_ranges$f)
+    req(!is.null(wg_ranges$pr))
+    req(!is.null(wg_ranges$m))
+    req(!is.null(wg_ranges$f))
+    seg_data <- mod_dnCNV_Server("wg_dnCNV",wg_ranges$pr, wg_ranges$m, wg_ranges$f)
+    names(seg_data)[1] = "chr"
+    print(seg_data)
+    temp <- wg_ranges$pr %>% 
+      group_by(chr) %>% 
+      summarise(max_end = max(loc.end)) %>% 
+      mutate(across("chr", str_replace, "chr", "")) %>% 
+      arrange(as.numeric(chr)) %>% 
+      mutate(loc_add = lag(cumsum(as.numeric(max_end)), default = 0)) %>% 
+      mutate(chr = paste0("chr", chr))
+    seg_data <- seg_data %>% 
+      inner_join(temp, by = "chr") %>% 
+      mutate(end_cum = loc_add + end) 
+    seg_data <- seg_data %>% 
+      mutate(start_cum = end_cum- width)
+    wg_dnCNV_table$t <- seg_data
   })
   
 

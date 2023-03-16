@@ -152,22 +152,16 @@ mod_plot_wg_UI <- function(id, height = 100) {
 #' mod_plot_output_Server("plot", p, ranges, dnCNV_table, zoom = F)
 #'
 #' @export
-mod_plot_wg_Server <- function(id, p, ranges, dnCNV_table, zoom = T){
+mod_plot_wg_Server <- function(id, p, ranges, dnCNV_table){
   moduleServer(
     id,
     function(input, output, session) {
-      if (isTRUE(zoom)){
-        output$plot <- renderPlot({
-          
+      output$plot <- renderPlot({
           p +
-            coord_cartesian(xlim= ranges$x, ylim = ranges$y, expand = F)
+            coord_cartesian(xlim= ranges$x, ylim = ranges$y, expand = F)+
+            annotate("rect", fill = "orange", alpha =0.3, xmin = dnCNV_table$t$start_cum, xmax = dnCNV_table$t$end_cum, ymin = -Inf, ymax = Inf)
         })
-      } else{
-        output$plot <- renderPlot({
-          p +
-            coord_cartesian(expand = F)
-        })
-      }
+      
       
       observeEvent(input$dblclick, {
         brush <- input$brush
