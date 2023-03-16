@@ -4,7 +4,7 @@
 #  ------------------------------------------------------------------------
 #
 # Title : App - VizCNV
-#    By : Haowei Du
+#    By : Haowei Du, Cliff Lun
 #  Date : April 2022
 #    
 #  ------------------------------------------------------------------------
@@ -21,12 +21,12 @@ options(shiny.autoreload=TRUE)
 # Install missing packages from CRAN, 'arrow' may be a problem
 list.of.packages <- c("dplyr", "data.table", "shiny", "shinydashboard", "shinyFeedback",
                       "tippy","DT","ggplot2","shinyWidgets","shinyFiles","waiter",
-                      "cowplot","devtools","BiocManager","arrow","colourpicker", "shinyjs") 
+                      "cowplot","devtools","BiocManager","arrow","colourpicker", "shinyjs","rclipboard") 
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
 if(length(new.packages)) install.packages(new.packages)
 
 # Install missing packages from Bioconductor
-biocLitePackages <- c("DNAcopy", "GenomicRanges", "VariantAnnotation","bedr") 
+biocLitePackages <- c("DNAcopy", "GenomicRanges", "VariantAnnotation","bedr","plyranges") 
 new.biocLitePackage <- biocLitePackages[!(biocLitePackages %in% installed.packages()[,"Package"])]
 if (!require("BiocManager", quietly = TRUE))
   install.packages("BiocManager")
@@ -73,6 +73,7 @@ library(VariantAnnotation)
 library(arrow) ## read parquet data
 library(shinyjs)
 library(ggtranscript)
+library(rclipboard)
 #library(colourpicker) ## required for picking annotation color
 # set up local database -------
 
@@ -256,52 +257,64 @@ ReadGVCF <- function(path_to_gVCF,ref_genome=ref_genome,param = param){
   return(vcf.gr)
 }
 
+normalization_method <- function(df, chr, norm_option = "chr_med"){
+  if (norm_option == "chr_med"){
+    tmp <- df%>%
+      filter(V1 == chr)%>%
+      mutate(ratio=V4/median(V4+0.00001))
+  } else if (norm_option == "wg_med"){
+    tmp <- df%>%
+      mutate(ratio=V4/median(V4+0.00001)) %>% 
+      filter(V1 == chr)
+  }
+  return(tmp)
+}
 
 ## plot parameter
 
 
 style_rd <- theme_classic()+
-  theme(
-    plot.title = element_text(face = "bold", size = 12),
-    legend.position = "top",
-    legend.title = element_text(colour="black", size=12, face="bold"),
-    legend.text = element_text(size = 12),
-    panel.border = element_blank(),
-    panel.grid.minor.y = element_blank(),
-    #panel.grid.minor.x = element_line(colour = "grey50"),
-    panel.grid.major.y = element_line(linetype = 5,colour = "grey50"),
-    panel.grid.major.x = element_line(linetype = 5,colour = "grey50"),
-    panel.background = element_blank(),
-    axis.text = element_text(color = "black"),
-    # axis.title = element_text(color = "black",face = "bold"),
-    #axis.line.x = element_blank(),
-    axis.ticks = element_line(color = "black"))
+  theme(plot.title = element_text(face = "bold", size = 12),
+        legend.position = "top",
+        legend.title = element_text(colour="black", size=12),
+        legend.text = element_text(size = 12),
+        panel.border = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        panel.grid.minor.x = element_line(linetype = 4,colour = "grey85"),
+        panel.grid.major.y = element_line(linetype = 5,colour = "grey70"),
+        panel.grid.major.x = element_line(linetype = 5,colour = "grey50"),
+        panel.background = element_blank(),
+        axis.text.y = element_text(color = "black", size = 10),
+        axis.text.x = element_text(color = c("black", "white"), size = 10),
+        axis.title = element_text(color = "black", size = 12),
+        axis.ticks = element_line(color = "black"))
 
 style_snp <- theme_classic()+
-  theme(
-    plot.title = element_text(face = "bold", size = 12),
-    legend.position = "top",
-    legend.title = element_text(colour="black", size=12, face="bold"),
-    legend.text = element_text(size = 12),
-    panel.border = element_blank(),
-    panel.grid.minor.y = element_blank(),
-    #panel.grid.minor.x = element_line(colour = "grey50"),
-    panel.grid.major.y = element_line(linetype = 5,colour = "grey50"),
-    panel.grid.major.x = element_line(linetype = 5,colour = "grey50"),
-    panel.background = element_blank(),
-    axis.text = element_text(color = "black", size = 12),
-    axis.title = element_text(color = "black",face = "bold"),
-    axis.line.x = element_blank(),
-    axis.ticks = element_line(color = "black"))
+  theme(plot.title = element_text(face = "bold", size = 12),
+        legend.position = "top",
+        legend.title = element_text(colour="black", size=12),
+        legend.text = element_text(size = 12),
+        panel.border = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        panel.grid.minor.x = element_line(linetype = 4,colour = "grey85"),
+        panel.grid.major.y = element_line(linetype = 5,colour = "grey70"),
+        panel.grid.major.x = element_line(linetype = 5,colour = "grey50"),
+        panel.background = element_blank(),
+        axis.text.y = element_text(color = "black", size = 10),
+        axis.text.x = element_text(color = c("black", "white"), size = 10),
+        axis.title.y = element_text(color = "black", size = 12),
+        axis.title.x = element_blank(),
+        axis.ticks = element_line(color = "black"))
 
 scale_rd <- scale_y_continuous(name="Log2 Ratio",
                                limits=c(-2.5, 2),
-                               breaks = c(round(log2(1/2),2),
-                                          round(log2(2/2),2),
-                                          round(log2(3/2),2),
-                                          round(log2(4/2),2),
-                                          round(log2(5/2),2),
-                                          round(log2(6/2),2)
+                               breaks = c(-2,
+                                 round(log2(1/2),2),
+                                 round(log2(2/2),2),
+                                 round(log2(3/2),2),
+                                 round(log2(4/2),2),
+                                 round(log2(5/2),2),
+                                 round(log2(6/2),2)
                                ))
 scale_snp <- scale_y_continuous(name="B-allele frequency",
                                 limits = c(-0.0005, 1.0005),
@@ -314,15 +327,9 @@ scale_snp <- scale_y_continuous(name="B-allele frequency",
                                            round(2/5,2),
                                            round(3/5,2),
                                            1))
-SNPCOLOR2 <- c("#E69F00","#39918C")
-CNVCOLOR6 <- c("#00468b","#00468b","#8b0000","#8b0000","#008b46","#008b46")
-names(CNVCOLOR6) <- c("<TRP>","TRP","<DUP>","DUP","<DEL>","DEL")
-scale_SVType <- scale_fill_manual(CNVCOLOR6)
-chrom_id <- c(1:22,"X")
-names(chrom_id) <- paste0("chr",chrom_id)
 
 
-dir_create("~/Downloads/VizCNV")
+
 
 
 style_anno <- theme_classic()+
@@ -344,3 +351,9 @@ style_genes <- style_rd+
         axis.text.y = element_text(color = "white"))
 scale_genes <- scale_y_continuous(labels = scales::label_number(accuracy = 0.01))
 
+SNPCOLOR2 <- c("#E69F00","#39918C")
+CNVCOLOR6 <- c("#00468b","#00468b","#8b0000","#8b0000","#008b46","#008b46")
+names(CNVCOLOR6) <- c("<TRP>","TRP","<DUP>","DUP","<DEL>","DEL")
+scale_SVType <- scale_fill_manual(CNVCOLOR6)
+chrom_id <- c(1:22,"X")
+names(chrom_id) <- paste0("chr",chrom_id)
