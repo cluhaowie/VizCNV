@@ -125,7 +125,7 @@ mod_rd_upload_Server <- function(id,volumes,values) {
           mutate(V1=ifelse(!V1%like%"chr",paste0("chr",V1),V1))
         assign(id,values$rd_df)
         showModal(modalDialog(title = "File upload",
-                              "The proband read depth file has been uploaded"))
+                              "The read depth file has been uploaded"))
       })
       observeEvent(input$local_rd_file,{
         if(is.integer(input$local_rd_file)){
