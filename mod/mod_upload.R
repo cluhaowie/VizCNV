@@ -30,6 +30,17 @@ mod_snp_upload_Server <- function(id) {
   )
 }
 
+## WIP
+#' shiny file input wrapper UI
+#'
+#' @return tagList of Shiny UI elements with either upload file or able 
+#' to select for local path to file
+#'
+#' @examples
+#' mod_sv_upload_UI("plot")
+#'
+#' @export
+
 mod_sv_upload_UI <- function(id) {
   ns <- NS(id)
   tagList(
@@ -65,14 +76,11 @@ mod_sv_upload_Server <- function(id) {
 
 #' shiny file input wrapper UI
 #'
-#' 
-#'
-#' 
-#'
-#' @return tagList of Shiny UI elements depends on type
+#' @return tagList of Shiny UI elements with either upload file or able 
+#' to select for local path to file
 #'
 #' @examples
-#' mod_rd_upload_UI("plot", type = "required")
+#' mod_rd_upload_UI("pr_rd")
 #'
 #' @export
 
@@ -134,4 +142,29 @@ mod_rd_upload_Server <- function(id,volumes,values) {
   )
 }
 
+#WIP
+dyncheckboxUI <- function(id){
+  ns <- NS(id)
+  label <- switch(id,"pr_rd"="Proband","m_rd"="Mother","f_rd"="Father")
+  shinyjs::useShinyjs()
+  shinyjs::hidden(
+    id = ns("chk"),
+    tagList(
+      checkboxInput(ns("id"),label = label)
+    )
+  )
 
+}
+
+dyncheckboxServer <- function(id,values){
+  moduleServer(
+    id,
+    function(input, output, session){
+      if(nrow(values[[id]])==0){
+        shinyjs::hide(id = "chk")
+      } else {
+        shinyjs::show(id = "chk")
+      }
+    }
+  )
+}

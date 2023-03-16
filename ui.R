@@ -114,11 +114,12 @@ ui <- dashboardPage(
                                                              CBS is slow and give less segment, can be used for noisy data ",placement = "right")
                              )),
                       column(2, 
-                             p(HTML("<b>Segments to be included</b>"),span(shiny::icon("info-circle"), id = "info_include"),checkboxGroupInput(inputId="include_seg",
-                                                                                                                                               label = NULL,
-                                                                                                                                               c("Proband"="Proband",
-                                                                                                                                                 "Mom"="Mother",
-                                                                                                                                                 "Dad"="Father"),selected = "Proband"),
+                             p(HTML("<b>Segments to be included</b>"),span(shiny::icon("info-circle"), id = "info_include"),
+                               checkboxGroupInput(inputId="include_seg",
+                                                  label = NULL,
+                                                  c("Proband"="Proband",
+                                                    "Mom"="Mother",
+                                                    "Dad"="Father"),selected = "Proband"),
                                tippy::tippy_this(elementId = "info_include",tooltip = "Choose to show segment from either or both parents",placement = "right")
                              )),
 
