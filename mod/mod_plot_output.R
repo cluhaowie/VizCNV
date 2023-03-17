@@ -168,7 +168,7 @@ mod_plot_wg_Server <- function(id, p, ranges, dnCNV_table){
       output$plot <- renderPlot({
           p +
             coord_cartesian(xlim= ranges$x, ylim = ranges$y, expand = F)+
-            annotate("rect", fill = "orange", alpha =0.3, xmin = dnCNV_table$t$start_cum, xmax = dnCNV_table$t$end_cum, ymin = -Inf, ymax = Inf)
+            annotate("rect", fill = "red", alpha =0.4, xmin = dnCNV_table$t$start_cum, xmax = dnCNV_table$t$end_cum, ymin = -Inf, ymax = Inf)
         })
       
       
@@ -322,7 +322,6 @@ anno_table_Server <- function(id, df, ranges, chrn) {
 #' This function creates a UI element that allows the user to select a color using a color picker and highlight a row in a table.
 #' @param id The id of the UI element
 #' @return A UI element that can be added to a shiny app
-#' @importFrom shiny NS fluidRow column colourInput actionButton tableOutput
 #' @export
 mod_col_pick_UI <- function(id) {
   ns <- NS(id)
@@ -342,7 +341,6 @@ mod_col_pick_UI <- function(id) {
 #' @param dnCNV_table The data frame containing the table to highlight rows
 #' @param ranges The ranges of the table to be highlighted
 #' @return A server module that can be added to a shiny app
-#' @importFrom shiny moduleServer observeEvent renderTable
 #' @export
 mod_col_pick_Server <- function(id, dnCNV_table, ranges) {
   moduleServer(

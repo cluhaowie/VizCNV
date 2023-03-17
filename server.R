@@ -565,12 +565,12 @@ server <- function(input, output,session) {
   ## Show cur location
   observe({
     output$cur_loc <- renderText({
-      if(is.null(ranges$cur)){ranges$cur <- 0}
+      req(!is.null(ranges$cur))
       paste0("location: ", round(ranges$cur))
     })
   })
   
-  ## Show clicked location
+  ## copy clicked location
   observe({
     if(is.null(ranges$click)){ranges$click <- 0}
     clipr::write_clip(str_remove_all(as.character(round(ranges$click)), "[\r\n]"))
