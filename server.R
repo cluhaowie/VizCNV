@@ -576,10 +576,6 @@ server <- function(input, output,session) {
     clipr::write_clip(str_remove_all(as.character(round(ranges$click)), "[\r\n]"))
   })
 
-  
-
-  
-  
   ## btn_goto
   observeEvent(input$btn_go,{
     req(!is.null(input$goto_reg))

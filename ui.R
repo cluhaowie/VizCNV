@@ -146,17 +146,7 @@ ui <- dashboardPage(
                                                     "Dad"="Father"),selected = "Proband"),
                                tippy::tippy_this(elementId = "info_include",tooltip = "Choose to show segment from either or both parents",placement = "right")
                              ),
-                             uiOutput("blt_dnSNV_ui")),
-                      column(2,
-                             HTML("<b>Annotation Track Options:</b>"),
-                             mod_checkbox_UI("pr_sv", value = F),
-                             mod_checkbox_UI("RefSeq"),
-                             mod_checkbox_UI("IDR", value = F),
-                             mod_checkbox_UI("SegDup"),
-                             mod_checkbox_UI("OMIM"),
-                             mod_checkbox_UI("gnomAD"),
-                             mod_checkbox_UI("RMSK", value = F)
-                             )
+                             uiOutput("blt_dnSNV_ui"))
                       ),
                     fluidRow(
                       column(1, actionButton("btn_filter", "Filter")),
@@ -176,6 +166,14 @@ ui <- dashboardPage(
                                  mod_checkbox_UI("RD-dynamic"),
                                  mod_checkbox_UI("Baf-B_allele"),
                                  mod_checkbox_UI("Baf-A_allele", value = F),
+                                 HTML("<b>Annotation Track Options:</b>"),
+                                 mod_checkbox_UI("RefSeq"),
+                                 mod_checkbox_UI("SegDup"),
+                                 mod_checkbox_UI("OMIM"),
+                                 mod_checkbox_UI("gnomAD"),
+                                 mod_checkbox_UI("IDR", value = F),
+                                 mod_checkbox_UI("RMSK", value = F),
+                                 mod_checkbox_UI("pr_sv", value = F)
                                ),
                                fluidRow(
                                  column(4,shiny::textInput("goto_reg",label = NULL,placeholder = "gene symbol, chromosome location/range")),
