@@ -1,4 +1,11 @@
 ##for wg plots
+
+#' Obtain segmented copy number calls for a single chromosome
+#'
+#' This function performs segmentation analysis on the normalized coverage data for a single chromosome and returns segmented copy number calls.
+#' @param df A data frame containing the normalized coverage data to segment. It must have columns named "chr", "start", "end", and "ratio".
+#' @param idx A character string specifying the chromosome to segment.
+#' @return A data table with columns named "chr", "loc.start", "loc.end", "num.mark", and "seg.mean", containing the segmented copy number calls for the specified chromosome.
 getSeg <- function(df, idx){
   df = df %>% 
     filter(chr == idx)
@@ -20,6 +27,12 @@ getSeg <- function(df, idx){
   res.dt <- data.table(chr=chr,loc.start=start,loc.end=end,num.mark=res$lengths,seg.mean=res$values)
   return (res.dt)  
 }
+
+#' Obtain segmented copy number calls for all chromosomes
+#'
+#' This function performs segmentation analysis on the normalized coverage data for all chromosomes and returns segmented copy number calls for each chromosome.
+#' @param df A data frame containing the normalized coverage data to segment. It must have columns named "chr", "start", "end", and "ratio".
+#' @return A data table with columns named "chr", "loc.start", "loc.end", "num.mark", and "seg.mean", containing the segmented copy number calls for each chromosome.
 getAllSeg <-function(df){
   out = list()
   for (c in paste0("chr", c(1:22,"X"))){
@@ -29,7 +42,12 @@ getAllSeg <-function(df){
   return(out)
 }
 
-
+#' Normalize coverage data using median ratio
+#'
+#' This function normalizes coverage data by dividing each coverage value by the median coverage value of either the whole genome or each chromosome.
+#' @param df A data frame containing the coverage data to normalize. It must have columns named "chr", "start", "end", and "coverage".
+#' @param norm_option A character string specifying the normalization option. "chr_med" (default) normalizes by chromosome median, and "wg_med" normalizes by whole genome median.
+#' @return A data frame with an additional "ratio" column containing the normalized coverage values.
 wg_norm <- function(df, norm_option = "chr_med"){
   names(df) <- c("chr", "start", "end", "coverage")
   if (norm_option == "chr_med"){
