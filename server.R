@@ -202,7 +202,7 @@ server <- function(input, output,session) {
   wg_dnCNV_table <- reactiveValues(t = data.frame(start_cum = c(0), end_cum = c(0), stringsAsFactors = F))
   
   ## reset plots upon changing chr
-  observeEvent(input$btn_plot, {
+  observeEvent(input$btn_wg_rd, {
     wg_ranges$x <-  NULL
     wg_dnCNV_table$t <-  data.frame(start_cum = c(0), end_cum = c(0), stringsAsFactors = F)
   })
@@ -266,14 +266,21 @@ server <- function(input, output,session) {
   
   
   ## Plots section
-  ranges <- reactiveValues(x = NULL, y = NULL,cur = NULL, click = NULL)
-  dnCNV_table <- reactiveValues(t = data.frame(start = c(0), end = c(0), stringsAsFactors = F))
+  ranges <- reactiveValues(x = NULL, y = NULL,cur = NULL, click = NULL, pb = NULL)
+  dnCNV_table <- reactiveValues(t = data.frame(start = c(0), end = c(0), stringsAsFactors = F),
+                                hl = data.frame(start = c(0), end = c(0)))
   
   ## reset plots upon changing chr
   observeEvent(input$btn_plot, {
     ranges$x <-  NULL
+    ranges$cur <-  NULL
+    ranges$click <-  NULL
+    ranges$pb <-  NULL
     dnCNV_table$t <-  data.frame(start = c(0), end = c(0), stringsAsFactors = F)
   })
+
+  ## dynamic highlight
+  mod_col_pick_Server("highlight", dnCNV_table, ranges)
   
   ## RD plots
   observeEvent(input$btn_plot,{
@@ -549,8 +556,8 @@ server <- function(input, output,session) {
   ## Show current ranges
   observe({
     output$cur_range <- renderText({
-      req(!is.null(ranges$x))
-      paste0("range: ", round(ranges$x[1]), "-", round(ranges$x[2]), "    width: ", round(ranges$x[2])-round(ranges$x[1])+1)
+      req(!is.null(ranges$pb))
+      paste0("range: ", round(ranges$pb[1]), "-", round(ranges$pb[2]), "    width: ", round(ranges$pb[2])-round(ranges$pb[1])+1)
     })
   })
   

@@ -179,9 +179,12 @@ ui <- dashboardPage(
                                ),
                                fluidRow(
                                  column(4,shiny::textInput("goto_reg",label = NULL,placeholder = "gene symbol, chromosome location/range")),
-                                 column(2,shiny::actionButton("btn_go","go")),
+                                 column(1,shiny::actionButton("btn_go","go")),
                                  column(2,verbatimTextOutput("cur_loc")),
                                  column(4,verbatimTextOutput("cur_range"))
+                               ),
+                               fluidRow(
+                                 column(6,mod_col_pick_UI("highlight"))
                                ),
                     mod_plot_switch_UI("RD-static", height = 200),
                     mod_plot_switch_UI("RD-dynamic", height = 200),

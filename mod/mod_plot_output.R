@@ -60,12 +60,14 @@ mod_plot_output_Server <- function(id, p, ranges, dnCNV_table, zoom = T){
             p +
               coord_cartesian(xlim= ranges$x, ylim = ranges$y, expand = F)+
               scale_x_continuous(n.breaks = 20)+
-              annotate("rect", fill = "orange", alpha =0.3, xmin = dnCNV_table$t$start, xmax = dnCNV_table$t$end, ymin = -Inf, ymax = Inf)
+              annotate("rect", fill = "orange", alpha =0.3, xmin = dnCNV_table$t$start, xmax = dnCNV_table$t$end, ymin = -Inf, ymax = Inf)+
+              annotate("rect", fill = "red", alpha = 0.3, xmin = dnCNV_table$hl$start, xmax = dnCNV_table$hl$end, ymin = -Inf, ymax = Inf)
           } else {
             p +
               coord_cartesian(xlim= ranges$x, ylim = ranges$y, expand = F)+
               scale_x_continuous(n.breaks = 10)+
-              annotate("rect", fill = "orange", alpha =0.3, xmin = dnCNV_table$t$start, xmax = dnCNV_table$t$end, ymin = -Inf, ymax = Inf)
+              annotate("rect", fill = "orange", alpha =0.3, xmin = dnCNV_table$t$start, xmax = dnCNV_table$t$end, ymin = -Inf, ymax = Inf)+
+              annotate("rect", fill = "red", alpha = 0.3, xmin = dnCNV_table$hl$start, xmax = dnCNV_table$hl$end, ymin = -Inf, ymax = Inf)
           }
         })
       } else {
@@ -80,12 +82,19 @@ mod_plot_output_Server <- function(id, p, ranges, dnCNV_table, zoom = T){
           p +
             coord_cartesian(expand = F)+
             scale_x_continuous(n.breaks = 10)+
+            annotate("rect", fill = "blue", alpha =0.3, xmin = from, xmax = to, ymin = -Inf, ymax = Inf)+
             annotate("rect", fill = "orange", alpha =0.3, xmin = dnCNV_table$t$start, xmax = dnCNV_table$t$end, ymin = -Inf, ymax = Inf)+
-            annotate("rect", fill = "blue", alpha =0.3, xmin = from, xmax = to, ymin = -Inf, ymax = Inf)
+            annotate("rect", fill = "red", alpha = 0.3, xmin = dnCNV_table$hl$start, xmax = dnCNV_table$hl$end, ymin = -Inf, ymax = Inf)
         })
       }
       observe({
         ranges$cur <- input$hover$x
+      })
+      
+      observe({
+        if(!is.null(input$brush)){
+          ranges$pb <- c(round(input$brush$xmin), round(input$brush$xmax))
+        }
       })
       
       observeEvent(input$click, {
@@ -309,3 +318,34 @@ anno_table_Server <- function(id, df, ranges, chrn) {
 
 
 
+mod_col_pick_UI <- function(id) {
+  ns <- NS(id)
+  tagList(
+    fluidRow(
+      column(4, colourInput(ns("cp"), label = NULL, "red")),
+      column(2, actionButton(ns("hl"), "Highlight")),
+      column(2, actionButton(ns("reset", "Reset")))
+    ),
+    tableOutput(ns("table"))
+  )
+}
+
+mod_col_pick_Server <- function(id, dnCNV_table, ranges) {
+  moduleServer(
+    id,
+    function(input, output, session) {
+      observeEvent(input$hl, {
+        req(!is.null(ranges$pb))
+        dnCNV_table$hl[nrow(dnCNV_table$hl) +1,] <- c(ranges$pb[1], ranges$pb[2])
+      })
+      
+      observeEvent(input$reset, {
+        dnCNV_table$hl <- data.frame(start = 0, end = 0)
+      })
+      
+      output$table <- renderTable({
+        dnCNV_table$hl
+      })
+    }
+  )
+}
