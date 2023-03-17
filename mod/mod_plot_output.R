@@ -61,13 +61,13 @@ mod_plot_output_Server <- function(id, p, ranges, dnCNV_table, zoom = T){
               coord_cartesian(xlim= ranges$x, ylim = ranges$y, expand = F)+
               scale_x_continuous(n.breaks = 20)+
               annotate("rect", fill = "orange", alpha =0.3, xmin = dnCNV_table$t$start, xmax = dnCNV_table$t$end, ymin = -Inf, ymax = Inf)+
-              annotate("rect", fill = "red", alpha = 0.3, xmin = dnCNV_table$hl$start, xmax = dnCNV_table$hl$end, ymin = -Inf, ymax = Inf)
+              annotate("rect", fill = dnCNV_table$hl_col, alpha = 0.3, xmin = dnCNV_table$hl$start, xmax = dnCNV_table$hl$end, ymin = -Inf, ymax = Inf)
           } else {
             p +
               coord_cartesian(xlim= ranges$x, ylim = ranges$y, expand = F)+
               scale_x_continuous(n.breaks = 10)+
               annotate("rect", fill = "orange", alpha =0.3, xmin = dnCNV_table$t$start, xmax = dnCNV_table$t$end, ymin = -Inf, ymax = Inf)+
-              annotate("rect", fill = "red", alpha = 0.3, xmin = dnCNV_table$hl$start, xmax = dnCNV_table$hl$end, ymin = -Inf, ymax = Inf)
+              annotate("rect", fill = dnCNV_table$hl_col, alpha = 0.3, xmin = dnCNV_table$hl$start, xmax = dnCNV_table$hl$end, ymin = -Inf, ymax = Inf)
           }
         })
       } else {
@@ -84,7 +84,7 @@ mod_plot_output_Server <- function(id, p, ranges, dnCNV_table, zoom = T){
             scale_x_continuous(n.breaks = 10)+
             annotate("rect", fill = "blue", alpha =0.3, xmin = from, xmax = to, ymin = -Inf, ymax = Inf)+
             annotate("rect", fill = "orange", alpha =0.3, xmin = dnCNV_table$t$start, xmax = dnCNV_table$t$end, ymin = -Inf, ymax = Inf)+
-            annotate("rect", fill = "red", alpha = 0.3, xmin = dnCNV_table$hl$start, xmax = dnCNV_table$hl$end, ymin = -Inf, ymax = Inf)
+            annotate("rect", fill = dnCNV_table$hl_col, alpha = 0.3, xmin = dnCNV_table$hl$start, xmax = dnCNV_table$hl$end, ymin = -Inf, ymax = Inf)
         })
       }
       observe({
@@ -317,19 +317,33 @@ anno_table_Server <- function(id, df, ranges, chrn) {
 }
 
 
-
+#' Create a UI for selecting a color and highlighting a table row
+#'
+#' This function creates a UI element that allows the user to select a color using a color picker and highlight a row in a table.
+#' @param id The id of the UI element
+#' @return A UI element that can be added to a shiny app
+#' @importFrom shiny NS fluidRow column colourInput actionButton tableOutput
+#' @export
 mod_col_pick_UI <- function(id) {
   ns <- NS(id)
   tagList(
     fluidRow(
-      column(4, colourInput(ns("cp"), label = NULL, "red")),
+      column(3, colourInput(ns("cp"), label = NULL, "red", palette = "limited", returnName = T)),
       column(2, actionButton(ns("hl"), "Highlight")),
-      column(2, actionButton(ns("reset", "Reset")))
-    ),
-    tableOutput(ns("table"))
+      column(2, actionButton(ns("reset"), "Reset"))
+    )
   )
 }
 
+#' Create a server for selecting a color and highlighting a table row
+#'
+#' This function creates a server module that listens for input from a UI created by mod_col_pick_UI and updates a data frame with highlighted rows.
+#' @param id The id of the server module
+#' @param dnCNV_table The data frame containing the table to highlight rows
+#' @param ranges The ranges of the table to be highlighted
+#' @return A server module that can be added to a shiny app
+#' @importFrom shiny moduleServer observeEvent renderTable
+#' @export
 mod_col_pick_Server <- function(id, dnCNV_table, ranges) {
   moduleServer(
     id,
@@ -337,14 +351,16 @@ mod_col_pick_Server <- function(id, dnCNV_table, ranges) {
       observeEvent(input$hl, {
         req(!is.null(ranges$pb))
         dnCNV_table$hl[nrow(dnCNV_table$hl) +1,] <- c(ranges$pb[1], ranges$pb[2])
+        dnCNV_table$hl_col <- c(dnCNV_table$hl_col, input$cp)
       })
       
       observeEvent(input$reset, {
         dnCNV_table$hl <- data.frame(start = 0, end = 0)
+        dnCNV_table$hl_col <- c("white")
       })
       
       output$table <- renderTable({
-        dnCNV_table$hl
+        cbind(dnCNV_table$hl, dnCNV_table$hl_col)
       })
     }
   )

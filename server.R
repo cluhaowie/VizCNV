@@ -268,7 +268,8 @@ server <- function(input, output,session) {
   ## Plots section
   ranges <- reactiveValues(x = NULL, y = NULL,cur = NULL, click = NULL, pb = NULL)
   dnCNV_table <- reactiveValues(t = data.frame(start = c(0), end = c(0), stringsAsFactors = F),
-                                hl = data.frame(start = c(0), end = c(0)))
+                                hl = data.frame(start = c(0), end = c(0)), 
+                                hl_col = c("white"))
   
   ## reset plots upon changing chr
   observeEvent(input$btn_plot, {
