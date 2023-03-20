@@ -30,12 +30,12 @@ mod_snp_upload_Server <- function(id,volumes,values) {
         showModal(modalDialog(title = "File upload",
                               "The joint called SNP file has been uploaded and indexed"))
       })
-      observeEvent(input$local_sv_file,{
+      observeEvent(input$local_snp_file,{
         if(is.integer(input$local_snp_file)){
           cat("no local snp file found \n")
         }else{
           local_snp_file <- parseFilePaths(volumes, input$local_snp_file)
-          index.file <- paste0(local_snp_file,".tbi")
+          index.file <- paste0(local_snp_file$datapath,".tbi")
           values[["snp_gvcf_file_ref"]] <- VariantAnnotation::scanVcfHeader(local_snp_file$datapath)@reference
           values[["snp_gvcf_file_path"]] <-  local_snp_file$datapath
           if(!file.exists(index.file)){

@@ -58,40 +58,7 @@ server <- function(input, output,session) {
 
   
   # observe file uploaded and save in SQLdatabase---------
-  # local option
 
-  observeEvent(input$local_pr_snv_file,{ 
-    if(is.integer(input$local_pr_snv_file)){cat("no file\n")}else{
-      values$snp_gvcf_file <- parseFilePaths(volumes, input$local_pr_snv_file)
-      index.file <- paste0(values$snp_gvcf_file$datapath,".tbi")
-      #read the header of p.VCF file to checking the chr id
-      values$snp_gvcf_file_ref <- VariantAnnotation::scanVcfHeader(values$snp_gvcf_file$datapath)@reference
-      if(!file.exists(index.file)){
-        Rsamtools::indexTabix(values$snp_gvcf_file$datapath,format = "vcf")
-      }
-      
-      showModal(modalDialog(
-        title = "File upload",
-        "The joint called SNP file has been indexed"
-      ))
-    }
-  },ignoreInit = T)
-  
-  # cloud option
-
-  observeEvent(input$snp_gvcf_file,{
-    values$snp_gvcf_file <- input$snp_gvcf_file
-    if(is.null(values$snp_gvcf_file)){return(NULL)}
-    req(values$snp_gvcf_file)
-    Rsamtools::indexTabix(values$snp_gvcf_file$datapath,format = "vcf")
-    #read the header of p.VCF file to checking the chr id
-    values$snp_gvcf_file_ref <- VariantAnnotation::scanVcfHeader(values$snp_gvcf_file$datapath)@reference
-    showModal(modalDialog(
-      title = "File upload",
-      "The joint called SNP file has been uploaded and indexed"
-    ))
-  }) 
-  
   observeEvent(input$chr,{
     chr <- input$chr
     if(nrow(values$pr_sv) == 0){
@@ -163,7 +130,7 @@ server <- function(input, output,session) {
     }
   })
   observeEvent(input$btn_filter,{
-    snp_gvcf_file=values$snp_gvcf_file
+    snp_gvcf_file_path=values$snp_gvcf_file_path
     ref_genome <- input$ref
     chr <- input$chr
     if(!chr%in%values$snp_gvcf_file_ref){
@@ -173,7 +140,7 @@ server <- function(input, output,session) {
         chr <- chrom_id[which(names(chrom_id)==chr)]
       }
     }
-    if(is.null(snp_gvcf_file$datapath)){
+    if(length(snp_gvcf_file_path)==0){
       return(NULL)
     }else{
       w$show()
@@ -183,7 +150,7 @@ server <- function(input, output,session) {
         dplyr::select(seqlengths)%>%unlist
       range.gr <- GenomicRanges::GRanges(chr,ranges = IRanges(loc.start,loc.end))
       range.gr <- GenomicRanges::setdiff(range.gr, blacklist)
-      plots$snp_chr <- ReadGVCF(snp_gvcf_file$datapath,ref_genome=input$ref,param = range.gr)%>%
+      plots$snp_chr <- ReadGVCF(snp_gvcf_file_path,ref_genome=input$ref,param = range.gr)%>%
         as.data.frame()
       InhFrom <- unique(plots$snp_chr$B_InhFrom)
       if(length(InhFrom)==3){
