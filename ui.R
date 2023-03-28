@@ -88,8 +88,12 @@ ui <- dashboardPage(
           fluidRow(
             column(width=8,
                    box(title="Advanced",status="primary",width = 12,solidHeader = T,collapsible = T,
-                       h5("Upload or select SV vcf",dashboardBadge("optional", color = "secondary")),
+                       h5("Upload or select proband SV vcf",dashboardBadge("optional", color = "secondary")),
                        mod_sv_upload_UI("pr_sv"),
+                       h5("Upload or select mother SV vcf",dashboardBadge("optional", color = "secondary")),
+                       mod_sv_upload_UI("m_sv"),
+                       h5("Upload or select father SV vcf",dashboardBadge("optional", color = "secondary")),
+                       mod_sv_upload_UI("f_sv"),
                        h5("Upload or select joint snp vcf (maximun file size 3Gb)",dashboardBadge("optional", color = "secondary")),
                        mod_snp_upload_UI("snp_file")
                        )
@@ -187,8 +191,8 @@ ui <- dashboardPage(
                                  column(4,verbatimTextOutput("cur_range"))
                                ),
                                fluidRow(
-                                 column(6,mod_col_pick_UI("highlight")),
-                                 column(6,mod_UCSC_UI("UCSC"))
+                                 column(4,mod_col_pick_UI("highlight")),
+                                 column(4,mod_UCSC_UI("UCSC"))
                                ),
                     mod_plot_switch_UI("RD-static", height = 200),
                     mod_plot_switch_UI("RD-dynamic", height = 200),

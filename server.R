@@ -8,6 +8,8 @@ server <- function(input, output,session) {
   # Reavtive Values --------------------------
   values <- reactiveValues()
   values$pr_sv <- data.frame(stringsAsFactors = F)
+  values$m_sv <- data.frame(stringsAsFactors = F)
+  values$f_sv <- data.frame(stringsAsFactors = F)
   values$pr_rd <- data.frame(stringsAsFactors = F)
   values$m_rd <- data.frame(stringsAsFactors = F)
   values$f_rd <- data.frame(stringsAsFactors = F)
@@ -40,8 +42,9 @@ server <- function(input, output,session) {
   mod_rd_upload_Server("pr_rd",volumes=volumes,values) 
   mod_rd_upload_Server("m_rd",volumes=volumes,values) 
   mod_rd_upload_Server("f_rd",volumes=volumes,values) 
-  
   mod_sv_upload_Server("pr_sv",volumes=volumes,values) 
+  mod_sv_upload_Server("m_sv",volumes=volumes,values) 
+  mod_sv_upload_Server("f_sv",volumes=volumes,values) 
   mod_snp_upload_Server("snp_file",volumes=volumes,values)
 
   output$blt_dnSNV_ui <- shiny::renderUI({
@@ -331,7 +334,7 @@ server <- function(input, output,session) {
     id <- showNotification("Pulling Data", type = "message", duration = NULL)
     chrn = input$chr
     path = "./data/"
-    if (input$ref == "GRCh37"){
+    if (input$ref == "hg19"){
       p1_file = "NCBI_RefSeq_hg19_clean.bed.parquet"
       p2_file = "Claudia_hg19_MergedInvDirRpts_sorted.bed"
       p3_file = "SegDup_hg19_UCSC.bed"
