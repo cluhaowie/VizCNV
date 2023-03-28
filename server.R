@@ -1,6 +1,7 @@
 source("./mod/mod_plot_output.R")
 source("./mod/mod_dnCNV.R")
 source("./mod/mod_upload.R")
+source("./mod/mod_UCSC.R")
 source("./helper/wg_plot.R")
 
 server <- function(input, output,session) {
@@ -580,6 +581,10 @@ server <- function(input, output,session) {
     }
   }, ignoreInit = T)
   
+  ##UCSC
+  observe({
+    mod_UCSC_Server("UCSC", input$ref, input$chr, ranges)
+  })
   # ## buttons 
   # output$ui_dlbtn_tbl <- renderUI({
   #   if(nrow(values$pr_sv) > 0){

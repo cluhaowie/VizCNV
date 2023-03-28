@@ -1,6 +1,8 @@
 source("./mod/mod_plot_output.R")
 source("./mod/mod_dnCNV.R")
 source("./mod/mod_upload.R")
+source("./mod/mod_UCSC.R")
+
 ui <- dashboardPage(
   
   dashboardHeader(title = HTML("VizCNV-dev"),
@@ -24,10 +26,13 @@ ui <- dashboardPage(
   dashboardBody(
       tabItems(
         tabItem(tabName = "input",
+                tags$head(
+                  tags$link(rel = "stylesheet", href = "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css")
+                ),
           fluidRow(
             column(width=8,
                    box(title="Step 0: File import/upload",status="primary",width = 12,solidHeader = T,collapsible = T,
-                       radioButtons(inputId = "ref",label = h3("Reference Genome Build"),choices = list("GRCh37"="GRCh37","GRCh38"="GRCh38"),inline = T,selected = "GRCh37"),
+                       radioButtons(inputId = "ref",label = h4("Reference Genome Build"),choices = list("hg19"="hg19","hg38"="hg38"),inline = T,selected = "hg19"),
                        h5("Upload or select proband read depth file",dashboardBadge("required", color = "primary")),
                        mod_rd_upload_UI("pr_rd"),
                        h5("Upload or select mother read depth file",dashboardBadge("optional", color = "secondary")),
@@ -182,7 +187,8 @@ ui <- dashboardPage(
                                  column(4,verbatimTextOutput("cur_range"))
                                ),
                                fluidRow(
-                                 column(6,mod_col_pick_UI("highlight"))
+                                 column(6,mod_col_pick_UI("highlight")),
+                                 column(6,mod_UCSC_UI("UCSC"))
                                ),
                     mod_plot_switch_UI("RD-static", height = 200),
                     mod_plot_switch_UI("RD-dynamic", height = 200),
