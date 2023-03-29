@@ -110,7 +110,8 @@ ui <- dashboardPage(
                               radioButtons("wg_norm_options",
                                            label = "Normalization options", 
                                            choiceNames = list("chromosomal median", "whole genome median"),
-                                           choiceValues = list("chr_med", "wg_med")))
+                                           choiceValues = list("chr_med", "wg_med"),
+                                           selected = "wg_med"))
                    )),
                    box(title = "WG Plots",width = 12,solidHeader = T, status = "success",collapsible = T,
                        mod_plot_wg_UI("wg_pr_rd", height = 270),
