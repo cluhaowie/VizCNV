@@ -544,7 +544,7 @@ server <- function(input, output,session) {
   ## copy clicked location
   observe({
     if(is.null(ranges$click)){ranges$click <- 0}
-    clipr::write_clip(str_remove_all(as.character(round(ranges$click)), "[\r\n]"))
+    clipr::write_clip(str_remove_all(as.character(round(ranges$click)), "[\r\n]"), allow_non_interactive = T)
   })
 
   ## btn_goto
