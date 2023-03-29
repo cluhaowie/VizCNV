@@ -73,11 +73,11 @@ server <- function(input, output,session) {
     }
   })
   observeEvent(input$ref,{
-    if(input$ref=="GRCh38"){
+    if(input$ref=="hg38"){
       blacklist <- data.table::fread("GRCh38_unified_blacklist.bed.gz")%>%
         regioneR::toGRanges()
       values$ref_info <- data.table::fread("hg38.info.txt")
-    }else if(input$ref=="GRCh37"){
+    }else if(input$ref=="hg19"){
       blacklist <- data.table::fread("ENCFF001TDO.bed.gz")%>%
         regioneR::toGRanges()
       values$ref_info <- data.table::fread("hg19.info.txt")
