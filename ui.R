@@ -202,10 +202,10 @@ ui <- dashboardPage(
                     
                     mod_plot_switch_UI("pr_sv"),
                     mod_plot_switch_UI("RefSeq", height = 120),
-                    mod_plot_switch_UI("IDR"),
                     mod_plot_switch_UI("Segdup"),
                     mod_plot_switch_UI("OMIM"),
                     mod_plot_switch_UI("gnomAD"),
+                    mod_plot_switch_UI("IDR"),
                     mod_plot_switch_UI("RMSK"),
                     fluidRow(column(1,uiOutput("ui_dlbtn_plt")),
                              column(1,uiOutput("ui_clbtn_plt")),

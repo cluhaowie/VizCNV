@@ -588,6 +588,9 @@ server <- function(input, output,session) {
   observe({
     mod_UCSC_Server("UCSC", input$ref, input$chr, ranges)
   })
+  
+  
+  
   # ## buttons 
   # output$ui_dlbtn_tbl <- renderUI({
   #   if(nrow(values$pr_sv) > 0){
