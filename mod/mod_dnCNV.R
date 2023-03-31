@@ -53,12 +53,12 @@ get_dnCNV = function(pr, mo, fa, size_threshold = 10000){
 get_dnCNV_all = function(pr_seg, mo_seg, fa_seg){
   
   ## separating segments into two groups
-  pr_dup <- pr_seg %>% filter(seg.mean > 0.3) %>% makeGRangesFromDataFrame(keep.extra.columns = T)
-  mo_dup <- mo_seg %>% filter(seg.mean > 0.3) %>% makeGRangesFromDataFrame(keep.extra.columns = T)
-  fa_dup <- fa_seg %>% filter(seg.mean > 0.3) %>% makeGRangesFromDataFrame(keep.extra.columns = T)
-  pr_del <- pr_seg %>% filter(seg.mean < -0.2) %>% makeGRangesFromDataFrame(keep.extra.columns = T)
-  mo_del <- mo_seg %>% filter(seg.mean < -0.2) %>% makeGRangesFromDataFrame(keep.extra.columns = T)
-  fa_del <- fa_seg %>% filter(seg.mean < -0.2) %>% makeGRangesFromDataFrame(keep.extra.columns = T)
+  pr_dup <- pr_seg %>% filter(seg.mean > 0.4) %>% makeGRangesFromDataFrame(keep.extra.columns = T)
+  mo_dup <- mo_seg %>% filter(seg.mean > 0.4) %>% makeGRangesFromDataFrame(keep.extra.columns = T)
+  fa_dup <- fa_seg %>% filter(seg.mean > 0.4) %>% makeGRangesFromDataFrame(keep.extra.columns = T)
+  pr_del <- pr_seg %>% filter(seg.mean < -0.5) %>% makeGRangesFromDataFrame(keep.extra.columns = T)
+  mo_del <- mo_seg %>% filter(seg.mean < -0.5) %>% makeGRangesFromDataFrame(keep.extra.columns = T)
+  fa_del <- fa_seg %>% filter(seg.mean < -0.5) %>% makeGRangesFromDataFrame(keep.extra.columns = T)
 
   
   dnCNV_gain = get_dnCNV(pr_dup, mo_dup, fa_dup)
