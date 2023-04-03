@@ -342,7 +342,7 @@ server <- function(input, output,session) {
       p5_file = "gnomAD_allSV_hg19_UCSC.bed"
       p6_file = "hg19_rmsk.parquet"
     } else {
-      p1_file = "MANE.GRCh38.v1.0.refseq.parquet"
+      p1_file = "hg38_MANE.v1.0.refseq.parquet"
       p2_file = NULL
       p3_file = NULL
       p4_file = NULL
@@ -378,9 +378,10 @@ server <- function(input, output,session) {
     }
     
     
-    RefSeq <- read_parquet(paste0(path,p1_file))
-    RefSeq <- RefSeq %>% 
-      filter(seqname ==  chrn) %>%
+    RefSeq_data <- read_parquet(paste0(path,p1_file),as_data_frame = F)
+    RefSeq <- RefSeq_data %>% 
+      filter(seqname ==  chrn) %>% 
+      collect() %>%
       mutate(gene_num=round(as.numeric(as.factor(gene_id)),3)/100,
              strand=as.factor(strand))
     gene_x <- RefSeq%>%
@@ -474,19 +475,18 @@ server <- function(input, output,session) {
       ylab("gnomAD")
     
     
-    rmsk <- read_parquet(paste0(path, p6_file))
-    rmsk <- rmsk %>%
-      dplyr::rename("chrom" = "#chrom") %>%
-      filter(chrom ==  chrn)
-    rmsk <- rmsk %>%
+    rmsk <- read_parquet(paste0(path, p6_file),as_data_frame = F)
+    p6 <- rmsk %>% 
+      filter(chrom ==  chrn) %>% 
+      collect() %>%
       mutate(idx = case_when(repClass == "SINE" ~ 0.014*7,
                              repClass == "LINE" ~ 0.014*6,
                              repClass == "LTR" ~ 0.014*5,
                              repClass == "DNA" ~ 0.014*4,
                              repClass == "Simple_repeat" ~ 0.014*3,
                              repClass == "Low_complexity" ~ 0.014*2,
-                             TRUE ~ 0.014))
-    p6 <- ggplot(rmsk, aes(x = start, y = idx)) +
+                             TRUE ~ 0.014))%>%
+      ggplot(rmsk, aes(x = start, y = idx)) +
       annotate("rect", xmin = rmsk$start, xmax = rmsk$end, ymin = rmsk$idx, ymax = rmsk$idx+0.0001, color = "black")+
       style_anno+
       scale_anno+
