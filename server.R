@@ -246,7 +246,7 @@ server <- function(input, output,session) {
   observeEvent(input$btn_plot, {
     ranges$x <-  NULL
     ranges$cur <-  NULL
-    #ranges$click <-  NULL
+    ranges$click <-  NULL
     ranges$pb <-  NULL
     dnCNV_table$t <-  data.frame(start = c(0), end = c(0), stringsAsFactors = F)
   })
@@ -542,10 +542,10 @@ server <- function(input, output,session) {
   })
   
   ## copy clicked location
-  # observe({
-  #   if(is.null(ranges$click)){ranges$click <- 0}
-  #   clipr::write_clip(str_remove_all(as.character(round(ranges$click)), "[\r\n]"))
-  # })
+  observe({
+    if(is.null(ranges$click)){ranges$click <- 0}
+    clipr::write_clip(str_remove_all(as.character(round(ranges$click)), "[\r\n]"), allow_non_interactive = T)
+  })
 
   ## btn_goto
   observeEvent(input$btn_go,{
@@ -588,6 +588,9 @@ server <- function(input, output,session) {
   observe({
     mod_UCSC_Server("UCSC", input$ref, input$chr, ranges)
   })
+  
+  
+  
   # ## buttons 
   # output$ui_dlbtn_tbl <- renderUI({
   #   if(nrow(values$pr_sv) > 0){
@@ -642,3 +645,4 @@ server <- function(input, output,session) {
   
 }
 
+>>>>>>> ab6260d3e008e548900bbae3ee1c89723dd99986
