@@ -340,14 +340,14 @@ server <- function(input, output,session) {
       p3_file = "SegDup_hg19_UCSC.bed"
       p4_file = "OMIM_gene2_hg19_UCSC_all.bed"
       p5_file = "gnomAD_allSV_hg19_UCSC.bed"
-      p6_file = "rmsk_hg19_UCSC.parquet"
+      p6_file = "hg19_rmsk.parquet"
     } else {
-      p1_file = "MANE.GRCh38.v1.0.refseq.gz.parquet"
+      p1_file = "MANE.GRCh38.v1.0.refseq.parquet"
       p2_file = NULL
       p3_file = NULL
       p4_file = NULL
       p5_file = NULL
-      p6_file = NULL
+      p6_file = "hg38_rmsk.parquet"
     }
 
     if (nrow(values$pr_sv) != 0){
@@ -645,4 +645,4 @@ server <- function(input, output,session) {
   
 }
 
->>>>>>> ab6260d3e008e548900bbae3ee1c89723dd99986
+
