@@ -246,7 +246,7 @@ server <- function(input, output,session) {
   observeEvent(input$btn_plot, {
     ranges$x <-  NULL
     ranges$cur <-  NULL
-    ranges$click <-  NULL
+    #ranges$click <-  NULL
     ranges$pb <-  NULL
     dnCNV_table$t <-  data.frame(start = c(0), end = c(0), stringsAsFactors = F)
   })
@@ -542,10 +542,10 @@ server <- function(input, output,session) {
   })
   
   ## copy clicked location
-  observe({
-    if(is.null(ranges$click)){ranges$click <- 0}
-    clipr::write_clip(str_remove_all(as.character(round(ranges$click)), "[\r\n]"))
-  })
+  # observe({
+  #   if(is.null(ranges$click)){ranges$click <- 0}
+  #   clipr::write_clip(str_remove_all(as.character(round(ranges$click)), "[\r\n]"))
+  # })
 
   ## btn_goto
   observeEvent(input$btn_go,{
