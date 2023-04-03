@@ -177,12 +177,12 @@ ui <- dashboardPage(
                                  mod_checkbox_UI("Baf-B_allele"),
                                  mod_checkbox_UI("Baf-A_allele", value = F),
                                  HTML("<b>Annotation Track Options:</b>"),
-                                 mod_checkbox_UI("RefSeq"),
-                                 mod_checkbox_UI("SegDup"),
-                                 mod_checkbox_UI("OMIM"),
-                                 mod_checkbox_UI("gnomAD"),
-                                 mod_checkbox_UI("IDR", value = F),
-                                 mod_checkbox_UI("RMSK", value = F),
+                                 uiOutput("ui_chkbox_RefSeq"),
+                                 uiOutput("ui_chkbox_SegDup"),
+                                 uiOutput("ui_chkbox_OMIM"),
+                                 uiOutput("ui_chkbox_gnomAD"),
+                                 uiOutput("ui_chkbox_IDR"),
+                                 uiOutput("ui_chkbox_RMSK"),
                                  mod_checkbox_UI("pr_sv", value = F)
                                ),
                                fluidRow(

@@ -58,6 +58,38 @@ server <- function(input, output,session) {
           checkboxGroupInput(inputId="include_dnSNV",label = NULL,c("Show"="TRUE"))))
     }
   })
+  output$ui_chkbox_RefSeq <- renderUI({
+    if(!is.null(values$p1_file)){
+      mod_checkbox_UI("RefSeq")
+    }else{NULL}
+
+  })
+  output$ui_chkbox_IDR <- renderUI({
+    if(!is.null(values$p2_file)){
+      mod_checkbox_UI("IDR",value = F)
+    }else{NULL}
+  })
+  output$ui_chkbox_SegDup <- renderUI({
+    if(!is.null(values$p3_file)){
+      mod_checkbox_UI("SegDup",value = F)
+    }else{NULL}
+  })
+  output$ui_chkbox_OMIM <- renderUI({
+    if(!is.null(values$p4_file)){
+      mod_checkbox_UI("OMIM",value = F)
+    }else{NULL}
+  })
+  output$ui_chkbox_gnomAD <- renderUI({
+    if(!is.null(values$p5_file)){
+      mod_checkbox_UI("gnomAD",value = F)
+    }else{NULL}
+  })
+
+  output$ui_chkbox_RMSK <- renderUI({
+    if(!is.null(values$p6_file)){
+      mod_checkbox_UI("RMSK",value = F)
+    }else{NULL}
+  })
 
 
   
@@ -77,10 +109,22 @@ server <- function(input, output,session) {
       blacklist <- data.table::fread("GRCh38_unified_blacklist.bed.gz")%>%
         regioneR::toGRanges()
       values$ref_info <- data.table::fread("hg38.info.txt")
+      values$p1_file <-  "hg38_MANE.v1.0.refseq.parquet"
+      values$p2_file <-  NULL
+      values$p3_file <-  "hg38_ucsc_sugdups.parquet"
+      values$p4_file <-  NULL
+      values$p5_file <-  NULL
+      values$p6_file <-  "hg38_rmsk.parquet"
     }else if(input$ref=="hg19"){
       blacklist <- data.table::fread("ENCFF001TDO.bed.gz")%>%
         regioneR::toGRanges()
       values$ref_info <- data.table::fread("hg19.info.txt")
+      values$p1_file <-  "NCBI_RefSeq_hg19_clean.bed.parquet"
+      values$p2_file <-  "Claudia_hg19_MergedInvDirRpts_sorted.bed"
+      values$p3_file <-  "hg19_ucsc_sugdups.parguet"
+      values$p4_file <-  "OMIM_gene2_hg19_UCSC_all.bed"
+      values$p5_file <-  "gnomAD_allSV_hg19_UCSC.bed"
+      values$p6_file <-  "hg19_rmsk.parquet"
     }
   })
   
@@ -334,22 +378,6 @@ server <- function(input, output,session) {
     id <- showNotification("Pulling Data", type = "message", duration = NULL)
     chrn = input$chr
     path = "./data/"
-    if (input$ref == "hg19"){
-      p1_file = "NCBI_RefSeq_hg19_clean.bed.parquet"
-      p2_file = "Claudia_hg19_MergedInvDirRpts_sorted.bed"
-      p3_file = "SegDup_hg19_UCSC.bed"
-      p4_file = "OMIM_gene2_hg19_UCSC_all.bed"
-      p5_file = "gnomAD_allSV_hg19_UCSC.bed"
-      p6_file = "hg19_rmsk.parquet"
-    } else {
-      p1_file = "hg38_MANE.v1.0.refseq.parquet"
-      p2_file = NULL
-      p3_file = NULL
-      p4_file = NULL
-      p5_file = NULL
-      p6_file = "hg38_rmsk.parquet"
-    }
-
     if (nrow(values$pr_sv) != 0){
       pr_sv <- values$pr_sv %>% 
         filter(CHROM == chrn) %>% 
@@ -377,122 +405,136 @@ server <- function(input, output,session) {
       anno_table_Server("pr_sv", pr_sv, ranges, chrn)
     }
     
-    
-    RefSeq_data <- read_parquet(paste0(path,p1_file),as_data_frame = F)
-    RefSeq <- RefSeq_data %>% 
-      filter(seqname ==  chrn) %>% 
-      collect() %>%
-      mutate(gene_num=round(as.numeric(as.factor(gene_id)),3)/100,
-             strand=as.factor(strand))
-    gene_x <- RefSeq%>%
-      group_by(gene_num)%>%
-      summarise(start=(min(start)+max(end))/2,
-                end=(min(start)+max(end))/2,
-                gene_id=unique(gene_id))
-    
-    p1 <- RefSeq %>% 
-      ggplot(aes(xstart = start, xend = end, y = gene_num))+
-      geom_intron(data = to_intron(RefSeq, "gene_num"), arrow.min.intron.length = 400)+
-      geom_text(data=gene_x,aes(x=start,label=gene_id),vjust = -1.2,check_overlap = T,fontface="italic")+
-      ylab("RefSeq")+
-      style_anno+
-      scale_genes+
-      scale_fill_manual(values = c("+"="#E69F00","-"="#39918C"))+
-      scale_x_continuous(labels = scales::label_number())
-    
-    IDR<-data.table::fread(paste0(path, p2_file)) %>% 
-      dplyr::select(V1,V2,V3,V4,V5,V6) %>% 
-      dplyr::rename("chrom" = V1, "start" = V2, "end" = V3, "name" = V4, "score" = V5, "strand" = V6) %>%
-      dplyr::filter(chrom == chrn)
-    IDR <- IDR %>%
-      mutate(idx = sample(1:1, size = dim(IDR)[1], replace = T)/1000)
-    IDR_pos <- IDR %>%
-      filter(strand == "+")
-    IDR_neg <- IDR %>%
-      filter(strand == "-")
-    p2 <- ggplot(IDR, aes(x = start, y = idx)) +
-      geom_segment(data = IDR_pos, aes(x = start, y = idx, xend = end, yend = idx), arrow = arrow(length = unit(0.05, "inches")), color = "dodgerblue")+
-      geom_segment(data = IDR_neg, aes(x = end, y = idx, xend = start, yend = idx), arrow = arrow(length = unit(0.05, "inches")), color = "dodgerblue3")+
-      style_anno+
-      ylab("IDR")
-    SegDup <- data.table::fread(paste0(path, p3_file))
-    SegDup <- SegDup %>%
-      dplyr::rename("chrom" = "#chrom", "start" = "chromStart", "end" = "chromEnd") %>%
-      filter(chrom ==chrn)
-    SegDup <- SegDup %>%
-      mutate(idx = sample(1:100, size = dim(SegDup)[1], replace = T)/1000) %>%
-      mutate(color = case_when(level == "SD_low" ~ "gray40",
-                               level == "SD_mid" ~ "yellow2",
-                               level == "SD_high" ~ "darkorange"))
-    SegDup_pos <- SegDup %>%
-      filter(strand == "+")
-    SegDup_neg <- SegDup %>%
-      filter(strand == "-")
-    p3 <- ggplot(SegDup, aes(x = start, y = idx)) +
-      geom_segment(data = SegDup_pos, aes(x = start, y = idx, xend = end, yend = idx), arrow = arrow(length = unit(0.05, "inches")), color = SegDup_pos$color)+
-      geom_segment(data = SegDup_neg, aes(x = end, y = idx, xend = start, yend = idx), arrow = arrow(length = unit(0.05, "inches")), color = SegDup_neg$color)+
-      style_anno+
-      scale_anno+
-      ylab("SegDup")
-    
-    
-    OMIM <- data.table::fread(paste0(path, p4_file))
-    OMIM <- OMIM %>%
-      filter(chrom == chrn) %>%
-      mutate_at(vars(pheno_key), as.factor)
-    OMIM <- OMIM %>%
-      mutate(idx = sample(1:100, size = dim(OMIM)[1], replace = T)/1000) %>%
-      mutate(color = case_when(pheno_key == "0" ~ "grey",
-                               pheno_key == "1" ~ "lightgreen",
-                               pheno_key == "2" ~ "green3",
-                               pheno_key == "3" ~ "green4",
-                               pheno_key == "4" ~ "purple", ))
-    
-    OMIM_label <- OMIM %>%
-      filter(pheno_key  %in% c("3","4"))
-    p4 <- ggplot(OMIM, aes(x = start, y = idx)) +
-      annotate("rect", xmin = OMIM$start, xmax = OMIM$end, ymin = OMIM$idx, ymax = OMIM$idx+0.0001, color = OMIM$color)+
-      annotate("text", x = OMIM_label$start, y = OMIM_label$idx, label = OMIM_label$gene_symbol, size = 3.5, hjust = 1.1)+
-      style_anno+
-      scale_anno+
-      ylab("OMIM")
-    
-    gnomAD <- data.table::fread(paste0(path, p5_file))
-    gnomAD <- gnomAD %>%
-      dplyr::rename("chrom" = "#chrom", "start" = "chromStart", "end" = "chromEnd") %>%
-      filter(chrom == chrn)
-    gnomAD <- gnomAD %>%
-      mutate(idx = sample(1:100, size = dim(gnomAD)[1], replace = T)/1000) %>%
-      mutate(color = case_when(svtype == "BND" ~ "grey",
-                               svtype == "DEL" ~ "red",
-                               svtype == "DUP" ~ "blue",
-                               svtype == "INS" ~ "darkorange",
-                               TRUE ~ "cyan4"))
-    p5 <- ggplot(gnomAD, aes(x = start, y = idx)) +
-      annotate("rect", xmin = gnomAD$start, xmax = gnomAD$end, ymin = gnomAD$idx, ymax = gnomAD$idx+0.0001, color = gnomAD$color)+
-      style_anno+
-      scale_anno+
-      ylab("gnomAD")
-    
-    
-    rmsk <- read_parquet(paste0(path, p6_file),as_data_frame = F)
-    p6 <- rmsk %>% 
-      filter(chrom ==  chrn) %>% 
-      collect() %>%
-      mutate(idx = case_when(repClass == "SINE" ~ 0.014*7,
-                             repClass == "LINE" ~ 0.014*6,
-                             repClass == "LTR" ~ 0.014*5,
-                             repClass == "DNA" ~ 0.014*4,
-                             repClass == "Simple_repeat" ~ 0.014*3,
-                             repClass == "Low_complexity" ~ 0.014*2,
-                             TRUE ~ 0.014))%>%
-      ggplot(rmsk, aes(x = start, y = idx)) +
-      annotate("rect", xmin = rmsk$start, xmax = rmsk$end, ymin = rmsk$idx, ymax = rmsk$idx+0.0001, color = "black")+
-      style_anno+
-      scale_anno+
-      ylab("RMSK")
-    
-    
+    if(!is.null(values$p1_file)){
+      RefSeq_data <- read_parquet(paste0(path,values$p1_file),as_data_frame = F)
+      RefSeq <- RefSeq_data %>% 
+        filter(seqname ==  chrn) %>% 
+        collect() %>%
+        mutate(gene_num=round(as.numeric(as.factor(gene_id)),3)/100,
+               strand=as.factor(strand))
+      gene_x <- RefSeq%>%
+        group_by(gene_num)%>%
+        summarise(start=(min(start)+max(end))/2,
+                  end=(min(start)+max(end))/2,
+                  gene_id=unique(gene_id))
+      
+      p1 <- RefSeq %>% 
+        ggplot(aes(xstart = start, xend = end, y = gene_num))+
+        geom_intron(data = to_intron(RefSeq, "gene_num"), arrow.min.intron.length = 400)+
+        geom_text(data=gene_x,aes(x=start,label=gene_id),vjust = -1.2,check_overlap = T,fontface="italic")+
+        ylab("RefSeq")+
+        style_anno+
+        scale_genes+
+        scale_fill_manual(values = c("+"="#E69F00","-"="#39918C"))+
+        scale_x_continuous(labels = scales::label_number())
+      anno_table_Server("RefSeq", RefSeq, ranges, chrn)
+    }
+    if(!is.null(values$p2_file)){
+      IDR<-data.table::fread(paste0(path, values$p2_file)) %>% 
+        dplyr::select(V1,V2,V3,V4,V5,V6) %>% 
+        dplyr::rename("chrom" = V1, "start" = V2, "end" = V3, "name" = V4, "score" = V5, "strand" = V6) %>%
+        dplyr::filter(chrom == chrn)
+      IDR <- IDR %>%
+        mutate(idx = sample(1:1, size = dim(IDR)[1], replace = T)/1000)
+      IDR_pos <- IDR %>%
+        filter(strand == "+")
+      IDR_neg <- IDR %>%
+        filter(strand == "-")
+      p2 <- ggplot(IDR, aes(x = start, y = idx)) +
+        geom_segment(data = IDR_pos, aes(x = start, y = idx, xend = end, yend = idx), arrow = arrow(length = unit(0.05, "inches")), color = "dodgerblue")+
+        geom_segment(data = IDR_neg, aes(x = end, y = idx, xend = start, yend = idx), arrow = arrow(length = unit(0.05, "inches")), color = "dodgerblue3")+
+        style_anno+
+        ylab("IDR")
+      anno_table_Server("IDR", IDR, ranges, chrn)
+    }
+    if(!is.null(values$p3_file)){
+      SegDup_data <- arrow::read_parquet(paste0(path, values$p3_file),as_data_frame = F)
+      SegDup <- SegDup_data %>%
+        dplyr::select(segdups.keep.col)%>%
+        filter(chrom ==chrn)%>%
+        dplyr::rename("start" = "chromStart", "end" = "chromEnd") %>%
+        collect()
+        
+      SegDup <- SegDup %>%
+        mutate(idx = sample(1:100, size = dim(SegDup)[1], replace = T)/1000) %>%
+        mutate(color = case_when(level == "SD_low" ~ "gray40",
+                                 level == "SD_mid" ~ "yellow2",
+                                 level == "SD_high" ~ "darkorange"))
+      SegDup_pos <- SegDup %>%
+        filter(strand == "+")
+      SegDup_neg <- SegDup %>%
+        filter(strand == "-")
+      p3 <- ggplot(SegDup, aes(x = start, y = idx)) +
+        geom_segment(data = SegDup_pos, aes(x = start, y = idx, xend = end, yend = idx), arrow = arrow(length = unit(0.05, "inches")), color = SegDup_pos$color)+
+        geom_segment(data = SegDup_neg, aes(x = end, y = idx, xend = start, yend = idx), arrow = arrow(length = unit(0.05, "inches")), color = SegDup_neg$color)+
+        style_anno+
+        scale_anno+
+        ylab("SegDup")
+      anno_table_Server("SegDup", SegDup, ranges, chrn)
+    }
+    if(!is.null(values$p4_file)){
+      OMIM <- data.table::fread(paste0(path, values$p4_file))
+      OMIM <- OMIM %>%
+        filter(chrom == chrn) %>%
+        mutate_at(vars(pheno_key), as.factor)
+      OMIM <- OMIM %>%
+        mutate(idx = sample(1:100, size = dim(OMIM)[1], replace = T)/1000) %>%
+        mutate(color = case_when(pheno_key == "0" ~ "grey",
+                                 pheno_key == "1" ~ "lightgreen",
+                                 pheno_key == "2" ~ "green3",
+                                 pheno_key == "3" ~ "green4",
+                                 pheno_key == "4" ~ "purple", ))
+      
+      OMIM_label <- OMIM %>%
+        filter(pheno_key  %in% c("3","4"))
+      p4 <- ggplot(OMIM, aes(x = start, y = idx)) +
+        annotate("rect", xmin = OMIM$start, xmax = OMIM$end, ymin = OMIM$idx, ymax = OMIM$idx+0.0001, color = OMIM$color)+
+        annotate("text", x = OMIM_label$start, y = OMIM_label$idx, label = OMIM_label$gene_symbol, size = 3.5, hjust = 1.1)+
+        style_anno+
+        scale_anno+
+        ylab("OMIM")
+      anno_table_Server("OMIM", OMIM, ranges, chrn)
+    }
+    if(!is.null(values$p5_file)){
+      gnomAD <- data.table::fread(paste0(path, values$p5_file))
+      gnomAD <- gnomAD %>%
+        dplyr::rename("chrom" = "#chrom", "start" = "chromStart", "end" = "chromEnd") %>%
+        filter(chrom == chrn)
+      gnomAD <- gnomAD %>%
+        mutate(idx = sample(1:100, size = dim(gnomAD)[1], replace = T)/1000) %>%
+        mutate(color = case_when(svtype == "BND" ~ "grey",
+                                 svtype == "DEL" ~ "red",
+                                 svtype == "DUP" ~ "blue",
+                                 svtype == "INS" ~ "darkorange",
+                                 TRUE ~ "cyan4"))
+      p5 <- ggplot(gnomAD, aes(x = start, y = idx)) +
+        annotate("rect", xmin = gnomAD$start, xmax = gnomAD$end, ymin = gnomAD$idx, ymax = gnomAD$idx+0.0001, color = gnomAD$color)+
+        style_anno+
+        scale_anno+
+        ylab("gnomAD")
+      anno_table_Server("gnomAD", gnomAD, ranges, chrn)
+      
+    }
+    if(!is.null(values$p6_file)){
+      rmsk_data <- read_parquet(paste0(path, values$p6_file),as_data_frame = F)
+      rmsk <- rmsk_data %>% 
+        filter(chrom ==  chrn) %>% 
+        collect()
+      p6 <- rmsk %>% 
+        mutate(idx = case_when(repClass == "SINE" ~ 0.014*7,
+                               repClass == "LINE" ~ 0.014*6,
+                               repClass == "LTR" ~ 0.014*5,
+                               repClass == "DNA" ~ 0.014*4,
+                               repClass == "Simple_repeat" ~ 0.014*3,
+                               repClass == "Low_complexity" ~ 0.014*2,
+                               TRUE ~ 0.014))%>%
+        ggplot(., aes(x = start, y = idx)) +
+        annotate("rect", xmin = rmsk$start, xmax = rmsk$end, ymin = rmsk$idx, ymax = rmsk$idx+0.0001, color = "black")+
+        style_anno+
+        scale_anno+
+        ylab("RMSK")
+      anno_table_Server("rmsk", rmsk, ranges, chrn)
+    }
     showNotification("Annotating", type = "message", duration = 8)
     btnVal1 <- mod_checkbox_Server("RefSeq")
     btnVal2 <- mod_checkbox_Server("IDR")
@@ -508,12 +550,6 @@ server <- function(input, output,session) {
     ranges <- mod_plot_switch_Server("RMSK", btnVal6$box_state, p6, ranges, dnCNV_table)
   
     removeNotification(id)
-    anno_table_Server("RefSeq", RefSeq, ranges, chrn)
-    anno_table_Server("IDR", IDR, ranges, chrn)
-    anno_table_Server("SegDup", SegDup, ranges, chrn)
-    anno_table_Server("OMIM", OMIM, ranges, chrn)
-    anno_table_Server("gnomAD", gnomAD, ranges, chrn)
-    anno_table_Server("rmsk", rmsk, ranges, chrn)
   })
   
   
