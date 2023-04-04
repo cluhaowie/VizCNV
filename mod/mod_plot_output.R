@@ -327,7 +327,7 @@ mod_col_pick_UI <- function(id) {
   ns <- NS(id)
   tagList(
     fluidRow(
-      column(3, colourInput(ns("cp"), label = NULL, "red", palette = "limited", returnName = T)),
+      column(3, colourInput(ns("cp"), label = NULL, "red", palette = "limited", returnName = T, showColour = "background")),
       column(2, actionButton(ns("hl"), "Highlight")),
       column(2, actionButton(ns("reset"), "Reset"))
     )
