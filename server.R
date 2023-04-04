@@ -121,7 +121,7 @@ server <- function(input, output,session) {
       values$ref_info <- data.table::fread("hg19.info.txt")
       values$p1_file <-  "NCBI_RefSeq_hg19_clean.bed.parquet"
       values$p2_file <-  "Claudia_hg19_MergedInvDirRpts_sorted.bed"
-      values$p3_file <-  "hg19_ucsc_sugdups.parguet"
+      values$p3_file <-  "hg19_ucsc_sugdups.parquet"
       values$p4_file <-  "OMIM_gene2_hg19_UCSC_all.bed"
       values$p5_file <-  "gnomAD_allSV_hg19_UCSC.bed"
       values$p6_file <-  "hg19_rmsk.parquet"
