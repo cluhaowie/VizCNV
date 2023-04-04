@@ -353,7 +353,7 @@ style_genes <- style_rd+
         axis.text.y = element_text(color = "white"))
 scale_genes <- scale_y_continuous(labels = scales::label_number(accuracy = 0.01))
 
-SNPCOLOR2 <- c("#E69F00","#39918C")
+SNPCOLOR2 <- c("#39918C","#E69F00")
 CNVCOLOR6 <- c("#00468b","#00468b","#8b0000","#8b0000","#008b46","#008b46")
 names(CNVCOLOR6) <- c("<TRP>","TRP","<DUP>","DUP","<DEL>","DEL")
 scale_SVType <- scale_fill_manual(CNVCOLOR6)
