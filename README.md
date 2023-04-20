@@ -1,17 +1,12 @@
-
-
 # VizCNV
 
-This is a shiny app for chromosomal copy number variant analysis. It can
-parse the vcf file with SV calls, visualize CNV and B-allele frequency
-and genetic phasing information interactively.
+This is a shiny app for chromosomal copy number variant analysis. It can parse the vcf file with SV calls, visualize CNV and B-allele frequency and genetic phasing information interactively.
 
 ## Prerequisites
 
-R version \>= 3.6.3 Following R libraries are required:
+R version \>= 4.2 Following R libraries are required:
 
-Shifting level models based segmentation is performed using
-[SLMSuite](https://bmcbioinformatics.biomedcentral.com/articles/10.1186/s12859-017-1734-5).
+Shifting level models based segmentation is performed using [SLMSuite](https://bmcbioinformatics.biomedcentral.com/articles/10.1186/s12859-017-1734-5).
 
 Launch app on local with the main branch:
 
@@ -19,26 +14,33 @@ Launch app on local with the main branch:
 shiny::runGitHub(repo = "BCM-Lupskilab/VizCNV")
 ```
 
-
 or Launch app on local with the dev branch:
 
-```r
+``` r
 shiny::runGitHub(repo = "cluhaowie/VizCNV",ref="dev")
 ```
 
+A docker image is public available and can be pulled from docker hub
 
-Upload the required file from local file systerm:
-![gif1](docs/uploadFile.gif)
+```{bash}
+docker pull duclare123/vizcnv_dev
+```
 
-If launch the app on cloud or on server, input file need to be upload
-due to access restriction.
+and run docker image with
 
-Visualize the CNV calls in table format, read depth plot and B-allele
-frequency together: ![gif1](docs/view.gif)
+```{bash}
+docker run -d -p 3838:3838 -v /path/to/local:/root/input/ duclare123/vizcnv_dev
+```
 
-The app require read depth file as the input: A output from
-[mosedepth](https://github.com/brentp/mosdepth) can be used example of
-generate the read depth file for 1Kb window size would be:
+then accessing the app with <http://localhost:3838/>
+
+Upload the required file from local file systerm: ![gif1](docs/uploadFile.gif)
+
+If launch the app on cloud or on server, input file need to be upload due to access restriction.
+
+Visualize the CNV calls in table format, read depth plot and B-allele frequency together: ![gif1](docs/view.gif)
+
+The app require read depth file as the input: A output from [mosedepth](https://github.com/brentp/mosdepth) can be used example of generate the read depth file for 1Kb window size would be:
 
 ```{bash}
 mosdepth -n --fast-mode --by 1000 sample.wgs $sample.wgs.cram
