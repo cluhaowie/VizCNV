@@ -1,11 +1,15 @@
+
+
+
 #  ------------------------------------------------------------------------
 #
 # Title : App - VizCNV
-#    By : Haowei Du
+#    By : Haowei Du, Cliff Lun
 #  Date : April 2022
 #    
 #  ------------------------------------------------------------------------
 options(timeout = 6000)
+options(scipen=999)
 options(shiny.maxRequestSize=3*1024^3) ## max file size 3 Gb
 options(shiny.autoreload=TRUE)
 #options(shiny.reactlog=TRUE) 
@@ -15,22 +19,23 @@ options(shiny.autoreload=TRUE)
 
 # Packages ----------------------------------------------------------------
 # Install missing packages from CRAN, 'arrow' may be a problem
-list.of.packages <- c("dplyr", "data.table", "shiny", "shinydashboard",
+list.of.packages <- c("dplyr", "data.table", "shiny", "shinydashboard", "shinyFeedback",
                       "tippy","DT","ggplot2","shinyWidgets","shinyFiles","waiter",
-                      "cowplot","devtools","BiocManager","arrow","colourpicker") 
+                      "cowplot","devtools","BiocManager","arrow","colourpicker", "shinyjs","rclipboard",
+                      "shinydashboardPlus","bs4Dash", "colourpicker") 
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
 if(length(new.packages)) install.packages(new.packages)
 
 # Install missing packages from Bioconductor
-biocLitePackages <- c("DNAcopy", "GenomicRanges", "VariantAnnotation","bedr","ggtranscript") 
+biocLitePackages <- c("DNAcopy", "GenomicRanges", "VariantAnnotation","bedr","plyranges") 
 new.biocLitePackage <- biocLitePackages[!(biocLitePackages %in% installed.packages()[,"Package"])]
 if (!require("BiocManager", quietly = TRUE))
   install.packages("BiocManager")
 if(length(new.biocLitePackage)) BiocManager::install(new.biocLitePackage)
 # Install SLMSeg package from github
-local.packages <- c("SLMSeg","regioneR")
+local.packages <- c("SLMSeg","regioneR","ggtranscript")
 add.packages <- local.packages[!local.packages%in% installed.packages()[,"Package"]]
-if(length(add.packages)) devtools::install_github(c("cluhaowie/VizCNV/SLMSeg","bernatgel/regioneR"))
+if(length(add.packages)) devtools::install_github(c("cluhaowie/VizCNV/SLMSeg","bernatgel/regioneR","dzhang32/ggtranscript"))
 #Cleaning ----
 detach_all <- function() {
   basic.pkg <- c("package:stats", "package:graphics", "package:grDevices",
@@ -45,12 +50,16 @@ detach_all <- function() {
 detach_all()
 rm(list = ls())
 
-# Loading ----
 
+# Loading ----
+library(plyranges)
+library(stringr)
 library(dplyr)
 library(data.table)
 library(shiny)
 library(shinydashboard)
+library(shinydashboardPlus)
+library(bs4Dash) ## support bootstrap 4
 library(shinyFiles)
 library(shinyWidgets)
 library(waiter)
@@ -63,17 +72,20 @@ library(bedr)
 library(Rsamtools)
 library(VariantAnnotation)
 library(arrow) ## read parquet data
+library(shinyjs)
+library(ggtranscript)
+library(rclipboard)
+library(colourpicker)
 #library(colourpicker) ## required for picking annotation color
 # set up local database -------
 
 #sqlitePath="data/database.sqlite"
-genePath_hg38=here::here("data/MANE.GRCh38.v1.0.refseq.gz.parquet")
-#rmskPath_hg38="data/hg38_rmsk.gz.parquet"
+# genePath_hg38 <- "./data/MANE.GRCh38.v1.0.refseq.gz.parquet"
 maxSize_anno <- 20e6 # max size to show the transcripts
 maxtranscript <- 30 # max number of transcript to show
 geneExtend <- 1e5 # window size extend to 100kb
 
-genebase <- arrow::read_parquet(genePath_hg38,as_data_frame = F)
+# genebase <- arrow::read_parquet(genePath_hg38,as_data_frame = F)
 #rmskbase <- arrow::read_parquet(rmskPath_hg38,as_data_frame = F)
 
 
@@ -152,6 +164,7 @@ SegNormRD <- function(df, id, seg.method = "cbs") {
     seg <- DNAcopy::segment(CNA.obj)
     seg.output <- seg$output
     seg.output$ID <- id
+    print("done")
     return(seg.output)
   }
   ##EDIT: include SLM segmentation
@@ -177,7 +190,10 @@ SegNormRD <- function(df, id, seg.method = "cbs") {
       end=c(df$V2[c(idx[-1],end(df$V2)[1])])
       res.dt <- data.table(ID=id,chrom=chr,loc.start=start,loc.end=end,num.mark=res$lengths,seg.mean=res$values)
     })
+    print("done")
+    
     res <- data.table::rbindlist(res)
+    return(res)
   }
   
 }
@@ -194,7 +210,7 @@ blacklist <- data.table::fread("GRCh38_unified_blacklist.bed.gz")%>%
   regioneR::toGRanges()
 
 ReadGVCF <- function(path_to_gVCF,ref_genome=ref_genome,param = param){
-  print("scaning the region")
+  print("Grabbing regions")
   vcf<- VariantAnnotation::readVcf(file = path_to_gVCF,genome = ref_genome,param = param)
   vcf.gr <- vcf@rowRanges
   GT <- VariantAnnotation::geno(vcf)$GT
@@ -208,13 +224,19 @@ ReadGVCF <- function(path_to_gVCF,ref_genome=ref_genome,param = param){
   G3=c('0/1',"0|1")
   GT <- as.data.table(GT)
   setnames(GT,colnames(GT),c("index","P1","P2"))
-  GT.anno <- GT %>% mutate(InhFrom=case_when(index%in%G3&P1%in%G1&P2%in%c(G2,G3) ~ P2_ID,
-                                             index%in%G3&P1%in%c(G2,G3)&P2%in%G1 ~ P1_ID,
-                                             index%in%G1&P1%in%G1&P2 %in% G2 ~ P1_ID, 
-                                             index%in%G1&P1%in%G2&P2 %in% G1 ~ P2_ID,
-                                             index%in%G2&P1%in%c(G2,G3)&P2 %in% G1 ~ P1_ID,
-                                             index%in%G2&P1%in%G1&P2 %in% c(G2,G3) ~ P2_ID, 
-                                             TRUE ~ "Notphased"))
+  GT.anno <- GT %>% 
+    mutate(B_InhFrom=case_when(index %in% G3 & P1 %in% G1 & P2  %in% c(G2,G3) ~ P2_ID, #cases 11,12
+                               index %in% G3 & P1 %in% G3 & P2  %in% G1 ~ P1_ID, #case 13
+                               index %in% G3 & P1 %in% G2 & P2  %in% G1 ~ P1_ID, #case 16
+                               index %in% G2 & P1 %in% G1 & P2  %in% c(G2,G3) ~ P2_ID, #cases 20,21
+                               index %in% G2 & P1 %in% G3 & P2  %in% G1 ~ P2_ID, #case 22
+                               index %in% G2 & P1 %in% G2 & P2  %in% G1 ~ P2_ID, #case 25
+                               TRUE ~ "Notphased")) %>% 
+    mutate(A_InhFrom=case_when(index %in% G1 & P1 %in% c(G1,G3) & P2  %in% G2 ~ P1_ID, #cases 3,6
+                               index %in% G1 & P1 %in% G2 & P2  %in% c(G1,G3) ~ P2_ID, #cases 7,8
+                               index %in% G2 & P1 %in% c(G1,G3) & P2  %in% G2 ~ P1_ID, #cases 12,15
+                               index %in% G2 & P1 %in% G2 & P2  %in% c(G1,G3) ~ P2_ID, #cases 16,17
+                               TRUE ~ "Notphased")) 
   AD <- as.data.table(AD)
   setnames(AD,colnames(AD),c("index","P1","P2"))
   AD.anno <- AD%>%
@@ -237,54 +259,64 @@ ReadGVCF <- function(path_to_gVCF,ref_genome=ref_genome,param = param){
   return(vcf.gr)
 }
 
+normalization_method <- function(df, chr, norm_option = "chr_med"){
+  if (norm_option == "chr_med"){
+    tmp <- df%>%
+      filter(V1 == chr)%>%
+      mutate(ratio=V4/median(V4+0.00001))
+  } else if (norm_option == "wg_med"){
+    tmp <- df%>%
+      mutate(ratio=V4/median(V4+0.00001)) %>% 
+      filter(V1 == chr)
+  }
+  return(tmp)
+}
 
 ## plot parameter
+
+
 style_rd <- theme_classic()+
-  theme(
-    plot.title = element_text(face = "bold", size = 12),
-    legend.position = "top",
-    legend.title = element_text(colour="black", size=12, face="bold"),
-    legend.text = element_text(size = 12),
-    panel.border = element_blank(),
-    panel.grid.minor.y = element_blank(),
-    #panel.grid.minor.x = element_line(colour = "grey50"),
-    panel.grid.major.y = element_line(linetype = 5,colour = "grey50"),
-    panel.grid.major.x = element_line(linetype = 5,colour = "grey50"),
-    panel.background = element_blank(),
-    axis.text = element_text(color = "black", size = 12),
-    axis.title = element_text(color = "black", size = 16,face = "bold"),
-    #axis.line.x = element_blank(),
-    axis.ticks = element_line(color = "black"))
-style_genes <- style_rd+
-  theme(panel.grid.major.y = element_blank(),
-        axis.title.x = element_blank())
-scale_genes <- scale_y_continuous(labels = scales::label_number(accuracy = 0.01))
-  
+  theme(plot.title = element_text(face = "bold", size = 12),
+        legend.position = "top",
+        legend.title = element_text(colour="black", size=12),
+        legend.text = element_text(size = 12),
+        panel.border = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        panel.grid.minor.x = element_line(linetype = 4,colour = "grey85"),
+        panel.grid.major.y = element_line(linetype = 5,colour = "grey70"),
+        panel.grid.major.x = element_line(linetype = 5,colour = "grey50"),
+        panel.background = element_blank(),
+        axis.text.y = element_text(color = "black", size = 10),
+        axis.text.x = element_text(color = c("black", "white"), size = 10),
+        axis.title = element_text(color = "black", size = 12),
+        axis.ticks = element_line(color = "black"))
+
 style_snp <- theme_classic()+
-  theme(
-    plot.title = element_text(face = "bold", size = 12),
-    legend.position = "top",
-    legend.title = element_text(colour="black", size=12, face="bold"),
-    legend.text = element_text(size = 12),
-    panel.border = element_blank(),
-    panel.grid.minor.y = element_blank(),
-    #panel.grid.minor.x = element_line(colour = "grey50"),
-    panel.grid.major.y = element_line(linetype = 5,colour = "grey50"),
-    panel.grid.major.x = element_line(linetype = 5,colour = "grey50"),
-    panel.background = element_blank(),
-    axis.text = element_text(color = "black", size = 12),
-    axis.title = element_text(color = "black", size = 16,face = "bold"),
-    #axis.line.x = element_blank(),
-    axis.ticks = element_line(color = "black"))
+  theme(plot.title = element_text(face = "bold", size = 12),
+        legend.position = "top",
+        legend.title = element_text(colour="black", size=12),
+        legend.text = element_text(size = 12),
+        panel.border = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        panel.grid.minor.x = element_line(linetype = 4,colour = "grey85"),
+        panel.grid.major.y = element_line(linetype = 5,colour = "grey70"),
+        panel.grid.major.x = element_line(linetype = 5,colour = "grey50"),
+        panel.background = element_blank(),
+        axis.text.y = element_text(color = "black", size = 10),
+        axis.text.x = element_text(color = c("black", "white"), size = 10),
+        axis.title.y = element_text(color = "black", size = 12),
+        axis.title.x = element_blank(),
+        axis.ticks = element_line(color = "black"))
 
 scale_rd <- scale_y_continuous(name="Log2 Ratio",
-                               limits=c(-3, 2),
-                               breaks = c(round(log2(1/2),2),
-                                          round(log2(2/2),2),
-                                          round(log2(3/2),2),
-                                          round(log2(4/2),2),
-                                          round(log2(5/2),2),
-                                          round(log2(6/2),2)
+                               limits=c(-2.5, 2),
+                               breaks = c(-2,
+                                 round(log2(1/2),2),
+                                 round(log2(2/2),2),
+                                 round(log2(3/2),2),
+                                 round(log2(4/2),2),
+                                 round(log2(5/2),2),
+                                 round(log2(6/2),2)
                                ))
 scale_snp <- scale_y_continuous(name="B-allele frequency",
                                 limits = c(-0.0005, 1.0005),
@@ -297,13 +329,37 @@ scale_snp <- scale_y_continuous(name="B-allele frequency",
                                            round(2/5,2),
                                            round(3/5,2),
                                            1))
-SNPCOLOR2 <- c("#E69F00","#39918C")
+
+
+
+
+
+style_anno <- theme_classic()+
+  theme(axis.text.x=element_blank(), 
+        axis.ticks.x=element_blank(), #remove x axis ticks
+        axis.title.x = element_blank(),
+        panel.grid.major.x = element_line(linetype = 5,colour = "grey50"),
+        axis.text.y=element_text(color = "white"),  #remove y axis labels
+        axis.ticks.y=element_blank()
+  )
+
+scale_anno <- scale_y_continuous(limits = c(-0.01,.11))
+
+
+style_genes <- style_rd+
+  theme(panel.grid.major.y = element_blank(),
+        axis.title.x = element_blank(),
+        axis.ticks.y = element_blank(),
+        axis.text.y = element_text(color = "white"))
+scale_genes <- scale_y_continuous(labels = scales::label_number(accuracy = 0.01))
+
+SNPCOLOR2 <- c("#39918C","#E69F00")
 CNVCOLOR6 <- c("#00468b","#00468b","#8b0000","#8b0000","#008b46","#008b46")
 names(CNVCOLOR6) <- c("<TRP>","TRP","<DUP>","DUP","<DEL>","DEL")
 scale_SVType <- scale_fill_manual(CNVCOLOR6)
 chrom_id <- c(1:22,"X")
 names(chrom_id) <- paste0("chr",chrom_id)
 
-
-dir_create("~/Downloads/VizCNV")
-
+## keep column from ucsc track
+segdups.keep.col <- c("chrom","chromStart","chromEnd","strand","name","uid","fracMatch","fracMatchIndel","level")
+rmsk.keep.col <- c("genoName","genoStart","genoEnd","strand","repName","repClass","repFamily")

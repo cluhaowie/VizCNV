@@ -23,7 +23,7 @@ shiny::runGitHub(repo = "BCM-Lupskilab/VizCNV")
 or Launch app on local with the dev branch:
 
 ```r
-shiny::runGitHub(repo = "cluhaowie/VizCNV",ref="dev-annotrack")
+shiny::runGitHub(repo = "cluhaowie/VizCNV",ref="dev")
 ```
 
 
