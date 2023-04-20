@@ -4,7 +4,7 @@ This is a shiny app for chromosomal copy number variant analysis. It can parse t
 
 ## Prerequisites
 
-R version \>= 3.6.3 Following R libraries are required:
+R version \>= 4.2 Following R libraries are required:
 
 Shifting level models based segmentation is performed using [SLMSuite](https://bmcbioinformatics.biomedcentral.com/articles/10.1186/s12859-017-1734-5).
 
