@@ -64,10 +64,12 @@ server <- function(input, output,session) {
     }else{NULL}
 
   })
+
   output$ui_chkbox_IDR <- renderUI({
     if(!is.null(values$p2_file)){
       mod_checkbox_UI("IDR",value = F)
     }else{NULL}
+
   })
   output$ui_chkbox_SegDup <- renderUI({
     if(!is.null(values$p3_file)){
