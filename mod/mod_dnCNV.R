@@ -114,7 +114,13 @@ mod_dnCNV_Server <- function(id, pr_seg, mo_seg, fa_seg) {
       table <- reactive({
         get_dnCNV_all(pr_seg, mo_seg, fa_seg) 
       })
-      output$table <- renderDataTable(table())
+      output$table <- renderDataTable(table(),
+                                      extensions=c("Responsive","Buttons"),
+                                      server = T,
+                                      editable = F,
+                                      filter = list(position = 'top', clear = T),
+                                      options = list(dom = 'Bfrtip',
+                                                     buttons = c('txt','csv', 'excel')))
       return(table() %>% as.data.frame())
     }
   )
