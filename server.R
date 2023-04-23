@@ -3,6 +3,7 @@ source("./mod/mod_dnCNV.R")
 source("./mod/mod_upload.R")
 source("./mod/mod_UCSC.R")
 source("./helper/wg_plot.R")
+source("./mod/mod_hmzcnv.R")
 
 server <- function(input, output,session) {
   # Reavtive Values --------------------------
@@ -28,6 +29,7 @@ server <- function(input, output,session) {
   
   plots <- reactiveValues()
   plots$pr_rd <- data.frame(stringsAsFactors = F)
+  plots$baf <- data.frame(stringsAsFactors = F)
   plots$m_rd <- data.frame(stringsAsFactors = F)
   plots$f_rd <- data.frame(stringsAsFactors = F)
   plots$pr_seg <- data.frame(stringsAsFactors = F)
@@ -158,6 +160,7 @@ server <- function(input, output,session) {
     if(nrow(values$pr_rd)==0){return(NULL)
     }else{
       w$show()
+      showNotification("Normalize and segment proband read depth", duration = 3, type = "message")
       plots$pr_rd <- normalization_method(values$pr_rd, chr, norm_option)
       plots$pr_seg <- SegNormRD(plots$pr_rd,id="Proband",seg.method = seg_option)
       w$hide()
@@ -165,6 +168,7 @@ server <- function(input, output,session) {
     if(nrow(values$m_rd)==0){return(NULL)
     }else{
       w$show()
+      showNotification("Normalize and segment mother read depth", duration = 3, type = "message")
       plots$m_rd <- normalization_method(values$m_rd, chr, norm_option)
       plots$m_seg <- SegNormRD(plots$m_rd,id="Mother",seg.method = seg_option)
       w$hide()
@@ -172,6 +176,7 @@ server <- function(input, output,session) {
     if(nrow(values$f_rd)==0){return(NULL)
     }else{
       w$show()
+      showNotification("Normalize and segment father read depth", duration = 3, type = "message")
       plots$f_rd <- normalization_method(values$f_rd, chr, norm_option)
       plots$f_seg <- SegNormRD(plots$f_rd,id="Father",seg.method = seg_option)
       w$hide()
@@ -285,6 +290,9 @@ server <- function(input, output,session) {
   dnCNV_table <- reactiveValues(t = data.frame(start = c(0), end = c(0), stringsAsFactors = F),
                                 hl = data.frame(start = c(0), end = c(0)), 
                                 hl_col = c("white"))
+  hmzCNV_table <- reactiveValues(t = data.frame(start = c(0), end = c(0), stringsAsFactors = F),
+                                hl = data.frame(start = c(0), end = c(0)), 
+                                hl_col = c("white"))
   
   ## reset plots upon changing chr
   observeEvent(input$btn_plot, {
@@ -293,10 +301,12 @@ server <- function(input, output,session) {
     ranges$click <-  NULL
     ranges$pb <-  NULL
     dnCNV_table$t <-  data.frame(start = c(0), end = c(0), stringsAsFactors = F)
+    hmzCNV_table$t <- data.frame(start = c(0), end = c(0), stringsAsFactors = F)
   })
 
   ## dynamic highlight
   mod_col_pick_Server("highlight", dnCNV_table, ranges)
+  mod_col_pick_Server("highlight", hmzCNV_table, ranges)
   
   ## RD plots
   observeEvent(input$btn_plot,{
@@ -322,9 +332,9 @@ server <- function(input, output,session) {
     
  
     btnValrds <- mod_checkbox_Server("RD-static")
-    ranges <- mod_plot_switch_Server("RD-static", btnValrds$box_state, rd, ranges, dnCNV_table, zoom= F)
+    ranges <- mod_plot_switch_Server("RD-static", btnValrds$box_state, rd, ranges, dnCNV_table,hmzCNV_table, zoom= F)
     btnValrdd <- mod_checkbox_Server("RD-dynamic")
-    ranges <- mod_plot_switch_Server("RD-dynamic", btnValrdd$box_state, rd, ranges, dnCNV_table)
+    ranges <- mod_plot_switch_Server("RD-dynamic", btnValrdd$box_state, rd, ranges, dnCNV_table,hmzCNV_table)
 
   })
   
@@ -353,7 +363,7 @@ server <- function(input, output,session) {
       scale_x_continuous(labels = scales::label_number())
     
     btnVala <- mod_checkbox_Server("Baf-A_allele")
-    ranges <- mod_plot_switch_Server("Baf-A_allele", btnVala$box_state, snp_a, ranges, dnCNV_table)
+    ranges <- mod_plot_switch_Server("Baf-A_allele", btnVala$box_state, snp_a, ranges, dnCNV_table,hmzCNV_table)
     
     snp_b <- ggplot(df, aes(x=start,y=pr_ALT_Freq,col=B_InhFrom))+
       geom_point(shape=".")+
@@ -369,7 +379,7 @@ server <- function(input, output,session) {
     
     removeNotification(noti_id)
     btnValb <- mod_checkbox_Server("Baf-B_allele")
-    ranges <- mod_plot_switch_Server("Baf-B_allele", btnValb$box_state, snp_b, ranges, dnCNV_table)
+    ranges <- mod_plot_switch_Server("Baf-B_allele", btnValb$box_state, snp_b, ranges, dnCNV_table,hmzCNV_table)
     
   })
   
@@ -401,14 +411,14 @@ server <- function(input, output,session) {
         scale_anno+
         ylab("pr_SV")
       btnVal_prsv <- mod_checkbox_Server("pr_sv")
-      ranges <- mod_plot_switch_Server("pr_sv", btnVal_prsv$box_state, pr_sv_plot, ranges, dnCNV_table)
+      ranges <- mod_plot_switch_Server("pr_sv", btnVal_prsv$box_state, pr_sv_plot, ranges, dnCNV_table, hmzCNV_table)
       anno_table_Server("pr_sv", pr_sv, ranges, chrn)
     }
     
     if(!is.null(values$p1_file)){
       RefSeq_data <- read_parquet(paste0(path,values$p1_file),as_data_frame = F)
       RefSeq <- RefSeq_data %>% 
-        filter(seqname ==  chrn) %>% 
+        filter(seqname ==  chrn,type=="exon") %>% 
         collect() %>%
         mutate(gene_num=round(as.numeric(as.factor(gene_id)),3)/100,
                strand=as.factor(strand))
@@ -420,7 +430,8 @@ server <- function(input, output,session) {
       
       p1 <- RefSeq %>% 
         ggplot(aes(xstart = start, xend = end, y = gene_num))+
-        geom_intron(data = to_intron(RefSeq, "gene_num"), arrow.min.intron.length = 400)+
+        #geom_range(aes(fill = strand),height = 0.02) +
+        geom_intron(data = to_intron(RefSeq, "gene_num"), arrow.min.intron.length = 1000)+
         geom_text(data=gene_x,aes(x=start,label=gene_id),vjust = -1.2,check_overlap = T,fontface="italic")+
         ylab("RefSeq")+
         style_anno+
@@ -542,12 +553,12 @@ server <- function(input, output,session) {
     btnVal4 <- mod_checkbox_Server("OMIM")
     btnVal5 <- mod_checkbox_Server("gnomAD")
     btnVal6 <- mod_checkbox_Server("RMSK")
-    ranges <- mod_plot_switch_Server("RefSeq", btnVal1$box_state, p1, ranges, dnCNV_table)
-    ranges <- mod_plot_switch_Server("IDR", btnVal2$box_state, p2, ranges, dnCNV_table)
-    ranges <- mod_plot_switch_Server("Segdup", btnVal3$box_state, p3, ranges, dnCNV_table)
-    ranges <- mod_plot_switch_Server("OMIM", btnVal4$box_state, p4, ranges, dnCNV_table)
-    ranges <- mod_plot_switch_Server("gnomAD", btnVal5$box_state, p5, ranges, dnCNV_table)
-    ranges <- mod_plot_switch_Server("RMSK", btnVal6$box_state, p6, ranges, dnCNV_table)
+    ranges <- mod_plot_switch_Server("RefSeq", btnVal1$box_state, p1, ranges, dnCNV_table, hmzCNV_table)
+    ranges <- mod_plot_switch_Server("IDR", btnVal2$box_state, p2, ranges, dnCNV_table, hmzCNV_table)
+    ranges <- mod_plot_switch_Server("Segdup", btnVal3$box_state, p3, ranges, dnCNV_table, hmzCNV_table)
+    ranges <- mod_plot_switch_Server("OMIM", btnVal4$box_state, p4, ranges, dnCNV_table, hmzCNV_table)
+    ranges <- mod_plot_switch_Server("gnomAD", btnVal5$box_state, p5, ranges, dnCNV_table, hmzCNV_table)
+    ranges <- mod_plot_switch_Server("RMSK", btnVal6$box_state, p6, ranges, dnCNV_table, hmzCNV_table)
   
     removeNotification(id)
   })
@@ -559,6 +570,14 @@ server <- function(input, output,session) {
     req(nrow(values$m_rd)!=0)
     req(nrow(values$f_rd)!=0)
     dnCNV_table$t <- mod_dnCNV_Server("dnCNV",plots$pr_seg, plots$m_seg, plots$f_seg)
+  })
+  
+  ## hmzCNV table
+  observeEvent(input$btn_hmzCNV, {
+    req(nrow(values$pr_rd)!=0)
+    req(nrow(values$m_rd)!=0)
+    req(nrow(values$f_rd)!=0)
+    hmzCNV_table$t <- mod_hmzcnv_Server("hmzCNV",plots$pr_seg,plots$baf,plots$m_seg, plots$f_seg)
   })
   
   ## Show current ranges

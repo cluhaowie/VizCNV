@@ -2,6 +2,7 @@ source("./mod/mod_plot_output.R")
 source("./mod/mod_dnCNV.R")
 source("./mod/mod_upload.R")
 source("./mod/mod_UCSC.R")
+source("./mod/mod_hmzcnv.R")
 
 ui <- dashboardPage(
   
@@ -162,7 +163,8 @@ ui <- dashboardPage(
                       column(1, actionButton("btn_filter", "Filter")),
                       column(1, actionButton("btn_plot", "Plot")),
                       column(1, actionButton("btn_anno", "Annotate")),
-                      column(2, actionButton("btn_dnCNV", "Show potential dnCNVs"))
+                      column(2, actionButton("btn_dnCNV", "Show potential dnCNVs")),
+                      column(2, actionButton("btn_hmzCNV", "Show potential hmzCNV"))
                       )
                     )
                   ),
@@ -216,24 +218,26 @@ ui <- dashboardPage(
         tabItem(tabName = "table",
                 fluidRow(box(title = "dnCNV Table",width = 12,solidHeader = T, status = "success",collapsible = T,
                              mod_dnCNV_UI("dnCNV")),
-                box(title = "SV Table",width = 12,solidHeader = T, status = "success",collapsible = T,
-                      DT::dataTableOutput("filter_sv_table"),
-                      fluidRow(
-                        column(1,uiOutput("ui_dlbtn_tbl"))
-                      ),
-                      DT::dataTableOutput("Select_table")),
-                box(title = "Annotation Table",width = 12,solidHeader = T, status = "success",collapsible = T,
-                tabsetPanel(
-                  tabPanel("pr_sv",anno_table_UI("pr_sv")),
-                  tabPanel("RefSeq",anno_table_UI("RefSeq")),
-                  tabPanel("IDR",anno_table_UI("IDR")),
-                  tabPanel("SegDup",anno_table_UI("SegDup")),
-                  tabPanel("OMIM",anno_table_UI("OMIM")),
-                  tabPanel("gnomAD",anno_table_UI("gnomAD")),
-                  tabPanel("rmsk",anno_table_UI("rmsk"))
-                )
-              )
-            )
+                         box(title = "Homozygous CNVs Table",width = 12,solidHeader = T, status = "success",collapsible = T,
+                             mod_hmzcnv_UI("hmzCNV")),
+                         box(title = "SV Table",width = 12,solidHeader = T, status = "success",collapsible = T,
+                             DT::dataTableOutput("filter_sv_table"),
+                             fluidRow(
+                               column(1,uiOutput("ui_dlbtn_tbl"))
+                             ),
+                             DT::dataTableOutput("Select_table")),
+                         box(title = "Annotation Table",width = 12,solidHeader = T, status = "success",collapsible = T,
+                             tabsetPanel(
+                               tabPanel("pr_sv",anno_table_UI("pr_sv")),
+                               tabPanel("RefSeq",anno_table_UI("RefSeq")),
+                               tabPanel("IDR",anno_table_UI("IDR")),
+                               tabPanel("SegDup",anno_table_UI("SegDup")),
+                               tabPanel("OMIM",anno_table_UI("OMIM")),
+                               tabPanel("gnomAD",anno_table_UI("gnomAD")),
+                               tabPanel("rmsk",anno_table_UI("rmsk"))
+                               )
+                             )
+                         )
         ),
         tabItem(tabName = "help",
                 "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum"),
