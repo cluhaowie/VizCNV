@@ -343,7 +343,7 @@ server <- function(input, output,session) {
     
     
     snp_a <- ggplot(df, aes(x=start,y=pr_ALT_Freq,col=A_InhFrom))+
-      geom_point(shape=".")+
+      geom_point(shape=20, size = 1.5)+
       #scattermore::geom_scattermore(shape=".",pixels=c(1024,1024))+
       geom_point(data = subset(df, likelyDN %in%c("TRUE")),size = 2,shape=8,color="red")+
       scale_fill_manual("LikelyDN",limits=c("dnSNV"),values = "red")+
@@ -358,7 +358,7 @@ server <- function(input, output,session) {
     ranges <- mod_plot_switch_Server("Baf-A_allele", btnVala$box_state, snp_a, ranges, dnCNV_table)
     
     snp_b <- ggplot(df, aes(x=start,y=pr_ALT_Freq,col=B_InhFrom))+
-      geom_point(shape=".")+
+      geom_point(shape=20, size = 1.5)+
       #scattermore::geom_scattermore(shape=".",pixels=c(1024,1024))+
       geom_point(data = subset(df, likelyDN %in%c("TRUE")),size = 2,shape=8,color="red")+
       scale_fill_manual("LikelyDN",limits=c("dnSNV"),values = "red")+
@@ -629,57 +629,6 @@ server <- function(input, output,session) {
   
   
   
-  # ## buttons 
-  # output$ui_dlbtn_tbl <- renderUI({
-  #   if(nrow(values$pr_sv) > 0){
-  #     tagList(shiny::actionButton("btl_select", "Select",icon("check")))
-  #   }
-  # })
-  # output$ui_dlbtn_plt <- renderUI({
-  #   if(length(plots$plot1) > 0){
-  #     downloadButton("dl_plt", "Download")
-  #   }
-  # })
-  # output$ui_clbtn_plt <- renderUI({
-  #   if(length(plots$plot1) > 0){
-  #     shiny::actionButton("cl_btn","Clear plot",icon("trash"))
-  #   }
-  # })
-  # output$ui_dlbtn_dnsnv <- renderUI({
-  #   if(length(plots$plot2) > 0){
-  #     shiny::downloadButton("dl_btn_dnsnv","Download dnSNV")
-  #   }
-  # })
-  # 
-  
-  # observeEvent(input$cl_btn,{
-  #   plots$snp_chr <- data.frame(stringsAsFactors = F)
-  #   plots$pr_rd <- data.frame(stringsAsFactors = F)
-  #   input$filter_sv_table_rows_selected <- NULL
-  # })
-  # 
-  # ## Download handler
-  # output$dl_plt <- downloadHandler(
-  #   filename = function(){
-  #     paste0(input$chr,".pdf")
-  #   },
-  #   content = function(file){
-  #     
-  #     mylist <- list(plots$plot1,plots$plot3_dl,plots$plot2)
-  #     mylist <- mylist[lengths(mylist)!= 0]
-  #     n <- length(mylist)
-  #     p <- cowplot::plot_grid(plotlist=mylist,ncol = 1,align = 'v',axis = 'lr')
-  #     ggplot2::ggsave(filename =file, plot = p,device = "pdf",width =12 ,height = n*4,units = "in")
-  #   }
-  # )
-  # output$dl_btn_dnsnv <- downloadHandler(
-  #   filename = function(){paste("dnSNV_",input$chr,".csv")},
-  #   content = function(file){
-  #     df <- plots$snp_chr%>%filter(likelyDN%in%c(input$include_dnSNV))
-  #     write.csv(df,file,row.names = F)
-  #   }
-  # )
-  # 
   
 }
 

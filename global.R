@@ -317,7 +317,7 @@ scale_rd <- scale_y_continuous(name="Log2 Ratio",
                                  round(log2(6/2),2)
                                ))
 scale_snp <- scale_y_continuous(name="B-allele frequency",
-                                limits = c(-0.0005, 1.0005),
+                                limits = c(-0.05, 1.05),
                                 breaks = c(0,
                                            round(1/2,2),
                                            round(1/3,2),
