@@ -232,8 +232,8 @@ ReadGVCF <- function(path_to_gVCF,ref_genome=ref_genome,param = param){
                                TRUE ~ "Notphased")) %>% 
     mutate(A_InhFrom=case_when(index %in% G1 & P1 %in% c(G1,G3) & P2  %in% G2 ~ P1_ID, #cases 3,6
                                index %in% G1 & P1 %in% G2 & P2  %in% c(G1,G3) ~ P2_ID, #cases 7,8
-                               index %in% G2 & P1 %in% c(G1,G3) & P2  %in% G2 ~ P1_ID, #cases 12,15
-                               index %in% G2 & P1 %in% G2 & P2  %in% c(G1,G3) ~ P2_ID, #cases 16,17
+                               index %in% G3 & P1 %in% c(G1,G3) & P2  %in% G2 ~ P1_ID, #cases 12,15
+                               index %in% G3 & P1 %in% G2 & P2  %in% c(G1,G3) ~ P2_ID, #cases 16,17
                                TRUE ~ "Notphased")) 
   AD <- as.data.table(AD)
   setnames(AD,colnames(AD),c("index","P1","P2"))
