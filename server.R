@@ -111,6 +111,8 @@ server <- function(input, output,session) {
       blacklist <- data.table::fread("GRCh38_unified_blacklist.bed.gz")%>%
         regioneR::toGRanges()
       values$ref_info <- data.table::fread("hg38.info.txt")
+      values$gaps <- data.table::fread("data/hg38_gaps.bed")%>%
+        makeGRangesFromDataFrame(keep.extra.columns = TRUE)
       values$p1_file <-  "hg38_MANE.v1.0.refseq.parquet"
       values$p2_file <-  NULL
       values$p3_file <-  "hg38_ucsc_sugdups.parquet"
@@ -161,7 +163,16 @@ server <- function(input, output,session) {
     }else{
       w$show()
       showNotification("Normalize and segment proband read depth", duration = 3, type = "message")
-      plots$pr_rd <- normalization_method(values$pr_rd, chr, norm_option)
+      pr_rd.gr <- normalization_method(values$pr_rd, chr, norm_option)%>%
+        setDT()%>%
+        setnames(.,c("V1","V2","V3"),c("chrom","start","end"))%>%
+        makeGRangesFromDataFrame(keep.extra.columns = T)
+      # remove regions that mapped to gaps
+      ov <- findOverlaps(pr_rd.gr,values$gaps)
+      plots$pr_rd <- pr_rd.gr[-queryHits(ov)]%>%as.data.frame()%>%
+        dplyr::select(-c("width","strand"))%>%
+        setDT()%>%
+        setnames(.,c("seqnames","start","end"),c("V1","V2","V3"))
       plots$pr_seg <- SegNormRD(plots$pr_rd,id="Proband",seg.method = seg_option)
       w$hide()
     }
@@ -202,7 +213,7 @@ server <- function(input, output,session) {
         filter(chrom%in%c(chr,paste0("chr",chr)))%>%
         dplyr::select(seqlengths)%>%unlist
       range.gr <- GenomicRanges::GRanges(chr,ranges = IRanges(loc.start,loc.end))
-      range.gr <- GenomicRanges::setdiff(range.gr, blacklist)
+      range.gr <- unlist(GenomicRanges::subtract(range.gr, blacklist))
       plots$snp_chr <- ReadGVCF(snp_gvcf_file_path,ref_genome=input$ref,param = range.gr)%>%
         as.data.frame()
       InhFrom <- unique(plots$snp_chr$B_InhFrom)

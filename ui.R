@@ -130,7 +130,7 @@ ui <- dashboardPage(
                     fluidRow(
                       use_waiter(),
                       column(1, 
-                             p(HTML("<b>Chromosome</b>"),span(shiny::icon("info-circle"), id = "info_chr"),selectInput('chr', choice=c(paste0("chr", c(seq(1,22), "X"))),label = NULL, multiple = F),
+                             p(HTML("<b>Chromosome</b>"),span(shiny::icon("info-circle"), id = "info_chr"),selectInput('chr', choice=c(paste0("chr", c(seq(1,22), "X","Y"))),label = NULL, multiple = F),
                                tippy::tippy_this(elementId = "info_chr",tooltip = "Selected chromosome",placement = "right")
                              )),
                       column(2,
