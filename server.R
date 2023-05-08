@@ -123,6 +123,8 @@ server <- function(input, output,session) {
       blacklist <- data.table::fread("ENCFF001TDO.bed.gz")%>%
         regioneR::toGRanges()
       values$ref_info <- data.table::fread("hg19.info.txt")
+      values$gaps <- data.table::fread("data/hg19_gaps.bed")%>%
+        makeGRangesFromDataFrame(keep.extra.columns = TRUE)
       values$p1_file <-  "NCBI_RefSeq_hg19_clean.bed.parquet"
       values$p2_file <-  "Claudia_hg19_MergedInvDirRpts_sorted.bed"
       values$p3_file <-  "hg19_ucsc_sugdups.parquet"
