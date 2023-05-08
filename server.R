@@ -182,7 +182,16 @@ server <- function(input, output,session) {
     }else{
       w$show()
       showNotification("Normalize and segment mother read depth", duration = 3, type = "message")
-      plots$m_rd <- normalization_method(values$m_rd, chr, norm_option)
+      m_rd.gr <- normalization_method(values$m_rd, chr, norm_option)%>%
+        setDT()%>%
+        setnames(.,c("V1","V2","V3"),c("chrom","start","end"))%>%
+        makeGRangesFromDataFrame(keep.extra.columns = T)
+      # remove regions that mapped to gaps
+      ov <- findOverlaps(m_rd.gr,values$gaps)
+      plots$m_rd <- m_rd.gr[-queryHits(ov)]%>%as.data.frame()%>%
+        dplyr::select(-c("width","strand"))%>%
+        setDT()%>%
+        setnames(.,c("seqnames","start","end"),c("V1","V2","V3"))
       plots$m_seg <- SegNormRD(plots$m_rd,id="Mother",seg.method = seg_option)
       w$hide()
     }
@@ -190,7 +199,16 @@ server <- function(input, output,session) {
     }else{
       w$show()
       showNotification("Normalize and segment father read depth", duration = 3, type = "message")
-      plots$f_rd <- normalization_method(values$f_rd, chr, norm_option)
+      f_rd.gr <- normalization_method(values$f_rd, chr, norm_option)%>%
+        setDT()%>%
+        setnames(.,c("V1","V2","V3"),c("chrom","start","end"))%>%
+        makeGRangesFromDataFrame(keep.extra.columns = T)
+      # remove regions that mapped to gaps
+      ov <- findOverlaps(f_rd.gr,values$gaps)
+      plots$f_rd <- f_rd.gr[-queryHits(ov)]%>%as.data.frame()%>%
+        dplyr::select(-c("width","strand"))%>%
+        setDT()%>%
+        setnames(.,c("seqnames","start","end"),c("V1","V2","V3"))
       plots$f_seg <- SegNormRD(plots$f_rd,id="Father",seg.method = seg_option)
       w$hide()
     }
@@ -233,6 +251,7 @@ server <- function(input, output,session) {
   ### "Global" reactive values
   wg_ranges <- reactiveValues(x = NULL, pr = NULL, m = NULL, f = NULL)
   wg_dnCNV_table <- reactiveValues(t = data.frame(start_cum = c(0), end_cum = c(0), stringsAsFactors = F))
+  wg_hmzCNV_table <- reactiveValues(t = data.frame(start_cum = c(0), end_cum = c(0), stringsAsFactors = F))
   
   ## reset plots upon changing chr
   observeEvent(input$btn_wg_rd, {
@@ -243,33 +262,81 @@ server <- function(input, output,session) {
   ## WG Plot section
   observeEvent(input$btn_wg_rd, {
     req(nrow(values$pr_rd) != 0)
-    w$show()
-    rd <- values$pr_rd
-    rd <- wg_norm(rd, input$wg_norm_options)
-    wg_ranges$pr <- getAllSeg(rd)
+    chr_list <- paste0("chr", c(1:22,"X","Y"))
+    showNotification("Normalize and segment proband read depth", duration = 3, type = "message")
+    withProgress(message = 'Making plot', value = 0, {
+      n=length(chr_list)
+      tmplist <- lapply(chr_list, function(chr){
+        pr_rd.gr <- normalization_method(values$pr_rd, chr, input$wg_norm_options)%>%
+          setDT()%>%
+          setnames(.,c("V1","V2","V3"),c("chrom","start","end"))%>%
+          makeGRangesFromDataFrame(keep.extra.columns = T)
+        # remove regions that mapped to gaps
+        ov <- findOverlaps(pr_rd.gr,values$gaps)
+        pr_rd <- pr_rd.gr[-queryHits(ov)]%>%as.data.frame()%>%
+          dplyr::select(-c("width","strand"))%>%
+          setDT()%>%
+          setnames(.,c("seqnames","start","end"),c("V1","V2","V3"))
+        pr_seg <- SegNormRD(pr_rd,id="Proband",seg.method = "slm")
+        incProgress(1/n, detail = paste("Segment", chr))
+        return(pr_seg)
+      })
+      wg_ranges$pr <- rbindlist(tmplist)
+    })
     wg_pr <- wg_seg2plot(wg_ranges$pr)
-    w$hide()
-    wg_ranges <- mod_plot_wg_Server("wg_pr_rd", wg_pr, wg_ranges, wg_dnCNV_table)
+    wg_ranges <- mod_plot_wg_Server("wg_pr_rd", wg_pr, wg_ranges, wg_dnCNV_table, wg_hmzCNV_table)
   })
   observeEvent(input$btn_wg_rd, {
     req(nrow(values$m_rd) != 0)
-    w$show()
-    rd <- values$m_rd
-    rd <- wg_norm(rd, input$wg_norm_options)
-    wg_ranges$m <- getAllSeg(rd)
+    chr_list <- paste0("chr", c(1:22,"X","Y"))
+    showNotification("Normalize and segment mother's read depth", duration = 3, type = "message")
+    withProgress(message = 'Making plot', value = 0, {
+      n=length(chr_list)
+      tmplist <- lapply(chr_list, function(chr){
+        m_rd.gr <- normalization_method(values$m_rd, chr, input$wg_norm_options)%>%
+          setDT()%>%
+          setnames(.,c("V1","V2","V3"),c("chrom","start","end"))%>%
+          makeGRangesFromDataFrame(keep.extra.columns = T)
+        # remove regions that mapped to gaps
+        ov <- findOverlaps(m_rd.gr,values$gaps)
+        m_rd <- m_rd.gr[-queryHits(ov)]%>%as.data.frame()%>%
+          dplyr::select(-c("width","strand"))%>%
+          setDT()%>%
+          setnames(.,c("seqnames","start","end"),c("V1","V2","V3"))
+        m_seg <- SegNormRD(m_rd,id="Mother",seg.method = "slm")
+        incProgress(1/n, detail = paste("Segment", chr))
+        return(m_seg)
+      })
+      wg_ranges$m <- rbindlist(tmplist)
+    })
     wg_m <- wg_seg2plot(wg_ranges$m)
-    w$hide()
-    wg_ranges <- mod_plot_wg_Server("wg_m_rd", wg_m, wg_ranges, wg_dnCNV_table)
+    wg_ranges <- mod_plot_wg_Server("wg_m_rd", wg_m, wg_ranges, wg_dnCNV_table,wg_hmzCNV_table)
   })
   observeEvent(input$btn_wg_rd, {
     req(nrow(values$f_rd) != 0)
-    w$show()
-    rd <- values$f_rd
-    rd <- wg_norm(rd, input$wg_norm_options)
-    wg_ranges$f <- getAllSeg(rd)
+    chr_list <- paste0("chr", c(1:22,"X","Y"))
+    showNotification("Normalize and segment father's read depth", duration = 3, type = "message")
+    withProgress(message = 'Making plot', value = 0, {
+      n=length(chr_list)
+      tmplist <- lapply(chr_list, function(chr){
+        f_rd.gr <- normalization_method(values$f_rd, chr, input$wg_norm_options)%>%
+          setDT()%>%
+          setnames(.,c("V1","V2","V3"),c("chrom","start","end"))%>%
+          makeGRangesFromDataFrame(keep.extra.columns = T)
+        # remove regions that mapped to gaps
+        ov <- findOverlaps(f_rd.gr,values$gaps)
+        f_rd <- f_rd.gr[-queryHits(ov)]%>%as.data.frame()%>%
+          dplyr::select(-c("width","strand"))%>%
+          setDT()%>%
+          setnames(.,c("seqnames","start","end"),c("V1","V2","V3"))
+        f_seg <- SegNormRD(f_rd,id="Father",seg.method = "slm")
+        incProgress(1/n, detail = paste("Segment", chr))
+        return(f_seg)
+      })
+      wg_ranges$f <- rbindlist(tmplist)
+    })
     wg_f <- wg_seg2plot(wg_ranges$f)
-    w$hide()
-    wg_ranges <- mod_plot_wg_Server("wg_f_rd", wg_f, wg_ranges, wg_dnCNV_table)
+    wg_ranges <- mod_plot_wg_Server("wg_f_rd", wg_f, wg_ranges, wg_dnCNV_table,wg_hmzCNV_table)
   })
 
   ## dnCNV table
@@ -278,17 +345,17 @@ server <- function(input, output,session) {
     req(!is.null(wg_ranges$m))
     req(!is.null(wg_ranges$f))
     seg_data <- mod_dnCNV_Server("wg_dnCNV",wg_ranges$pr, wg_ranges$m, wg_ranges$f)
-    names(seg_data)[1] = "chr"
+    names(seg_data)[1] = "chrom"
     print(seg_data)
     temp <- wg_ranges$pr %>% 
-      group_by(chr) %>% 
+      group_by(chrom) %>% 
       summarise(max_end = max(loc.end)) %>% 
-      mutate(across("chr", str_replace, "chr", "")) %>% 
-      arrange(as.numeric(chr)) %>% 
+      mutate(across("chrom", str_replace, "chr", "")) %>% 
+      arrange(as.numeric(chrom)) %>% 
       mutate(loc_add = lag(cumsum(as.numeric(max_end)), default = 0)) %>% 
-      mutate(chr = paste0("chr", chr))
+      mutate(chrom = paste0("chr", chrom))
     seg_data <- seg_data %>% 
-      inner_join(temp, by = "chr") %>% 
+      inner_join(temp, by = "chrom") %>% 
       mutate(end_cum = loc_add + end) 
     seg_data <- seg_data %>% 
       mutate(start_cum = end_cum- width)
