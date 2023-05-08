@@ -149,54 +149,7 @@ scanTabixDataFrame <- function(tabix_file, param, format, ...){
 }
 
 
-SegNormRD <- function(df, id, seg.method = "cbs") {
-  #SegNormRD.file <- paste0(id, ".seg.rds")
-  if (seg.method == "cbs") {
-    print("segment with CBS")
-    CNA.obj <-
-      DNAcopy::CNA(
-        log2(df$ratio + 0.001),
-        df$V1,
-        df$V2,
-        data.type = "logratio",
-        sampleid = id
-      )
-    seg <- DNAcopy::segment(CNA.obj)
-    seg.output <- seg$output
-    seg.output$ID <- id
-    print("done")
-    return(seg.output)
-  }
-  ##EDIT: include SLM segmentation
-  if (seg.method == "slm") {
-    print("segment with SLM")
-    df.ls <- base::split(df, f="V1")
-    res <- lapply(df.ls, function(df) {
-      slm <-
-        SLMSeg::SLM(
-          log2(df$ratio + 0.001),
-          omega = 0.3,
-          FW = 0,
-          eta = 1e-5
-        )
-      res <- rle(slm[1, ])
-      idx <- sapply(seq_along(res$lengths),function(i){
-        if(i==1){return(1)}
-        start.idx=1+sum(res$lengths[1:(i-1)])
-        return(start.idx)
-      })
-      chr=df$V1[idx]
-      start=df$V2[idx]
-      end=c(df$V2[c(idx[-1],end(df$V2)[1])])
-      res.dt <- data.table(ID=id,chrom=chr,loc.start=start,loc.end=end,num.mark=res$lengths,seg.mean=res$values)
-    })
-    print("done")
-    
-    res <- data.table::rbindlist(res)
-    return(res)
-  }
-  
-}
+
 #ref_genome="GRCh38"
 
 #hg38.info <- seqinfo(BSgenome.Hsapiens.UCSC.hg38::Hsapiens)%>%as.data.frame()
@@ -259,9 +212,11 @@ ReadGVCF <- function(path_to_gVCF,ref_genome=ref_genome,param = param){
 
 normalization_method <- function(df, chr, norm_option = "chr_med"){
   if (norm_option == "chr_med"){
+    df_chr <- df%>%filter(V1 == chr) ## this is needed for chrY normalization
+    tmp_median <- df_chr$V4[df_chr$V4!=0]
     tmp <- df%>%
       filter(V1 == chr)%>%
-      mutate(ratio=V4/median(V4+0.00001))
+      mutate(ratio=V4/median(tmp_median+0.00001))
   } else if (norm_option == "wg_med"){
     tmp <- df%>%
       mutate(ratio=V4/median(V4+0.00001)) %>% 
@@ -355,7 +310,7 @@ SNPCOLOR2 <- c("#39918C","#E69F00")
 CNVCOLOR6 <- c("#00468b","#00468b","#8b0000","#8b0000","#008b46","#008b46")
 names(CNVCOLOR6) <- c("<TRP>","TRP","<DUP>","DUP","<DEL>","DEL")
 scale_SVType <- scale_fill_manual(CNVCOLOR6)
-chrom_id <- c(1:22,"X")
+chrom_id <- c(1:22,"X","Y") ## incorporate chrY
 names(chrom_id) <- paste0("chr",chrom_id)
 
 ## keep column from ucsc track

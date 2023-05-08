@@ -3,6 +3,7 @@ source("./mod/mod_dnCNV.R")
 source("./mod/mod_upload.R")
 source("./mod/mod_UCSC.R")
 source("./helper/wg_plot.R")
+source("./mod/mod_hmzcnv.R")
 
 server <- function(input, output,session) {
   # Reavtive Values --------------------------
@@ -28,6 +29,7 @@ server <- function(input, output,session) {
   
   plots <- reactiveValues()
   plots$pr_rd <- data.frame(stringsAsFactors = F)
+  plots$baf <- data.frame(stringsAsFactors = F)
   plots$m_rd <- data.frame(stringsAsFactors = F)
   plots$f_rd <- data.frame(stringsAsFactors = F)
   plots$pr_seg <- data.frame(stringsAsFactors = F)
@@ -64,12 +66,10 @@ server <- function(input, output,session) {
     }else{NULL}
 
   })
-
   output$ui_chkbox_IDR <- renderUI({
     if(!is.null(values$p2_file)){
       mod_checkbox_UI("IDR",value = F)
     }else{NULL}
-
   })
   output$ui_chkbox_SegDup <- renderUI({
     if(!is.null(values$p3_file)){
@@ -111,6 +111,8 @@ server <- function(input, output,session) {
       blacklist <- data.table::fread("GRCh38_unified_blacklist.bed.gz")%>%
         regioneR::toGRanges()
       values$ref_info <- data.table::fread("hg38.info.txt")
+      values$gaps <- data.table::fread("data/hg38_gaps.bed")%>%
+        makeGRangesFromDataFrame(keep.extra.columns = TRUE)
       values$p1_file <-  "hg38_MANE.v1.0.refseq.parquet"
       values$p2_file <-  NULL
       values$p3_file <-  "hg38_ucsc_sugdups.parquet"
@@ -121,6 +123,8 @@ server <- function(input, output,session) {
       blacklist <- data.table::fread("ENCFF001TDO.bed.gz")%>%
         regioneR::toGRanges()
       values$ref_info <- data.table::fread("hg19.info.txt")
+      values$gaps <- data.table::fread("data/hg19_gaps.bed")%>%
+        makeGRangesFromDataFrame(keep.extra.columns = TRUE)
       values$p1_file <-  "NCBI_RefSeq_hg19_clean.bed.parquet"
       values$p2_file <-  "Claudia_hg19_MergedInvDirRpts_sorted.bed"
       values$p3_file <-  "hg19_ucsc_sugdups.parquet"
@@ -160,21 +164,51 @@ server <- function(input, output,session) {
     if(nrow(values$pr_rd)==0){return(NULL)
     }else{
       w$show()
-      plots$pr_rd <- normalization_method(values$pr_rd, chr, norm_option)
+      showNotification("Normalize and segment proband read depth", duration = 3, type = "message")
+      pr_rd.gr <- normalization_method(values$pr_rd, chr, norm_option)%>%
+        setDT()%>%
+        setnames(.,c("V1","V2","V3"),c("chrom","start","end"))%>%
+        makeGRangesFromDataFrame(keep.extra.columns = T)
+      # remove regions that mapped to gaps
+      ov <- findOverlaps(pr_rd.gr,values$gaps)
+      plots$pr_rd <- pr_rd.gr[-queryHits(ov)]%>%as.data.frame()%>%
+        dplyr::select(-c("width","strand"))%>%
+        setDT()%>%
+        setnames(.,c("seqnames","start","end"),c("V1","V2","V3"))
       plots$pr_seg <- SegNormRD(plots$pr_rd,id="Proband",seg.method = seg_option)
       w$hide()
     }
     if(nrow(values$m_rd)==0){return(NULL)
     }else{
       w$show()
-      plots$m_rd <- normalization_method(values$m_rd, chr, norm_option)
+      showNotification("Normalize and segment mother read depth", duration = 3, type = "message")
+      m_rd.gr <- normalization_method(values$m_rd, chr, norm_option)%>%
+        setDT()%>%
+        setnames(.,c("V1","V2","V3"),c("chrom","start","end"))%>%
+        makeGRangesFromDataFrame(keep.extra.columns = T)
+      # remove regions that mapped to gaps
+      ov <- findOverlaps(m_rd.gr,values$gaps)
+      plots$m_rd <- m_rd.gr[-queryHits(ov)]%>%as.data.frame()%>%
+        dplyr::select(-c("width","strand"))%>%
+        setDT()%>%
+        setnames(.,c("seqnames","start","end"),c("V1","V2","V3"))
       plots$m_seg <- SegNormRD(plots$m_rd,id="Mother",seg.method = seg_option)
       w$hide()
     }
     if(nrow(values$f_rd)==0){return(NULL)
     }else{
       w$show()
-      plots$f_rd <- normalization_method(values$f_rd, chr, norm_option)
+      showNotification("Normalize and segment father read depth", duration = 3, type = "message")
+      f_rd.gr <- normalization_method(values$f_rd, chr, norm_option)%>%
+        setDT()%>%
+        setnames(.,c("V1","V2","V3"),c("chrom","start","end"))%>%
+        makeGRangesFromDataFrame(keep.extra.columns = T)
+      # remove regions that mapped to gaps
+      ov <- findOverlaps(f_rd.gr,values$gaps)
+      plots$f_rd <- f_rd.gr[-queryHits(ov)]%>%as.data.frame()%>%
+        dplyr::select(-c("width","strand"))%>%
+        setDT()%>%
+        setnames(.,c("seqnames","start","end"),c("V1","V2","V3"))
       plots$f_seg <- SegNormRD(plots$f_rd,id="Father",seg.method = seg_option)
       w$hide()
     }
@@ -199,7 +233,7 @@ server <- function(input, output,session) {
         filter(chrom%in%c(chr,paste0("chr",chr)))%>%
         dplyr::select(seqlengths)%>%unlist
       range.gr <- GenomicRanges::GRanges(chr,ranges = IRanges(loc.start,loc.end))
-      range.gr <- GenomicRanges::setdiff(range.gr, blacklist)
+      range.gr <- unlist(GenomicRanges::subtract(range.gr, blacklist))
       plots$snp_chr <- ReadGVCF(snp_gvcf_file_path,ref_genome=input$ref,param = range.gr)%>%
         as.data.frame()
       InhFrom <- unique(plots$snp_chr$B_InhFrom)
@@ -217,6 +251,7 @@ server <- function(input, output,session) {
   ### "Global" reactive values
   wg_ranges <- reactiveValues(x = NULL, pr = NULL, m = NULL, f = NULL)
   wg_dnCNV_table <- reactiveValues(t = data.frame(start_cum = c(0), end_cum = c(0), stringsAsFactors = F))
+  wg_hmzCNV_table <- reactiveValues(t = data.frame(start_cum = c(0), end_cum = c(0), stringsAsFactors = F))
   
   ## reset plots upon changing chr
   observeEvent(input$btn_wg_rd, {
@@ -227,33 +262,81 @@ server <- function(input, output,session) {
   ## WG Plot section
   observeEvent(input$btn_wg_rd, {
     req(nrow(values$pr_rd) != 0)
-    w$show()
-    rd <- values$pr_rd
-    rd <- wg_norm(rd, input$wg_norm_options)
-    wg_ranges$pr <- getAllSeg(rd)
+    chr_list <- paste0("chr", c(1:22,"X","Y"))
+    showNotification("Normalize and segment proband read depth", duration = 3, type = "message")
+    withProgress(message = 'Making plot', value = 0, {
+      n=length(chr_list)
+      tmplist <- lapply(chr_list, function(chr){
+        pr_rd.gr <- normalization_method(values$pr_rd, chr, input$wg_norm_options)%>%
+          setDT()%>%
+          setnames(.,c("V1","V2","V3"),c("chrom","start","end"))%>%
+          makeGRangesFromDataFrame(keep.extra.columns = T)
+        # remove regions that mapped to gaps
+        ov <- findOverlaps(pr_rd.gr,values$gaps)
+        pr_rd <- pr_rd.gr[-queryHits(ov)]%>%as.data.frame()%>%
+          dplyr::select(-c("width","strand"))%>%
+          setDT()%>%
+          setnames(.,c("seqnames","start","end"),c("V1","V2","V3"))
+        pr_seg <- SegNormRD(pr_rd,id="Proband",seg.method = "slm")
+        incProgress(1/n, detail = paste("Segment", chr))
+        return(pr_seg)
+      })
+      wg_ranges$pr <- rbindlist(tmplist)
+    })
     wg_pr <- wg_seg2plot(wg_ranges$pr)
-    w$hide()
-    wg_ranges <- mod_plot_wg_Server("wg_pr_rd", wg_pr, wg_ranges, wg_dnCNV_table)
+    wg_ranges <- mod_plot_wg_Server("wg_pr_rd", wg_pr, wg_ranges, wg_dnCNV_table, wg_hmzCNV_table)
   })
   observeEvent(input$btn_wg_rd, {
     req(nrow(values$m_rd) != 0)
-    w$show()
-    rd <- values$m_rd
-    rd <- wg_norm(rd, input$wg_norm_options)
-    wg_ranges$m <- getAllSeg(rd)
+    chr_list <- paste0("chr", c(1:22,"X","Y"))
+    showNotification("Normalize and segment mother's read depth", duration = 3, type = "message")
+    withProgress(message = 'Making plot', value = 0, {
+      n=length(chr_list)
+      tmplist <- lapply(chr_list, function(chr){
+        m_rd.gr <- normalization_method(values$m_rd, chr, input$wg_norm_options)%>%
+          setDT()%>%
+          setnames(.,c("V1","V2","V3"),c("chrom","start","end"))%>%
+          makeGRangesFromDataFrame(keep.extra.columns = T)
+        # remove regions that mapped to gaps
+        ov <- findOverlaps(m_rd.gr,values$gaps)
+        m_rd <- m_rd.gr[-queryHits(ov)]%>%as.data.frame()%>%
+          dplyr::select(-c("width","strand"))%>%
+          setDT()%>%
+          setnames(.,c("seqnames","start","end"),c("V1","V2","V3"))
+        m_seg <- SegNormRD(m_rd,id="Mother",seg.method = "slm")
+        incProgress(1/n, detail = paste("Segment", chr))
+        return(m_seg)
+      })
+      wg_ranges$m <- rbindlist(tmplist)
+    })
     wg_m <- wg_seg2plot(wg_ranges$m)
-    w$hide()
-    wg_ranges <- mod_plot_wg_Server("wg_m_rd", wg_m, wg_ranges, wg_dnCNV_table)
+    wg_ranges <- mod_plot_wg_Server("wg_m_rd", wg_m, wg_ranges, wg_dnCNV_table,wg_hmzCNV_table)
   })
   observeEvent(input$btn_wg_rd, {
     req(nrow(values$f_rd) != 0)
-    w$show()
-    rd <- values$f_rd
-    rd <- wg_norm(rd, input$wg_norm_options)
-    wg_ranges$f <- getAllSeg(rd)
+    chr_list <- paste0("chr", c(1:22,"X","Y"))
+    showNotification("Normalize and segment father's read depth", duration = 3, type = "message")
+    withProgress(message = 'Making plot', value = 0, {
+      n=length(chr_list)
+      tmplist <- lapply(chr_list, function(chr){
+        f_rd.gr <- normalization_method(values$f_rd, chr, input$wg_norm_options)%>%
+          setDT()%>%
+          setnames(.,c("V1","V2","V3"),c("chrom","start","end"))%>%
+          makeGRangesFromDataFrame(keep.extra.columns = T)
+        # remove regions that mapped to gaps
+        ov <- findOverlaps(f_rd.gr,values$gaps)
+        f_rd <- f_rd.gr[-queryHits(ov)]%>%as.data.frame()%>%
+          dplyr::select(-c("width","strand"))%>%
+          setDT()%>%
+          setnames(.,c("seqnames","start","end"),c("V1","V2","V3"))
+        f_seg <- SegNormRD(f_rd,id="Father",seg.method = "slm")
+        incProgress(1/n, detail = paste("Segment", chr))
+        return(f_seg)
+      })
+      wg_ranges$f <- rbindlist(tmplist)
+    })
     wg_f <- wg_seg2plot(wg_ranges$f)
-    w$hide()
-    wg_ranges <- mod_plot_wg_Server("wg_f_rd", wg_f, wg_ranges, wg_dnCNV_table)
+    wg_ranges <- mod_plot_wg_Server("wg_f_rd", wg_f, wg_ranges, wg_dnCNV_table,wg_hmzCNV_table)
   })
 
   ## dnCNV table
@@ -262,17 +345,17 @@ server <- function(input, output,session) {
     req(!is.null(wg_ranges$m))
     req(!is.null(wg_ranges$f))
     seg_data <- mod_dnCNV_Server("wg_dnCNV",wg_ranges$pr, wg_ranges$m, wg_ranges$f)
-    names(seg_data)[1] = "chr"
+    names(seg_data)[1] = "chrom"
     print(seg_data)
     temp <- wg_ranges$pr %>% 
-      group_by(chr) %>% 
+      group_by(chrom) %>% 
       summarise(max_end = max(loc.end)) %>% 
-      mutate(across("chr", str_replace, "chr", "")) %>% 
-      arrange(as.numeric(chr)) %>% 
+      mutate(across("chrom", str_replace, "chr", "")) %>% 
+      arrange(as.numeric(chrom)) %>% 
       mutate(loc_add = lag(cumsum(as.numeric(max_end)), default = 0)) %>% 
-      mutate(chr = paste0("chr", chr))
+      mutate(chrom = paste0("chr", chrom))
     seg_data <- seg_data %>% 
-      inner_join(temp, by = "chr") %>% 
+      inner_join(temp, by = "chrom") %>% 
       mutate(end_cum = loc_add + end) 
     seg_data <- seg_data %>% 
       mutate(start_cum = end_cum- width)
@@ -287,6 +370,9 @@ server <- function(input, output,session) {
   dnCNV_table <- reactiveValues(t = data.frame(start = c(0), end = c(0), stringsAsFactors = F),
                                 hl = data.frame(start = c(0), end = c(0)), 
                                 hl_col = c("white"))
+  hmzCNV_table <- reactiveValues(t = data.frame(start = c(0), end = c(0), stringsAsFactors = F),
+                                hl = data.frame(start = c(0), end = c(0)), 
+                                hl_col = c("white"))
   
   ## reset plots upon changing chr
   observeEvent(input$btn_plot, {
@@ -295,10 +381,12 @@ server <- function(input, output,session) {
     ranges$click <-  NULL
     ranges$pb <-  NULL
     dnCNV_table$t <-  data.frame(start = c(0), end = c(0), stringsAsFactors = F)
+    hmzCNV_table$t <- data.frame(start = c(0), end = c(0), stringsAsFactors = F)
   })
 
   ## dynamic highlight
   mod_col_pick_Server("highlight", dnCNV_table, ranges)
+  mod_col_pick_Server("highlight", hmzCNV_table, ranges)
   
   ## RD plots
   observeEvent(input$btn_plot,{
@@ -324,9 +412,9 @@ server <- function(input, output,session) {
     
  
     btnValrds <- mod_checkbox_Server("RD-static")
-    ranges <- mod_plot_switch_Server("RD-static", btnValrds$box_state, rd, ranges, dnCNV_table, zoom= F)
+    ranges <- mod_plot_switch_Server("RD-static", btnValrds$box_state, rd, ranges, dnCNV_table,hmzCNV_table, zoom= F)
     btnValrdd <- mod_checkbox_Server("RD-dynamic")
-    ranges <- mod_plot_switch_Server("RD-dynamic", btnValrdd$box_state, rd, ranges, dnCNV_table)
+    ranges <- mod_plot_switch_Server("RD-dynamic", btnValrdd$box_state, rd, ranges, dnCNV_table,hmzCNV_table)
 
   })
   
@@ -343,7 +431,7 @@ server <- function(input, output,session) {
     
     
     snp_a <- ggplot(df, aes(x=start,y=pr_ALT_Freq,col=A_InhFrom))+
-      geom_point(shape=20, size = 1.5)+
+      geom_point(shape=".")+
       #scattermore::geom_scattermore(shape=".",pixels=c(1024,1024))+
       geom_point(data = subset(df, likelyDN %in%c("TRUE")),size = 2,shape=8,color="red")+
       scale_fill_manual("LikelyDN",limits=c("dnSNV"),values = "red")+
@@ -355,10 +443,10 @@ server <- function(input, output,session) {
       scale_x_continuous(labels = scales::label_number())
     
     btnVala <- mod_checkbox_Server("Baf-A_allele")
-    ranges <- mod_plot_switch_Server("Baf-A_allele", btnVala$box_state, snp_a, ranges, dnCNV_table)
+    ranges <- mod_plot_switch_Server("Baf-A_allele", btnVala$box_state, snp_a, ranges, dnCNV_table,hmzCNV_table)
     
     snp_b <- ggplot(df, aes(x=start,y=pr_ALT_Freq,col=B_InhFrom))+
-      geom_point(shape=20, size = 1.5)+
+      geom_point(shape=".")+
       #scattermore::geom_scattermore(shape=".",pixels=c(1024,1024))+
       geom_point(data = subset(df, likelyDN %in%c("TRUE")),size = 2,shape=8,color="red")+
       scale_fill_manual("LikelyDN",limits=c("dnSNV"),values = "red")+
@@ -371,7 +459,7 @@ server <- function(input, output,session) {
     
     removeNotification(noti_id)
     btnValb <- mod_checkbox_Server("Baf-B_allele")
-    ranges <- mod_plot_switch_Server("Baf-B_allele", btnValb$box_state, snp_b, ranges, dnCNV_table)
+    ranges <- mod_plot_switch_Server("Baf-B_allele", btnValb$box_state, snp_b, ranges, dnCNV_table,hmzCNV_table)
     
   })
   
@@ -403,14 +491,14 @@ server <- function(input, output,session) {
         scale_anno+
         ylab("pr_SV")
       btnVal_prsv <- mod_checkbox_Server("pr_sv")
-      ranges <- mod_plot_switch_Server("pr_sv", btnVal_prsv$box_state, pr_sv_plot, ranges, dnCNV_table)
+      ranges <- mod_plot_switch_Server("pr_sv", btnVal_prsv$box_state, pr_sv_plot, ranges, dnCNV_table, hmzCNV_table)
       anno_table_Server("pr_sv", pr_sv, ranges, chrn)
     }
     
     if(!is.null(values$p1_file)){
       RefSeq_data <- read_parquet(paste0(path,values$p1_file),as_data_frame = F)
       RefSeq <- RefSeq_data %>% 
-        filter(seqname ==  chrn) %>% 
+        filter(seqname ==  chrn,type=="exon") %>% 
         collect() %>%
         mutate(gene_num=round(as.numeric(as.factor(gene_id)),3)/100,
                strand=as.factor(strand))
@@ -422,7 +510,8 @@ server <- function(input, output,session) {
       
       p1 <- RefSeq %>% 
         ggplot(aes(xstart = start, xend = end, y = gene_num))+
-        geom_intron(data = to_intron(RefSeq, "gene_num"), arrow.min.intron.length = 400)+
+        #geom_range(aes(fill = strand),height = 0.02) +
+        geom_intron(data = to_intron(RefSeq, "gene_num"), arrow.min.intron.length = 1000)+
         geom_text(data=gene_x,aes(x=start,label=gene_id),vjust = -1.2,check_overlap = T,fontface="italic")+
         ylab("RefSeq")+
         style_anno+
@@ -544,12 +633,12 @@ server <- function(input, output,session) {
     btnVal4 <- mod_checkbox_Server("OMIM")
     btnVal5 <- mod_checkbox_Server("gnomAD")
     btnVal6 <- mod_checkbox_Server("RMSK")
-    ranges <- mod_plot_switch_Server("RefSeq", btnVal1$box_state, p1, ranges, dnCNV_table)
-    ranges <- mod_plot_switch_Server("IDR", btnVal2$box_state, p2, ranges, dnCNV_table)
-    ranges <- mod_plot_switch_Server("Segdup", btnVal3$box_state, p3, ranges, dnCNV_table)
-    ranges <- mod_plot_switch_Server("OMIM", btnVal4$box_state, p4, ranges, dnCNV_table)
-    ranges <- mod_plot_switch_Server("gnomAD", btnVal5$box_state, p5, ranges, dnCNV_table)
-    ranges <- mod_plot_switch_Server("RMSK", btnVal6$box_state, p6, ranges, dnCNV_table)
+    ranges <- mod_plot_switch_Server("RefSeq", btnVal1$box_state, p1, ranges, dnCNV_table, hmzCNV_table)
+    ranges <- mod_plot_switch_Server("IDR", btnVal2$box_state, p2, ranges, dnCNV_table, hmzCNV_table)
+    ranges <- mod_plot_switch_Server("Segdup", btnVal3$box_state, p3, ranges, dnCNV_table, hmzCNV_table)
+    ranges <- mod_plot_switch_Server("OMIM", btnVal4$box_state, p4, ranges, dnCNV_table, hmzCNV_table)
+    ranges <- mod_plot_switch_Server("gnomAD", btnVal5$box_state, p5, ranges, dnCNV_table, hmzCNV_table)
+    ranges <- mod_plot_switch_Server("RMSK", btnVal6$box_state, p6, ranges, dnCNV_table, hmzCNV_table)
   
     removeNotification(id)
   })
@@ -561,6 +650,14 @@ server <- function(input, output,session) {
     req(nrow(values$m_rd)!=0)
     req(nrow(values$f_rd)!=0)
     dnCNV_table$t <- mod_dnCNV_Server("dnCNV",plots$pr_seg, plots$m_seg, plots$f_seg)
+  })
+  
+  ## hmzCNV table
+  observeEvent(input$btn_hmzCNV, {
+    req(nrow(values$pr_rd)!=0)
+    req(nrow(values$m_rd)!=0)
+    req(nrow(values$f_rd)!=0)
+    hmzCNV_table$t <- mod_hmzcnv_Server("hmzCNV",plots$pr_seg,plots$baf,plots$m_seg, plots$f_seg)
   })
   
   ## Show current ranges
@@ -629,6 +726,57 @@ server <- function(input, output,session) {
   
   
   
+  # ## buttons 
+  # output$ui_dlbtn_tbl <- renderUI({
+  #   if(nrow(values$pr_sv) > 0){
+  #     tagList(shiny::actionButton("btl_select", "Select",icon("check")))
+  #   }
+  # })
+  # output$ui_dlbtn_plt <- renderUI({
+  #   if(length(plots$plot1) > 0){
+  #     downloadButton("dl_plt", "Download")
+  #   }
+  # })
+  # output$ui_clbtn_plt <- renderUI({
+  #   if(length(plots$plot1) > 0){
+  #     shiny::actionButton("cl_btn","Clear plot",icon("trash"))
+  #   }
+  # })
+  # output$ui_dlbtn_dnsnv <- renderUI({
+  #   if(length(plots$plot2) > 0){
+  #     shiny::downloadButton("dl_btn_dnsnv","Download dnSNV")
+  #   }
+  # })
+  # 
+  
+  # observeEvent(input$cl_btn,{
+  #   plots$snp_chr <- data.frame(stringsAsFactors = F)
+  #   plots$pr_rd <- data.frame(stringsAsFactors = F)
+  #   input$filter_sv_table_rows_selected <- NULL
+  # })
+  # 
+  # ## Download handler
+  # output$dl_plt <- downloadHandler(
+  #   filename = function(){
+  #     paste0(input$chr,".pdf")
+  #   },
+  #   content = function(file){
+  #     
+  #     mylist <- list(plots$plot1,plots$plot3_dl,plots$plot2)
+  #     mylist <- mylist[lengths(mylist)!= 0]
+  #     n <- length(mylist)
+  #     p <- cowplot::plot_grid(plotlist=mylist,ncol = 1,align = 'v',axis = 'lr')
+  #     ggplot2::ggsave(filename =file, plot = p,device = "pdf",width =12 ,height = n*4,units = "in")
+  #   }
+  # )
+  # output$dl_btn_dnsnv <- downloadHandler(
+  #   filename = function(){paste("dnSNV_",input$chr,".csv")},
+  #   content = function(file){
+  #     df <- plots$snp_chr%>%filter(likelyDN%in%c(input$include_dnSNV))
+  #     write.csv(df,file,row.names = F)
+  #   }
+  # )
+  # 
   
 }
 

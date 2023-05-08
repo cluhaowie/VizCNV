@@ -2,6 +2,7 @@ source("./mod/mod_plot_output.R")
 source("./mod/mod_dnCNV.R")
 source("./mod/mod_upload.R")
 source("./mod/mod_UCSC.R")
+source("./mod/mod_hmzcnv.R")
 
 ui <- dashboardPage(
   
@@ -103,16 +104,16 @@ ui <- dashboardPage(
         tabItem( tabName = "wg_plot",
                  fluidRow(
                    box(title = "Options",width = 12,solidHeader = T, status = "success",collapsible = T,
-                       fluidRow(column(3, 
-                                       actionButton("btn_wg_rd", "Show whole genome read depth"),
-                                       actionButton("btn_wg_dnCNV", "Show potential dnCNVs")),
-                       column(3, 
-                              radioButtons("wg_norm_options",
-                                           label = "Normalization options", 
-                                           choiceNames = list("chromosomal median", "whole genome median"),
-                                           choiceValues = list("chr_med", "wg_med"),
-                                           selected = "wg_med"))
-                   )),
+                       fluidRow(column(3,
+                                       radioButtons("wg_norm_options",
+                                                    label = "Normalization options:", 
+                                                    choiceNames = list("chromosomal median", "whole genome median"),
+                                                    choiceValues = list("chr_med", "wg_med"),
+                                                    selected = "wg_med"))),
+                       fluidRow(column(3, actionButton("btn_wg_rd", "Show whole genome read depth")),
+                                column(3, actionButton("btn_wg_dnCNV", "Show potential dnCNVs"))
+                                )
+                   ),
                    box(title = "WG Plots",width = 12,solidHeader = T, status = "success",collapsible = T,
                        mod_plot_wg_UI("wg_pr_rd", height = 270),
                        mod_plot_wg_UI("wg_m_rd", height = 270),
@@ -129,7 +130,7 @@ ui <- dashboardPage(
                     fluidRow(
                       use_waiter(),
                       column(1, 
-                             p(HTML("<b>Chromosome</b>"),span(shiny::icon("info-circle"), id = "info_chr"),selectInput('chr', choice=c(paste0("chr", c(seq(1,22), "X"))),label = NULL, multiple = F),
+                             p(HTML("<b>Chromosome</b>"),span(shiny::icon("info-circle"), id = "info_chr"),selectInput('chr', choice=c(paste0("chr", c(seq(1,22), "X","Y"))),label = NULL, multiple = F),
                                tippy::tippy_this(elementId = "info_chr",tooltip = "Selected chromosome",placement = "right")
                              )),
                       column(2,
@@ -162,7 +163,8 @@ ui <- dashboardPage(
                       column(1, actionButton("btn_filter", "Filter")),
                       column(1, actionButton("btn_plot", "Plot")),
                       column(1, actionButton("btn_anno", "Annotate")),
-                      column(2, actionButton("btn_dnCNV", "Show potential dnCNVs"))
+                      column(2, actionButton("btn_dnCNV", "Show potential dnCNVs")),
+                      column(2, actionButton("btn_hmzCNV", "Show potential hmzCNV"))
                       )
                     )
                   ),
@@ -216,26 +218,26 @@ ui <- dashboardPage(
         tabItem(tabName = "table",
                 fluidRow(box(title = "dnCNV Table",width = 12,solidHeader = T, status = "success",collapsible = T,
                              mod_dnCNV_UI("dnCNV")),
-                box(title = "SV Table",width = 12,solidHeader = T, status = "success",collapsible = T,
-                      DT::dataTableOutput("filter_sv_table"),
-                      fluidRow(
-                        column(1,uiOutput("ui_dlbtn_tbl"))
-                      ),
-
-                      DT::dataTableOutput("Select_table")),
-                box(title = "Annotation Table",width = 12,solidHeader = T, status = "success",collapsible = T,
-                tabsetPanel(
-                  tabPanel("pr_sv",anno_table_UI("pr_sv")),
-                  tabPanel("RefSeq",anno_table_UI("RefSeq")),
-                  tabPanel("IDR",anno_table_UI("IDR")),
-                  tabPanel("SegDup",anno_table_UI("SegDup")),
-                  tabPanel("OMIM",anno_table_UI("OMIM")),
-                  tabPanel("gnomAD",anno_table_UI("gnomAD")),
-                  tabPanel("rmsk",anno_table_UI("rmsk"))
-                )
-              )
-            )
-
+                         box(title = "Homozygous CNVs Table",width = 12,solidHeader = T, status = "success",collapsible = T,
+                             mod_hmzcnv_UI("hmzCNV")),
+                         box(title = "SV Table",width = 12,solidHeader = T, status = "success",collapsible = T,
+                             DT::dataTableOutput("filter_sv_table"),
+                             fluidRow(
+                               column(1,uiOutput("ui_dlbtn_tbl"))
+                             ),
+                             DT::dataTableOutput("Select_table")),
+                         box(title = "Annotation Table",width = 12,solidHeader = T, status = "success",collapsible = T,
+                             tabsetPanel(
+                               tabPanel("pr_sv",anno_table_UI("pr_sv")),
+                               tabPanel("RefSeq",anno_table_UI("RefSeq")),
+                               tabPanel("IDR",anno_table_UI("IDR")),
+                               tabPanel("SegDup",anno_table_UI("SegDup")),
+                               tabPanel("OMIM",anno_table_UI("OMIM")),
+                               tabPanel("gnomAD",anno_table_UI("gnomAD")),
+                               tabPanel("rmsk",anno_table_UI("rmsk"))
+                               )
+                             )
+                         )
         ),
         tabItem(tabName = "help",
                 "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum"),
