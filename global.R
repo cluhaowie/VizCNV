@@ -149,57 +149,7 @@ scanTabixDataFrame <- function(tabix_file, param, format, ...){
 }
 
 
-SegNormRD <- function(df, id, seg.method = "cbs") {
-  # make sure df only has one chr in V1
-  if(mad(df$ratio)==0){
-    res <- data.table(ID=id,chrom=unique(df$V1),
-                      loc.start=min(df$V2),
-                      loc.end=max(df$V3),
-                      num.mark=nrow(df),
-                      seg.mean=median(df$ratio))
-    return(res)
-  }
-  if (seg.method == "cbs") {
-    print("segment with CBS")
-    CNA.obj <-
-      DNAcopy::CNA(
-        log2(df$ratio + 0.001),
-        df$V1,
-        df$V2,
-        data.type = "logratio",
-        sampleid = id
-      )
-    seg <- DNAcopy::segment(CNA.obj)
-    seg.output <- seg$output
-    seg.output$ID <- id
-    print("done")
-    return(seg.output)
-  }
-  ##EDIT: include SLM segmentation
-  if (seg.method == "slm") {
-    print("segment with SLM")
-    slm <-
-      SLMSeg::SLM(
-        log2(df$ratio + 0.001),
-        omega = 0.3,
-        FW = 0,
-        eta = 1e-5
-      )
-    res <- rle(slm[1, ])
-    idx <- sapply(seq_along(res$lengths),function(i){
-      if(i==1){return(1)}
-      start.idx=1+sum(res$lengths[1:(i-1)])
-      return(start.idx)
-    })
-    chr=df$V1[idx]
-    start=df$V2[idx]
-    end=c(df$V2[c(idx[-1],end(df$V2)[1])])
-    res <- data.table(ID=id,chrom=chr,loc.start=start,loc.end=end,num.mark=res$lengths,seg.mean=res$values)
-    print("done")
-    return(res)
-  }
-  
-}
+
 #ref_genome="GRCh38"
 
 #hg38.info <- seqinfo(BSgenome.Hsapiens.UCSC.hg38::Hsapiens)%>%as.data.frame()
