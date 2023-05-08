@@ -104,16 +104,16 @@ ui <- dashboardPage(
         tabItem( tabName = "wg_plot",
                  fluidRow(
                    box(title = "Options",width = 12,solidHeader = T, status = "success",collapsible = T,
-                       fluidRow(column(3, 
-                                       actionButton("btn_wg_rd", "Show whole genome read depth"),
-                                       actionButton("btn_wg_dnCNV", "Show potential dnCNVs")),
-                       column(3, 
-                              radioButtons("wg_norm_options",
-                                           label = "Normalization options", 
-                                           choiceNames = list("chromosomal median", "whole genome median"),
-                                           choiceValues = list("chr_med", "wg_med"),
-                                           selected = "wg_med"))
-                   )),
+                       fluidRow(column(3,
+                                       radioButtons("wg_norm_options",
+                                                    label = "Normalization options:", 
+                                                    choiceNames = list("chromosomal median", "whole genome median"),
+                                                    choiceValues = list("chr_med", "wg_med"),
+                                                    selected = "wg_med"))),
+                       fluidRow(column(3, actionButton("btn_wg_rd", "Show whole genome read depth")),
+                                column(3, actionButton("btn_wg_dnCNV", "Show potential dnCNVs"))
+                                )
+                   ),
                    box(title = "WG Plots",width = 12,solidHeader = T, status = "success",collapsible = T,
                        mod_plot_wg_UI("wg_pr_rd", height = 270),
                        mod_plot_wg_UI("wg_m_rd", height = 270),
