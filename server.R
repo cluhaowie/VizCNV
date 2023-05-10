@@ -233,7 +233,6 @@ server <- function(input, output,session) {
         filter(chrom==chr | chrom == paste0("chr", chr))%>%
         dplyr::select(seqlengths)%>%unlist
       range.gr <- GenomicRanges::GRanges(chr,ranges = IRanges(loc.start,loc.end))
-      print(range.gr)
       if (chr %in% c(1:22, "X", "Y")){
         range.gr <- GenomeInfoDb::renameSeqlevels(range.gr, paste0("chr", GenomeInfoDb::seqlevels(range.gr)))
         range.gr <- unlist(GenomicRanges::subtract(range.gr, blacklist))
@@ -436,6 +435,13 @@ server <- function(input, output,session) {
     cols <- plots$SNPcols
     xlabel=unique(df$chrom)[1]
     
+    infrom <- df$B_InhFrom %>% 
+      unique()
+    snp_cols <- vector(length = length(infrom))
+    for (i in 1:length(snp_cols)){
+      snp_cols[i] <- df$B_col[which(df$B_InhFrom == infrom[i])[1]]
+      names(snp_cols)[i] <- infrom[i]
+    }
     
     snp_a <- ggplot(df, aes(x=start,y=pr_ALT_Freq,col=A_InhFrom))+
       geom_point(shape=20, size = 1.5)+
@@ -454,13 +460,12 @@ server <- function(input, output,session) {
     
     snp_b <- ggplot(df, aes(x=start,y=pr_ALT_Freq,col=B_InhFrom))+
       geom_point(shape=20, size = 1.5)+
-      #scattermore::geom_scattermore(shape=".",pixels=c(1024,1024))+
       geom_point(data = subset(df, likelyDN %in%c("TRUE")),size = 2,shape=8,color="red")+
       scale_fill_manual("LikelyDN",limits=c("dnSNV"),values = "red")+
       xlab(xlabel)+
       scale_snp+
       style_snp+
-      scale_colour_manual(values = cols)+
+      scale_colour_manual(values = snp_cols)+
       guides(color = guide_legend(override.aes = list(size = 4)))+
       scale_x_continuous(labels = scales::label_number())
     
@@ -484,7 +489,7 @@ server <- function(input, output,session) {
                                  SVTYPE == "DUP" ~ "#8b0000",
                                  SVTYPE == "INS" ~ "darkgreen", 
                                  SVTYPE == "INV" ~ "darkorange", 
-                                 TRUE ~ "magenta3")) %>% 
+                                 TRUE ~ "white")) %>% 
         mutate(idx = sample.int(n())/1000)
       pr_sv <- pr_sv %>% 
         mutate(start = POS, 
