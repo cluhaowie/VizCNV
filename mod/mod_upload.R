@@ -45,7 +45,6 @@ mod_snp_upload_Server <- function(id,volumes,values) {
                                 paste0("The joint called SNP file has been indexed")))
         }
       },ignoreInit = T)
-
     }
   )
 }
