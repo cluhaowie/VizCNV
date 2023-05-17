@@ -6,7 +6,7 @@ source("./mod/mod_hmzcnv.R")
 
 ui <- dashboardPage(
   
-  dashboardHeader(title = HTML("VizCNV-dev"),
+  dashboardHeader(title = "VizCNV",
                   tags$span(style = "width: 90%"),
                   tagList(
                     tags$a(href="https://github.com/cluhaowie/VizCNV",icon("github"))
@@ -15,17 +15,23 @@ ui <- dashboardPage(
   
   dashboardSidebar(
     sidebarMenu(
-      menuItem(tabName = "input", text = "Input/Filtering", icon = icon("upload")),
-      menuItem(tabName = "wg_plot", text = "WG Plots", icon = icon("chart-column")),
+      menuItem(tabName = "home", text = "Home", icon = icon("home")),
+      menuItem(tabName = "input", text = "Input", icon = icon("upload")),
+      menuItem(tabName = "wg_plot", text = "Genome-wide Plots", icon = icon("chart-column")),
       menuItem(tabName = "chr_plot", text = "Chromosomal Plots", icon = icon("search")),
-      menuItem(tabName = "table", text = "Tables", icon = icon("table")),
-      menuItem(tabName = "help", text = "Help", icon = icon("question-circle")),
-      menuItem(tabName = "about", text = "About", icon = icon("info-circle"))
+      menuItem(tabName = "table", text = "Table view", icon = icon("table")),
+      menuItem(tabName = "help", text = "Help", icon = icon("question-circle"))
+      
     )
   ),
   
   dashboardBody(
       tabItems(
+        tabItem(tabName = "home", 
+                h1("VizCNV"),
+                "Welcome to ",strong("VizCNV!"),
+                p("VizCNV serves as a dynamic interface for analyzing and representing copy number variations (CNVs) derived from short-read whole genome sequencing (WGS) data, specifically in the realm of rare disease investigation.
+                  Constructed using the interactive web application framework R Studio Shiny, VizCNV simplifies and accelerates the process of detecting intricate alterations in the genome structure. By offering a comprehensive, user-friendly platform for both computational analysis and visual representation of genomic data, VizCNV aids in enhancing our understanding of rare genetic disorders, thereby contributing to the improvement of diagnostic strategies.")),
         tabItem(tabName = "input",
                 tags$head(
                   tags$link(rel = "stylesheet", href = "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css")
@@ -239,10 +245,7 @@ ui <- dashboardPage(
                              )
                          )
         ),
-        tabItem(tabName = "help",
-                "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum"),
-        tabItem(tabName = "about",
-                "Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt. Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore et dolore magnam aliquam quaerat voluptatem. Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam, nisi ut aliquid ex ea commodi consequatur? Quis autem vel eum iure reprehenderit qui in ea voluptate velit esse quam nihil molestiae consequatur, vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?")
+        tabItem(tabName = "help")
     )
   )
 
