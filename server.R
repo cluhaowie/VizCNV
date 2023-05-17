@@ -221,7 +221,7 @@ server <- function(input, output,session) {
       if(chr%in%chrom_id){
         chr <- names(chrom_id)[which(chrom_id==chr)]
       }else{
-        chr <- chrom_id[which(names(chrom_id)==chr)]
+        chr <- chrom_id[which(names(chrom_id)==chr)][[1]]
       }
     }
     if(length(snp_gvcf_file_path)==0){
@@ -230,10 +230,16 @@ server <- function(input, output,session) {
       w$show()
       loc.start <- 0
       loc.end <- values$ref_info%>%
-        filter(chrom%in%c(chr,paste0("chr",chr)))%>%
+        filter(chrom==chr | chrom == paste0("chr", chr))%>%
         dplyr::select(seqlengths)%>%unlist
       range.gr <- GenomicRanges::GRanges(chr,ranges = IRanges(loc.start,loc.end))
-      range.gr <- unlist(GenomicRanges::subtract(range.gr, blacklist))
+      if (chr %in% c(1:22, "X", "Y")){
+        range.gr <- GenomeInfoDb::renameSeqlevels(range.gr, paste0("chr", GenomeInfoDb::seqlevels(range.gr)))
+        range.gr <- unlist(GenomicRanges::subtract(range.gr, blacklist))
+        range.gr <- GenomeInfoDb::renameSeqlevels(range.gr, gsub("chr", "", GenomeInfoDb::seqlevels(range.gr)))
+      } else {
+        range.gr <- unlist(GenomicRanges::subtract(range.gr, blacklist))
+      }
       plots$snp_chr <- ReadGVCF(snp_gvcf_file_path,ref_genome=input$ref,param = range.gr)%>%
         as.data.frame()
       InhFrom <- unique(plots$snp_chr$B_InhFrom)
@@ -429,9 +435,16 @@ server <- function(input, output,session) {
     cols <- plots$SNPcols
     xlabel=unique(df$chrom)[1]
     
+    infrom <- df$B_InhFrom %>% 
+      unique()
+    snp_cols <- vector(length = length(infrom))
+    for (i in 1:length(snp_cols)){
+      snp_cols[i] <- df$B_col[which(df$B_InhFrom == infrom[i])[1]]
+      names(snp_cols)[i] <- infrom[i]
+    }
     
     snp_a <- ggplot(df, aes(x=start,y=pr_ALT_Freq,col=A_InhFrom))+
-      geom_point(shape=".")+
+      geom_point(shape=20, size = 1.5)+
       #scattermore::geom_scattermore(shape=".",pixels=c(1024,1024))+
       geom_point(data = subset(df, likelyDN %in%c("TRUE")),size = 2,shape=8,color="red")+
       scale_fill_manual("LikelyDN",limits=c("dnSNV"),values = "red")+
@@ -446,14 +459,13 @@ server <- function(input, output,session) {
     ranges <- mod_plot_switch_Server("Baf-A_allele", btnVala$box_state, snp_a, ranges, dnCNV_table,hmzCNV_table)
     
     snp_b <- ggplot(df, aes(x=start,y=pr_ALT_Freq,col=B_InhFrom))+
-      geom_point(shape=".")+
-      #scattermore::geom_scattermore(shape=".",pixels=c(1024,1024))+
+      geom_point(shape=20, size = 1.5)+
       geom_point(data = subset(df, likelyDN %in%c("TRUE")),size = 2,shape=8,color="red")+
       scale_fill_manual("LikelyDN",limits=c("dnSNV"),values = "red")+
       xlab(xlabel)+
       scale_snp+
       style_snp+
-      scale_colour_manual(values = cols)+
+      scale_colour_manual(values = snp_cols)+
       guides(color = guide_legend(override.aes = list(size = 4)))+
       scale_x_continuous(labels = scales::label_number())
     
@@ -477,8 +489,7 @@ server <- function(input, output,session) {
                                  SVTYPE == "DUP" ~ "#8b0000",
                                  SVTYPE == "INS" ~ "darkgreen", 
                                  SVTYPE == "INV" ~ "darkorange", 
-                                 TRUE ~ "magenta3")) %>% 
-        group_by(SVTYPE) %>% 
+                                 TRUE ~ "white")) %>% 
         mutate(idx = sample.int(n())/1000)
       pr_sv <- pr_sv %>% 
         mutate(start = POS, 
