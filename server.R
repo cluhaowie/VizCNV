@@ -171,7 +171,10 @@ server <- function(input, output,session) {
         makeGRangesFromDataFrame(keep.extra.columns = T)
       # remove regions that mapped to gaps
       ov <- findOverlaps(pr_rd.gr,values$gaps)
-      plots$pr_rd <- pr_rd.gr[-queryHits(ov)]%>%as.data.frame()%>%
+      if (isTRUE(input$mask_option)){
+        pr_rd.gr <- pr_rd.gr[-queryHits(ov)]
+      }
+      plots$pr_rd <- pr_rd.gr%>%as.data.frame()%>%
         dplyr::select(-c("width","strand"))%>%
         setDT()%>%
         setnames(.,c("seqnames","start","end"),c("V1","V2","V3"))
@@ -188,7 +191,10 @@ server <- function(input, output,session) {
         makeGRangesFromDataFrame(keep.extra.columns = T)
       # remove regions that mapped to gaps
       ov <- findOverlaps(m_rd.gr,values$gaps)
-      plots$m_rd <- m_rd.gr[-queryHits(ov)]%>%as.data.frame()%>%
+      if (isTRUE(input$mask_option)){
+        m_rd.gr <- m_rd.gr[-queryHits(ov)]
+      }
+      plots$m_rd <- m_rd.gr%>%as.data.frame()%>%
         dplyr::select(-c("width","strand"))%>%
         setDT()%>%
         setnames(.,c("seqnames","start","end"),c("V1","V2","V3"))
@@ -205,7 +211,10 @@ server <- function(input, output,session) {
         makeGRangesFromDataFrame(keep.extra.columns = T)
       # remove regions that mapped to gaps
       ov <- findOverlaps(f_rd.gr,values$gaps)
-      plots$f_rd <- f_rd.gr[-queryHits(ov)]%>%as.data.frame()%>%
+      if (isTRUE(input$mask_option)){
+        f_rd.gr <- f_rd.gr[-queryHits(ov)]
+      }
+      plots$f_rd <- f_rd.gr%>%as.data.frame()%>%
         dplyr::select(-c("width","strand"))%>%
         setDT()%>%
         setnames(.,c("seqnames","start","end"),c("V1","V2","V3"))
@@ -233,12 +242,14 @@ server <- function(input, output,session) {
         filter(chrom==chr | chrom == paste0("chr", chr))%>%
         dplyr::select(seqlengths)%>%unlist
       range.gr <- GenomicRanges::GRanges(chr,ranges = IRanges(loc.start,loc.end))
-      if (chr %in% c(1:22, "X", "Y")){
-        range.gr <- GenomeInfoDb::renameSeqlevels(range.gr, paste0("chr", GenomeInfoDb::seqlevels(range.gr)))
-        range.gr <- unlist(GenomicRanges::subtract(range.gr, blacklist))
-        range.gr <- GenomeInfoDb::renameSeqlevels(range.gr, gsub("chr", "", GenomeInfoDb::seqlevels(range.gr)))
-      } else {
-        range.gr <- unlist(GenomicRanges::subtract(range.gr, blacklist))
+      if (isTRUE(input$mask_option)){
+        if (chr %in% c(1:22, "X", "Y")){
+          range.gr <- GenomeInfoDb::renameSeqlevels(range.gr, paste0("chr", GenomeInfoDb::seqlevels(range.gr)))
+          range.gr <- unlist(GenomicRanges::subtract(range.gr, blacklist))
+          range.gr <- GenomeInfoDb::renameSeqlevels(range.gr, gsub("chr", "", GenomeInfoDb::seqlevels(range.gr)))
+        } else {
+          range.gr <- unlist(GenomicRanges::subtract(range.gr, blacklist))
+        }
       }
       plots$snp_chr <- ReadGVCF(snp_gvcf_file_path,ref_genome=input$ref,param = range.gr)%>%
         as.data.frame()

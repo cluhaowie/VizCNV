@@ -163,7 +163,11 @@ ui <- dashboardPage(
                                                     "Dad"="Father"),selected = "Proband"),
                                tippy::tippy_this(elementId = "info_include",tooltip = "Choose to show segment from either or both parents",placement = "right")
                              ),
-                             uiOutput("blt_dnSNV_ui"))
+                             uiOutput("blt_dnSNV_ui")),
+                      column(2, p(HTML("<b>Mask options</b>")),
+                             checkboxInput(inputId = "mask_option",
+                                           label = "remove gaps in ref genome",
+                                           value = T))
                       ),
                     fluidRow(
                       column(2, actionButton("btn_filter", "Filter")),
