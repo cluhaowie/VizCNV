@@ -17,8 +17,8 @@ ui <- dashboardPage(
     sidebarMenu(
       menuItem(tabName = "home", text = "Home", icon = icon("home")),
       menuItem(tabName = "input", text = "Input", icon = icon("upload")),
-      menuItem(tabName = "wg_plot", text = "Genome-wide Plots", icon = icon("chart-column")),
-      menuItem(tabName = "chr_plot", text = "Chromosomal Plots", icon = icon("search")),
+      menuItem(tabName = "wg_plot", text = "Genome-wide view", icon = icon("chart-column")),
+      menuItem(tabName = "chr_plot", text = "Chromosomal view", icon = icon("search")),
       menuItem(tabName = "table", text = "Table view", icon = icon("table")),
       menuItem(tabName = "help", text = "Help", icon = icon("question-circle"))
       
@@ -116,8 +116,8 @@ ui <- dashboardPage(
                                                     choiceNames = list("chromosomal median", "whole genome median"),
                                                     choiceValues = list("chr_med", "wg_med"),
                                                     selected = "wg_med"))),
-                       fluidRow(column(3, actionButton("btn_wg_rd", "Show whole genome read depth")),
-                                column(3, actionButton("btn_wg_dnCNV", "Show potential dnCNVs"))
+                       fluidRow(column(3, actionButton("btn_wg_rd", "plot")),
+                                column(3, actionButton("btn_wg_dnCNV", "Filter dnCNVs"))
                                 )
                    ),
                    box(title = "WG Plots",width = 12,solidHeader = T, status = "success",collapsible = T,
@@ -135,7 +135,7 @@ ui <- dashboardPage(
                     use_waiter(),
                     fluidRow(
                       use_waiter(),
-                      column(1, 
+                      column(2, 
                              p(HTML("<b>Chromosome</b>"),span(shiny::icon("info-circle"), id = "info_chr"),selectInput('chr', choice=c(paste0("chr", c(seq(1,22), "X","Y"))),label = NULL, multiple = F),
                                tippy::tippy_this(elementId = "info_chr",tooltip = "Selected chromosome",placement = "right")
                              )),
@@ -149,7 +149,7 @@ ui <- dashboardPage(
                                                              SLM is fast and tend to give more segment,can be used for high-quality data; 
                                                              CBS is slow and give less segment, can be used for noisy data ",placement = "right")
                              )),
-                      column(3, 
+                      column(2, 
                              radioButtons("norm_options",
                                           label = "Normalization options", 
                                           choiceNames = list("chromosomal median", "whole genome median"),
@@ -166,11 +166,11 @@ ui <- dashboardPage(
                              uiOutput("blt_dnSNV_ui"))
                       ),
                     fluidRow(
-                      column(1, actionButton("btn_filter", "Filter")),
-                      column(1, actionButton("btn_plot", "Plot")),
-                      column(1, actionButton("btn_anno", "Annotate")),
-                      column(2, actionButton("btn_dnCNV", "Show potential dnCNVs")),
-                      column(2, actionButton("btn_hmzCNV", "Show potential hmzCNV"))
+                      column(2, actionButton("btn_filter", "Filter")),
+                      column(2, actionButton("btn_plot", "Plot")),
+                      column(2, actionButton("btn_anno", "Annotate")),
+                      column(2, actionButton("btn_dnCNV", "Filter dnCNVs")),
+                      column(2, actionButton("btn_hmzCNV", "Filter hmzCNV"))
                       )
                     )
                   ),
@@ -200,8 +200,8 @@ ui <- dashboardPage(
                                  column(4,verbatimTextOutput("cur_range"))
                                ),
                                fluidRow(
-                                 column(4,mod_col_pick_UI("highlight")),
-                                 column(4,mod_UCSC_UI("UCSC"))
+                                 column(6,mod_col_pick_UI("highlight")),
+                                 column(6,mod_UCSC_UI("UCSC"))
                                ),
                     mod_plot_switch_UI("RD-static", height = 200),
                     mod_plot_switch_UI("RD-dynamic", height = 200),
