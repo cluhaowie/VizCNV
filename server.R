@@ -446,14 +446,23 @@ server <- function(input, output,session) {
     cols <- plots$SNPcols
     xlabel=unique(df$chrom)[1]
     
-    infrom <- df$B_InhFrom %>% 
+    infromb <- df$B_InhFrom %>% 
       unique()
-    snp_cols <- vector(length = length(infrom))
-    for (i in 1:length(snp_cols)){
-      snp_cols[i] <- df$B_col[which(df$B_InhFrom == infrom[i])[1]]
-      names(snp_cols)[i] <- infrom[i]
+    snpb_cols <- vector(length = length(infromb))
+    for (i in 1:length(snpb_cols)){
+      snpb_cols[i] <- df$B_col[which(df$B_InhFrom == infromb[i])[1]]
+      names(snpb_cols)[i] <- infromb[i]
     }
     
+    infroma <- df$A_InhFrom %>% 
+      unique()
+    snpa_cols <- vector(length = length(infroma))
+    for (i in 1:length(snpa_cols)){
+      snpa_cols[i] <- df$A_col[which(df$A_InhFrom == infroma[i])[1]]
+      names(snpa_cols)[i] <- infroma[i]
+    }
+    
+        
     snp_a <- ggplot(df, aes(x=start,y=pr_ALT_Freq,col=A_InhFrom))+
       geom_point(shape=20, size = 1.5)+
       #scattermore::geom_scattermore(shape=".",pixels=c(1024,1024))+
@@ -462,7 +471,7 @@ server <- function(input, output,session) {
       xlab(xlabel)+
       scale_snp+
       style_snp+
-      scale_colour_manual(values = cols)+
+      scale_colour_manual(values = snpa_cols)+
       guides(color = guide_legend(override.aes = list(size = 4)))+
       scale_x_continuous(labels = scales::label_number())
     
@@ -476,7 +485,7 @@ server <- function(input, output,session) {
       xlab(xlabel)+
       scale_snp+
       style_snp+
-      scale_colour_manual(values = snp_cols)+
+      scale_colour_manual(values = snpb_cols)+
       guides(color = guide_legend(override.aes = list(size = 4)))+
       scale_x_continuous(labels = scales::label_number())
     
@@ -501,7 +510,9 @@ server <- function(input, output,session) {
                                  SVTYPE == "INS" ~ "darkgreen", 
                                  SVTYPE == "INV" ~ "darkorange", 
                                  TRUE ~ "white")) %>% 
-        mutate(idx = sample.int(n())/1000)
+        mutate(idx = sample.int(size = n(), n = 980, replace = T)/10000)
+      
+      print(pr_sv$idx)
       pr_sv <- pr_sv %>% 
         mutate(start = POS, 
                end = as.integer(END)) %>% 

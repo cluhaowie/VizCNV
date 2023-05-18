@@ -116,7 +116,7 @@ ui <- dashboardPage(
                                                     choiceNames = list("chromosomal median", "whole genome median"),
                                                     choiceValues = list("chr_med", "wg_med"),
                                                     selected = "wg_med"))),
-                       fluidRow(column(3, actionButton("btn_wg_rd", "plot")),
+                       fluidRow(column(3, actionButton("btn_wg_rd", "Plot")),
                                 column(3, actionButton("btn_wg_dnCNV", "Filter dnCNVs"))
                                 )
                    ),

@@ -190,7 +190,10 @@ ReadGVCF <- function(path_to_gVCF,ref_genome=ref_genome,param = param){
                                TRUE ~ "Notphased")) %>% 
    mutate(B_col = case_when(B_InhFrom == P1_ID ~ "#E69F00",
                             B_InhFrom == P2_ID ~ "#39918C",
-                            TRUE ~ "#999999"))
+                            TRUE ~ "#999999")) %>% 
+  mutate(A_col = case_when(A_InhFrom == P1_ID ~ "#E69F00",
+                           A_InhFrom == P2_ID ~ "#39918C",
+                           TRUE ~ "#999999"))
   AD <- as.data.table(AD)
   setnames(AD,colnames(AD),c("index","P1","P2"))
   AD.anno <- AD%>%
@@ -291,7 +294,8 @@ scale_snp <- scale_y_continuous(name="B-allele frequency",
 
 
 style_anno <- theme_classic()+
-  theme(axis.text.x=element_blank(), 
+  theme(
+        axis.text.x=element_blank(),
         axis.ticks.x=element_blank(), #remove x axis ticks
         axis.title.x = element_blank(),
         panel.grid.major.x = element_line(linetype = 5,colour = "grey50"),
