@@ -131,6 +131,8 @@ server <- function(input, output,session) {
       values$p4_file <-  "OMIM_gene2_hg19_UCSC_all.bed"
       values$p5_file <-  "gnomAD_allSV_hg19_UCSC.bed"
       values$p6_file <-  "hg19_rmsk.parquet"
+    } else if(input$ref=="T2T"){
+      values$ref_info <- data.table::fread("CHM13v2.0.info.txt")
     }
   })
   
