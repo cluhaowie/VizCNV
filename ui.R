@@ -38,7 +38,7 @@ ui <- dashboardPage(
                 ),
           fluidRow(
             column(width=8,
-                   box(title="Step 0: File import/upload",status="primary",width = 12,solidHeader = T,collapsible = T,
+                   box(title="File import/upload",status="primary",width = 12,solidHeader = T,collapsible = T,
                        radioButtons(inputId = "ref",label = h4("Reference Genome Build"),choices = list("hg19"="hg19","hg38"="hg38"),inline = T,selected = "hg19"),
                        h5("Upload or select proband read depth file",dashboardBadge("required", color = "primary")),
                        mod_rd_upload_UI("pr_rd"),
