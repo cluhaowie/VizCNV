@@ -154,13 +154,13 @@ scanTabixDataFrame <- function(tabix_file, param, format, ...){
 
 #hg38.info <- seqinfo(BSgenome.Hsapiens.UCSC.hg38::Hsapiens)%>%as.data.frame()
 #hg38.info <- hg38.info %>% mutate(chrom=rownames(hg38.info))
-hg38.info <- data.table::fread("hg38.info.txt")
+#hg38.info <- data.table::fread("hg38.info.txt")
 #write.table(hg38.info,file = "hg38.info.txt",quote = F,row.names = F,col.names = T)
-hg19.info <- data.table::fread("hg19.info.txt")
+#hg19.info <- data.table::fread("hg19.info.txt")
 #hg19.info <- hg19.info %>% mutate(chrom=rownames(hg19.info))
 #write.table(hg19.info,file = "hg19.info.txt",quote = F,row.names = F,col.names = T)
-blacklist <- data.table::fread("GRCh38_unified_blacklist.bed.gz")%>%
-  regioneR::toGRanges()
+#blacklist <- data.table::fread("GRCh38_unified_blacklist.bed.gz")%>%
+#  regioneR::toGRanges()
 
 ReadGVCF <- function(path_to_gVCF,ref_genome=ref_genome,param = param){
   print("Grabbing regions")
