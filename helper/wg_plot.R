@@ -36,7 +36,7 @@ SegNormRD <- function(df, id, seg.method = "cbs") {
                       loc.start=min(df$V2),
                       loc.end=max(df$V3),
                       num.mark=nrow(df),
-                      seg.mean=log2(median(df$ratio)+0.001)
+                      seg.mean=log2(median(df$ratio)+0.00001)
                       )
     return(res)
   }
@@ -44,7 +44,7 @@ SegNormRD <- function(df, id, seg.method = "cbs") {
     print("segment with CBS")
     CNA.obj <-
       DNAcopy::CNA(
-        log2(df$ratio + 0.001),
+        log2(df$ratio + 0.00001),
         df$V1,
         df$V2,
         data.type = "logratio",
@@ -61,10 +61,10 @@ SegNormRD <- function(df, id, seg.method = "cbs") {
     print("segment with SLM")
     slm <-
       SLMSeg::SLM(
-        log2(df$ratio + 0.001),
+        log2(df$ratio + 0.00001),
         omega = 0.3,
         FW = 0,
-        eta = 1e-5
+        eta = 0.00001 
       )
     res <- rle(slm[1, ])
     idx <- sapply(seq_along(res$lengths),function(i){
