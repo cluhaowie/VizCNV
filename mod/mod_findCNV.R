@@ -22,7 +22,7 @@ getSeg = function(df, idx){
 
 getAllSeg <-function(df){
   out = list()
-  for (c in paste0("chr",c(1:2, "X"))){
+  for (c in paste0("chr",c(1:22, "X"))){
     tmp = getSeg(df,c)
     out = rbind(out, tmp)  
   }
@@ -81,7 +81,7 @@ get_cnv_all <- function(pr_seg, mo_seg, fa_seg){
     slice(which.max(pol))
   idx <- t$subjectHits
   fa_log <- fa_seg$seg.mean[idx]
-  mcols(x) <- cbind(pr_log=round(pr_log,3), mo_log=round(mo_log,3), fa_log=round(fa_log,3), type)
+  mcols(x) <- cbind(pr_log, mo_log, fa_log, type)
   x <- x %>% as.data.frame()
   return(x)
 }
@@ -202,6 +202,10 @@ mod_findCNV_Server <- function(id, pr_rd, mo_rd, fa_rd, SegDup_merge) {
       cnv_all <- get_cnv_all(pr_seg, mo_seg, fa_seg) 
       df <- get_overlap(cnv_all, SegDup_merge)
       removeNotification(id = id)
+      df <- df %>% 
+        mutate(pr_log = as.numeric(pr_log),
+               mo_log = as.numeric(mo_log),
+               fa_log = as.numeric(fa_log),)
       df <- df %>% 
         mutate(pr_lvl = case_when(pr_log <= -1.525 ~ "HOM_DEL", 
                                   pr_log >= log2(1*0.9/2) & pr_log <= log2(1*1.1/2) ~ "HET_DEL",

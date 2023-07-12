@@ -440,7 +440,6 @@ server <- function(input, output,session) {
 
   })
   
-  
   #Baf-B plot
   observeEvent(input$btn_plot,{
     
@@ -545,13 +544,6 @@ server <- function(input, output,session) {
         summarise(start=(min(start)+max(end))/2,
                   end=(min(start)+max(end))/2,
                   gene_id=unique(gene_id))
-      RefSeq_gr <- RefSeq %>% 
-        group_by(gene_id) %>% 
-        summarise(chr = getmode(seqname),
-                  start = min(start),
-                  end = max(end)) %>% 
-        select(2,3,4,1) %>% 
-        makeGRangesFromDataFrame(keep.extra.columns = T)
       
       p1 <- RefSeq %>% 
         ggplot(aes(xstart = start, xend = end, y = gene_num))+

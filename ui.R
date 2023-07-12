@@ -181,10 +181,10 @@ ui <- dashboardPage(
                       )
                     )
                   ),
-                  fluidRow(box(title = "Plots",closable = TRUE,width = 12,solidHeader = T, status = "success",collapsible = T,
+                  fluidRow(box(title = "Plots",closable = F, width = 12,solidHeader = T, status = "success",collapsible = T, 
                                sidebar = boxSidebar(
                                  width = 25,
-                                 startOpen = TRUE,
+                                 startOpen = F,
                                  id = "mycardsidebar",
                                  HTML("<b>Basic Plot Options: </b>"),
                                  mod_checkbox_UI("RD-static"),
