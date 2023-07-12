@@ -158,11 +158,11 @@ mod_dnCNV_Server <- function(id, pr_seg, mo_seg, fa_seg) {
       })
       output$table <- renderDataTable(table(),
                                       extensions=c("Responsive","Buttons"),
-                                      server = T,
+                                      server = F,
                                       editable = F,
                                       filter = list(position = 'top', clear = T),
                                       options = list(dom = 'Bfrtip',
-                                                     buttons = c('txt','csv', 'excel')))
+                                                     buttons = c('copy','csv', 'excel', 'pdf', 'print')))
       return(table() %>% as.data.frame())
     }
   )

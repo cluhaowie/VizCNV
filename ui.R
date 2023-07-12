@@ -161,8 +161,8 @@ ui <- dashboardPage(
                                checkboxGroupInput(inputId="include_seg",
                                                   label = NULL,
                                                   c("Proband"="Proband",
-                                                    "Mom"="Mother",
-                                                    "Dad"="Father"),selected = "Proband"),
+                                                    "Mother"="Mother",
+                                                    "Father"="Father"),selected = c("Proband", "Mother", "Father")),
                                tippy::tippy_this(elementId = "info_include",tooltip = "Choose to show segment from either or both parents",placement = "right")
                              ),
                              uiOutput("blt_dnSNV_ui")),
@@ -259,4 +259,5 @@ ui <- dashboardPage(
   )
 
 )
+
 

@@ -248,11 +248,11 @@ mod_findCNV_Server <- function(id, pr_rd, mo_rd, fa_rd, SegDup_merge) {
       })
       output$table <- renderDataTable(table(),
                                       extensions=c("Responsive","Buttons"),
-                                      server = T,
+                                      server = F,
                                       editable = F,
                                       filter = list(position = 'top', clear = T),
                                       options = list(dom = 'Bfrtip',
-                                                     buttons = c('txt','csv', 'excel')))
+                                                     buttons = c('copy','csv', 'excel',)))
       return(table() %>% as.data.frame())
     }
   )
