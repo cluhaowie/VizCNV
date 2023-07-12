@@ -1,9 +1,10 @@
 source("./mod/mod_plot_output.R")
 source("./mod/mod_dnCNV.R")
+source("./mod/mod_hmzcnv.R")
+source("./mod/mod_findCNV.R")
 source("./mod/mod_upload.R")
 source("./mod/mod_UCSC.R")
 source("./helper/wg_plot.R")
-source("./mod/mod_hmzcnv.R")
 
 server <- function(input, output,session) {
   # Reavtive Values --------------------------
@@ -50,14 +51,14 @@ server <- function(input, output,session) {
   mod_snp_upload_Server("snp_file",volumes=volumes,values)
 
   output$blt_dnSNV_ui <- shiny::renderUI({
-    if(is.null(input$snp_gvcf_file)&is.integer(input$local_pr_snv_file)){
-      return(NULL)
-    }
-    else{
+    if(length(values$snp_gvcf_file_path)!=0){
       shiny::tagList(
         p(HTML("<b>Show de novo SNV ?</b>"),
           span(shiny::icon("info-circle"), id = "info_nor"),
           checkboxGroupInput(inputId="include_dnSNV",label = NULL,c("Show"="TRUE"))))
+    }
+    else{
+      return(NULL)
     }
   })
   output$ui_chkbox_RefSeq <- renderUI({
@@ -131,6 +132,7 @@ server <- function(input, output,session) {
       values$p4_file <-  "OMIM_gene2_hg19_UCSC_all.bed"
       values$p5_file <-  "gnomAD_allSV_hg19_UCSC.bed"
       values$p6_file <-  "hg19_rmsk.parquet"
+      values$SegDup_merge <- "SegDup_hg19_UCSC_no_PAR_merged_1k.bed"
     }
   })
   
@@ -388,8 +390,11 @@ server <- function(input, output,session) {
                                 hl = data.frame(start = c(0), end = c(0)), 
                                 hl_col = c("white"))
   hmzCNV_table <- reactiveValues(t = data.frame(start = c(0), end = c(0), stringsAsFactors = F),
-                                hl = data.frame(start = c(0), end = c(0)), 
-                                hl_col = c("white"))
+                                 hl = data.frame(start = c(0), end = c(0)), 
+                                 hl_col = c("white"))
+  findCNV_table <- reactiveValues(t = data.frame(start = c(0), end = c(0), stringsAsFactors = F),
+                                 hl = data.frame(start = c(0), end = c(0)), 
+                                 hl_col = c("white"))
   
   ## reset plots upon changing chr
   observeEvent(input$btn_plot, {
@@ -540,6 +545,13 @@ server <- function(input, output,session) {
         summarise(start=(min(start)+max(end))/2,
                   end=(min(start)+max(end))/2,
                   gene_id=unique(gene_id))
+      RefSeq_gr <- RefSeq %>% 
+        group_by(gene_id) %>% 
+        summarise(chr = getmode(seqname),
+                  start = min(start),
+                  end = max(end)) %>% 
+        select(2,3,4,1) %>% 
+        makeGRangesFromDataFrame(keep.extra.columns = T)
       
       p1 <- RefSeq %>% 
         ggplot(aes(xstart = start, xend = end, y = gene_num))+
@@ -659,6 +671,8 @@ server <- function(input, output,session) {
         ylab("RMSK")
       anno_table_Server("rmsk", rmsk, ranges, chrn)
     }
+    
+    
     showNotification("Annotating", type = "message", duration = 8)
     btnVal1 <- mod_checkbox_Server("RefSeq")
     btnVal2 <- mod_checkbox_Server("IDR")
@@ -677,20 +691,63 @@ server <- function(input, output,session) {
   })
   
   
-  ## dnCNV table
-  observeEvent(input$btn_dnCNV, {
+  # ## dnCNV table
+  # observeEvent(input$btn_dnCNV, {
+  #   req(nrow(values$pr_rd)!=0)
+  #   req(nrow(values$m_rd)!=0)
+  #   req(nrow(values$f_rd)!=0)
+  #   dnCNV_table$t <- mod_dnCNV_Server("dnCNV",plots$pr_seg, plots$m_seg, plots$f_seg)
+  # })
+  # 
+  # ## hmzCNV table
+  # observeEvent(input$btn_hmzCNV, {
+  #   req(nrow(values$pr_rd)!=0)
+  #   req(nrow(values$m_rd)!=0)
+  #   req(nrow(values$f_rd)!=0)
+  #   hmzCNV_table$t <- mod_hmzcnv_Server("hmzCNV",plots$pr_seg,plots$baf,plots$m_seg, plots$f_seg)
+  # })
+  # 
+  ## find CNV table
+  observeEvent(input$btn_findCNV, {
     req(nrow(values$pr_rd)!=0)
     req(nrow(values$m_rd)!=0)
     req(nrow(values$f_rd)!=0)
-    dnCNV_table$t <- mod_dnCNV_Server("dnCNV",plots$pr_seg, plots$m_seg, plots$f_seg)
-  })
-  
-  ## hmzCNV table
-  observeEvent(input$btn_hmzCNV, {
-    req(nrow(values$pr_rd)!=0)
-    req(nrow(values$m_rd)!=0)
-    req(nrow(values$f_rd)!=0)
-    hmzCNV_table$t <- mod_hmzcnv_Server("hmzCNV",plots$pr_seg,plots$baf,plots$m_seg, plots$f_seg)
+    path <- "./data/"
+    if(!is.null(values$SegDup_merge)){
+      SegDup_merge <- data.table::fread(paste0(path, values$SegDup_merge))
+      names(SegDup_merge) <- c("chrom", "start", "end")
+    }
+    # if(!is.null(values$p1_file)){
+    #   getmode <- function(v) {
+    #     uniqv <- unique(v)
+    #     uniqv[which.max(tabulate(match(v, uniqv)))]
+    #   }
+    #   RefSeq_data <- read_parquet(paste0(path,values$p1_file),as_data_frame = F)
+    #   RefSeq_gr <- RefSeq_data %>%
+    #     group_by(gene_id) %>%
+    #     dplyr::summarise(chr = getmode(seqname),
+    #               start = min(start),
+    #               end = max(end)) %>%
+    #     dplyr::select(2,3,4,1) %>%
+    #     makeGRangesFromDataFrame(keep.extra.columns = T)
+    # }
+    # if(!is.null(values$p4_file)){
+    #   OMIM <- data.table::fread(paste0(path, values$p4_file))
+    #   OMIM <- OMIM %>%
+    #     mutate_at(vars(pheno_key), as.factor)
+    #   OMIM <- OMIM %>%
+    #     mutate(idx = sample(1:100, size = dim(OMIM)[1], replace = T)/1000) %>%
+    #     mutate(color = case_when(pheno_key == "0" ~ "grey",
+    #                              pheno_key == "1" ~ "lightgreen",
+    #                              pheno_key == "2" ~ "green3",
+    #                              pheno_key == "3" ~ "green4",
+    #                              pheno_key == "4" ~ "purple", ))
+    # 
+    #   OMIM_label <- OMIM %>%
+    #     filter(pheno_key  %in% c("3","4"))
+    # }
+    findCNV_table$t <- mod_findCNV_Server("findCNV",values$pr_rd, values$m_rd, values$f_rd, SegDup_merge)
+    updateTabItems(session, "tabs", "table")
   })
   
   ## Show current ranges

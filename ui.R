@@ -1,8 +1,9 @@
 source("./mod/mod_plot_output.R")
 source("./mod/mod_dnCNV.R")
+source("./mod/mod_findCNV.R")
+source("./mod/mod_hmzcnv.R")
 source("./mod/mod_upload.R")
 source("./mod/mod_UCSC.R")
-source("./mod/mod_hmzcnv.R")
 
 ui <- dashboardPage(
   
@@ -15,6 +16,7 @@ ui <- dashboardPage(
   
   dashboardSidebar(
     sidebarMenu(
+      id = "tabs",
       menuItem(tabName = "home", text = "Home", icon = icon("home")),
       menuItem(tabName = "input", text = "Input", icon = icon("upload")),
       menuItem(tabName = "wg_plot", text = "Genome-wide view", icon = icon("chart-column")),
@@ -116,16 +118,16 @@ ui <- dashboardPage(
                                                     choiceNames = list("chromosomal median", "whole genome median"),
                                                     choiceValues = list("chr_med", "wg_med"),
                                                     selected = "wg_med"))),
-                       fluidRow(column(3, actionButton("btn_wg_rd", "Plot")),
-                                column(3, actionButton("btn_wg_dnCNV", "Filter dnCNVs"))
+                       fluidRow(column(3, actionButton("btn_wg_rd", "Plot"))
+                                # column(3, actionButton("btn_wg_dnCNV", "Filter dnCNVs"))
                                 )
                    ),
                    box(title = "WG Plots",width = 12,solidHeader = T, status = "success",collapsible = T,
                        mod_plot_wg_UI("wg_pr_rd", height = 270),
                        mod_plot_wg_UI("wg_m_rd", height = 270),
-                       mod_plot_wg_UI("wg_f_rd", height = 270)),
-                   box(title = "WG Table",width = 12,solidHeader = T, status = "success",collapsible = T,
-                       mod_dnCNV_UI("wg_dnCNV"))
+                       mod_plot_wg_UI("wg_f_rd", height = 270))
+                   # box(title = "WG Table",width = 12,solidHeader = T, status = "success",collapsible = T,
+                   #     mod_dnCNV_UI("wg_dnCNV"))
                  )
         ),
         tabItem(tabName = "chr_plot",
@@ -173,8 +175,9 @@ ui <- dashboardPage(
                       column(2, actionButton("btn_filter", "Filter")),
                       column(2, actionButton("btn_plot", "Plot")),
                       column(2, actionButton("btn_anno", "Annotate")),
-                      column(2, actionButton("btn_dnCNV", "Filter dnCNVs")),
-                      column(2, actionButton("btn_hmzCNV", "Filter hmzCNV"))
+                      # column(2, actionButton("btn_dnCNV", "Filter dnCNVs")),
+                      # column(2, actionButton("btn_hmzCNV", "Filter hmzCNV")),
+                      column(2, actionButton("btn_findCNV", "Find CNVs"))
                       )
                     )
                   ),
@@ -226,10 +229,12 @@ ui <- dashboardPage(
                  )
                ),
         tabItem(tabName = "table",
-                fluidRow(box(title = "dnCNV Table",width = 12,solidHeader = T, status = "success",collapsible = T,
-                             mod_dnCNV_UI("dnCNV")),
-                         box(title = "Homozygous CNVs Table",width = 12,solidHeader = T, status = "success",collapsible = T,
-                             mod_hmzcnv_UI("hmzCNV")),
+                fluidRow(box(title = "find CNV Table",width = 12,solidHeader = T, status = "success",collapsible = T,
+                             mod_findCNV_UI("findCNV")),
+                         # box(title = "dnCNV Table",width = 12,solidHeader = T, status = "success",collapsible = T,
+                         #     mod_dnCNV_UI("dnCNV")),
+                         # box(title = "Homozygous CNVs Table",width = 12,solidHeader = T, status = "success",collapsible = T,
+                         #     mod_hmzcnv_UI("hmzCNV")),
                          box(title = "SV Table",width = 12,solidHeader = T, status = "success",collapsible = T,
                              DT::dataTableOutput("filter_sv_table"),
                              fluidRow(
