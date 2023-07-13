@@ -252,7 +252,7 @@ mod_findCNV_Server <- function(id, pr_rd, mo_rd, fa_rd, SegDup_merge) {
                                       editable = F,
                                       filter = list(position = 'top', clear = T),
                                       options = list(dom = 'Bfrtip',
-                                                     buttons = c('copy','csv', 'excel',)))
+                                                     buttons = c('copy','csv', 'excel')))
       return(table() %>% as.data.frame())
     }
   )
