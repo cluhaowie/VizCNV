@@ -114,7 +114,7 @@ mod_rd_upload_UI <- function(id) {
     tagList(
       fluidRow(
         column(width = 6,
-               fileInput(ns("file"),label = NULL, accept=c(".bed",".bed.gz"),multiple = F, buttonLabel = "Browse...")
+               fileInput(ns("file"),label = NULL, accept=c("*.bed","*.bed.gz"),multiple = F, buttonLabel = "Browse...")
         ),
         column(width=1,h5("or")),
         column(width = 4,
