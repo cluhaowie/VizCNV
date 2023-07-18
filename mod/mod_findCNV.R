@@ -22,7 +22,7 @@ getSeg = function(df, idx){
 
 getAllSeg <-function(df){
   out = list()
-  for (c in paste0("chr",c(1:22, "X"))){
+  for (c in paste0("chr",c(1:2, "X"))){
     tmp = getSeg(df,c)
     out = rbind(out, tmp)  
   }
@@ -243,6 +243,11 @@ mod_findCNV_Server <- function(id, pr_rd, mo_rd, fa_rd, SegDup_merge) {
                                class == "inh" & pr_lvl != "TRP" & pr_lvl == fa_lvl & mo_lvl != fa_lvl~ "fa",
                                class == "inh" & pr_lvl == "TRP" & mo_lvl == "DUP" & mo_lvl == fa_lvl~ "both",
                                TRUE ~ "UND"))
+      df <- df %>% 
+        mutate(across(c(pr_log, mo_log, fa_log), round, 2)) %>% 
+        mutate(across(c(SDOverlap, pr_lvl, mo_lvl, fa_lvl, type, class, inh), as.factor)) %>% 
+        dplyr::select(-strand) %>% 
+        dplyr::rename(chr = seqnames)
       table <- reactive({
         df
       })
@@ -252,7 +257,8 @@ mod_findCNV_Server <- function(id, pr_rd, mo_rd, fa_rd, SegDup_merge) {
                                       editable = F,
                                       filter = list(position = 'top', clear = T),
                                       options = list(dom = 'Bfrtip',
-                                                     buttons = c('copy','csv', 'excel')))
+                                                     buttons = c('copy','csv', 'excel'),
+                                                     autoWidth = T))
       return(table() %>% as.data.frame())
     }
   )

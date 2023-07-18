@@ -40,7 +40,7 @@ ui <- dashboardPage(
                 ),
           fluidRow(
             column(width=8,
-                   box(title="Step 0: File import/upload",status="primary",width = 12,solidHeader = T,collapsible = T,
+                   box(title="File(s) upload",status="primary",width = 12,solidHeader = T,collapsible = T,
                        radioButtons(inputId = "ref",label = h4("Reference Genome Build"),choices = list("hg19"="hg19","hg38"="hg38"),inline = T,selected = "hg19"),
                        h5("Upload or select proband read depth file",dashboardBadge("required", color = "primary")),
                        mod_rd_upload_UI("pr_rd"),
@@ -201,7 +201,7 @@ ui <- dashboardPage(
                                  mod_checkbox_UI("pr_sv", value = F)
                                ),
                                fluidRow(
-                                 column(4,shiny::textInput("goto_reg",label = NULL,placeholder = "gene symbol, chromosome location/range")),
+                                 column(4,shiny::textInput("goto_reg",label = NULL,placeholder = "gene symbol, location/range (eg. 200000/200000-300000)")),
                                  column(1,shiny::actionButton("btn_go","go")),
                                  column(2,verbatimTextOutput("cur_loc")),
                                  column(4,verbatimTextOutput("cur_range"))
