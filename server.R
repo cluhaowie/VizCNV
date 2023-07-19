@@ -779,7 +779,11 @@ server <- function(input, output,session) {
       }else {
         showNotification("Looking up gene name", type = "message")
         path <- "./data/"
-        p1_file <- "NCBI_RefSeq_hg19_clean.bed.parquet"
+        if (input$ref=="hg38"){
+          p1_file <- "hg38_MANE.v1.0.refseq.parquet"
+        } else if (input@ref == "hg38"){
+          p1_file <- "NCBI_RefSeq_hg19_clean.bed.parquet"
+        }
         RefSeq <- read_parquet(paste0(path,p1_file))
         search <- as.character(str[[1]])
         found <- RefSeq %>% 
