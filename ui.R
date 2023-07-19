@@ -239,11 +239,13 @@ ui <- dashboardPage(
                          #     mod_dnCNV_UI("dnCNV")),
                          # box(title = "Homozygous CNVs Table",width = 12,solidHeader = T, status = "success",collapsible = T,
                          #     mod_hmzcnv_UI("hmzCNV")),
+                         box(title = "GATK Table",width = 12,solidHeader = T, status = "success",collapsible = T,
+                             anno_table_UI("gatk_table")),
                          box(title = "SV Table",width = 12,solidHeader = T, status = "success",collapsible = T,
                              tabsetPanel(
-                               tabPanel("Proband", DT::dataTableOutput("pr_sv_table")),
-                               tabPanel("Mother", DT::dataTableOutput("m_sv_table")),
-                               tabPanel("Father", DT::dataTableOutput("f_sv_table"))
+                               tabPanel("Proband", anno_table_UI("pr_sv")),
+                               tabPanel("Mother", anno_table_UI("m_sv")),
+                               tabPanel("Father", anno_table_UI("f_sv"))
                               )
                              ),
                          box(title = "Annotation Table",width = 12,solidHeader = T, status = "success",collapsible = T,
@@ -253,11 +255,7 @@ ui <- dashboardPage(
                                tabPanel("SegDup",anno_table_UI("SegDup")),
                                tabPanel("OMIM",anno_table_UI("OMIM")),
                                tabPanel("gnomAD",anno_table_UI("gnomAD")),
-                               tabPanel("rmsk",anno_table_UI("rmsk")),
-                               tabPanel("pr_sv",anno_table_UI("pr_sv")),
-                               tabPanel("m_sv",anno_table_UI("m_sv")),
-                               tabPanel("f_sv",anno_table_UI("f_sv"))
-                               
+                               tabPanel("rmsk",anno_table_UI("rmsk"))
                                )
                              )
                          )

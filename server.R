@@ -261,6 +261,7 @@ server <- function(input, output,session) {
         plots$SNPcols["Notphased"] <- c("#999999")
       }
       w$hide()
+      anno_table_Server("gatk_table", plots$snp_chr, ranges, chr)
     }
   })
   
@@ -498,31 +499,9 @@ server <- function(input, output,session) {
     
   })
   
-  process_sv <- function(sv){
-    sv <- sv %>% 
-      filter(AVGLEN > 10000 & AVGLEN < 100000000)
-    sv <- sv %>% 
-      mutate(color = case_when(SVTYPE == "DEL" ~ "darkblue",
-                               SVTYPE == "DUP" ~ "#8b0000",
-                               SVTYPE == "INS" ~ "darkgreen", 
-                               SVTYPE == "INV" ~ "darkorange", 
-                               TRUE ~ "white")) %>% 
-      mutate(idx = sample.int(size = n(), n = 980, replace = T)/10000)
-    sv <- sv %>% 
-      mutate(start = POS, 
-             end = as.integer(END)) %>% 
-      relocate(CHROM, start, end) %>% 
-      dplyr::select(-c(POS, END, REF, ALT, AVGLEN, MAPQ, RE, CIEND, CIPOS))
-    return(sv)
-  }
-  
-  
-  
-  
-  
   ##Anno tracks
   
-  ## swtich chr of sv table dynamically
+  ## swtich chr of sv table 
   observeEvent(input$btn_filter,{
     chr <- input$chr
     if(nrow(values$pr_sv) == 0){
@@ -532,7 +511,7 @@ server <- function(input, output,session) {
       return(values$pr_sv_fil)
     }
   })
-  observeEvent(input$btn_filter,{
+  observeEvent(input$btn_filter, {
     chr <- input$chr
     if(nrow(values$m_sv) == 0){
       return(NULL)
@@ -541,7 +520,7 @@ server <- function(input, output,session) {
       return(values$m_sv_fil)
     }
   })
-  observeEvent(input$btn_filter,{
+  observeEvent(input$btn_filter, {
     chr <- input$chr
     if(nrow(values$f_sv) == 0){
       return(NULL)
@@ -551,38 +530,8 @@ server <- function(input, output,session) {
     }
   })
   
-  ## display sv table
-  output$pr_sv_table <- DT::renderDataTable({ 
-    values$pr_sv_fil %>% 
-      dplyr::select(-c(REF, ALT, CIEND, CIPOS, MAPQ, RE, IMPRECISE, PRECISE, SVMETHOD, SUPP_VEC, SUPP, SUPP.1, FORMAT)) %>% 
-      mutate(across(c(SVTYPE, FILTER, CALLERS), as.factor))
-  },extensions=c("Responsive","Buttons"),
-  server = T,
-  editable = TRUE,
-  filter = list(position = 'top', clear = T),
-  options = list(dom = 'Bfrtip',buttons = c('copy','csv', 'excel')))
-  
-  output$m_sv_table <- DT::renderDataTable({ 
-    values$m_sv_fil %>% 
-      dplyr::select(-c(REF, ALT, CIEND, CIPOS, MAPQ, RE, IMPRECISE, PRECISE, SVMETHOD, SUPP_VEC, SUPP, SUPP.1, FORMAT)) %>% 
-      mutate(across(c(SVTYPE, FILTER, CALLERS), as.factor))
-  },extensions=c("Responsive","Buttons"),
-  server = T,
-  editable = TRUE,
-  filter = list(position = 'top', clear = T),
-  options = list(dom = 'Bfrtip',buttons = c('copy','csv', 'excel')))
-  
-  output$f_sv_table <- DT::renderDataTable({ 
-    values$f_sv_fil %>% 
-      dplyr::select(-c(REF, ALT, CIEND, CIPOS, MAPQ, RE, IMPRECISE, PRECISE, SVMETHOD, SUPP_VEC, SUPP, SUPP.1, FORMAT)) %>% 
-      mutate(across(c(SVTYPE, FILTER, CALLERS), as.factor))
-  },extensions=c("Responsive","Buttons"),
-  server = T,
-  editable = TRUE,
-  filter = list(position = 'top', clear = T),
-  options = list(dom = 'Bfrtip',buttons = c('copy','csv', 'excel')))
-  
-  ## create
+ 
+  ## create plots
   observeEvent(input$btn_anno,{
     id <- showNotification("Pulling Data", type = "message", duration = NULL)
     chrn = input$chr
@@ -590,7 +539,7 @@ server <- function(input, output,session) {
     
     if (nrow(values$pr_sv_fil) != 0){
       pr_sv <- process_sv(values$pr_sv_fil)
-      pr_sv_plot <- ggplot(pr_sv, aes(x = POS, y = idx)) +
+      pr_sv_plot <- ggplot(pr_sv, aes(x = start, y = idx)) +
         annotate("rect", xmin = pr_sv$start, xmax = pr_sv$end, ymin = pr_sv$idx, ymax = pr_sv$idx+0.0001, color = pr_sv$color)+
         style_anno+
         scale_anno+

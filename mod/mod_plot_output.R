@@ -274,7 +274,7 @@ mod_plot_switch_Server <- function(id, cbox, p, ranges, dnCNV_table, hmzCNV_tabl
 anno_table_UI <- function(id) {
   ns <- NS(id)
   tagList(
-    downloadButton(ns("download"), "Download (.tsv)"),
+    # downloadButton(ns("download"), "Download (.tsv)"),
     dataTableOutput(ns("table"))
   )
 }
@@ -310,16 +310,20 @@ anno_table_Server <- function(id, df, ranges, chrn) {
       
       output$table <- renderDataTable({
         df_table()
-      })
+      },extensions=c("Responsive","Buttons"),
+      server = T,
+      editable = TRUE,
+      filter = list(position = 'top', clear = T),
+      options = list(dom = 'Bfrtip',buttons = c('copy','csv', 'excel')))
       
-      output$download <- downloadHandler(
-        filename = function() {
-          paste0(id,".tsv")
-        },
-        content = function(file) {
-          write.table(df, file, sep = "\t", row.names = F, quote = F)
-        }
-      )
+      # output$download <- downloadHandler(
+      #   filename = function() {
+      #     paste0(id,".tsv")
+      #   },
+      #   content = function(file) {
+      #     write.table(df, file, sep = "\t", row.names = F, quote = F)
+      #   }
+      # )
     }
   )
 }
