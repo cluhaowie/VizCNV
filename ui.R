@@ -192,13 +192,13 @@ ui <- dashboardPage(
                                  mod_checkbox_UI("Baf-B_allele"),
                                  mod_checkbox_UI("Baf-A_allele", value = F),
                                  HTML("<b>Annotation Track Options:</b>"),
+                                 mod_checkbox_UI("pr_sv", value = F),
                                  uiOutput("ui_chkbox_RefSeq"),
                                  uiOutput("ui_chkbox_SegDup"),
                                  uiOutput("ui_chkbox_OMIM"),
                                  uiOutput("ui_chkbox_gnomAD"),
                                  uiOutput("ui_chkbox_IDR"),
-                                 uiOutput("ui_chkbox_RMSK"),
-                                 mod_checkbox_UI("pr_sv", value = F)
+                                 uiOutput("ui_chkbox_RMSK")
                                ),
                                fluidRow(
                                  column(4,shiny::textInput("goto_reg",label = NULL,placeholder = "gene symbol, location/range (eg. 200000/200000-300000)")),
@@ -236,14 +236,15 @@ ui <- dashboardPage(
                          # box(title = "Homozygous CNVs Table",width = 12,solidHeader = T, status = "success",collapsible = T,
                          #     mod_hmzcnv_UI("hmzCNV")),
                          box(title = "SV Table",width = 12,solidHeader = T, status = "success",collapsible = T,
-                             DT::dataTableOutput("filter_sv_table"),
-                             fluidRow(
-                               column(1,uiOutput("ui_dlbtn_tbl"))
+                             tabsetPanel(
+                               tabPanel("Proband", DT::dataTableOutput("pr_sv_table")),
+                               tabPanel("Mother", DT::dataTableOutput("mo_sv_table")),
+                               tabPanel("Father", DT::dataTableOutput("fa_sv_table"))
+                              )
                              ),
-                             DT::dataTableOutput("Select_table")),
                          box(title = "Annotation Table",width = 12,solidHeader = T, status = "success",collapsible = T,
                              tabsetPanel(
-                               tabPanel("pr_sv",anno_table_UI("pr_sv")),
+                               # tabPanel("pr_sv",anno_table_UI("pr_sv")),
                                tabPanel("RefSeq",anno_table_UI("RefSeq")),
                                tabPanel("IDR",anno_table_UI("IDR")),
                                tabPanel("SegDup",anno_table_UI("SegDup")),

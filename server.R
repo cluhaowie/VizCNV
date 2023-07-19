@@ -5,6 +5,7 @@ source("./mod/mod_findCNV.R")
 source("./mod/mod_upload.R")
 source("./mod/mod_UCSC.R")
 source("./helper/wg_plot.R")
+source("./helper/misc.R")
 
 server <- function(input, output,session) {
   # Reavtive Values --------------------------
@@ -97,16 +98,12 @@ server <- function(input, output,session) {
 
   
   # observe file uploaded and save in SQLdatabase---------
+  
+  
 
-  observeEvent(input$chr,{
-    chr <- input$chr
-    if(nrow(values$pr_sv) == 0){
-      return(NULL)
-    }else{
-      values$pr_sv <- values$pr_sv%>%filter(CHROM==chr)
-      return(values$pr_sv)
-    }
-  })
+  
+
+  ## ref file depending on genome build  
   observeEvent(input$ref,{
     if(input$ref=="hg38"){
       blacklist <- data.table::fread("GRCh38_unified_blacklist.bed.gz")%>%
@@ -137,24 +134,32 @@ server <- function(input, output,session) {
   })
   
   # button to filter range---------
-  output$filter_sv_table <- DT::renderDataTable({ 
-    values$pr_sv
-  },
-  extensions=c("Responsive","Buttons"),
-  server = T,editable = TRUE,filter = list(position = 'top', clear = T),options = list(dom = 'Bfrtip',buttons = c('txt','csv', 'excel')))
+  output$pr_sv_table <- DT::renderDataTable({ 
+    values$pr_sv_fil %>% 
+      dplyr::select(-c(REF, ALT, CIEND, CIPOS, MAPQ, RE, IMPRECISE, PRECISE, SVMETHOD, SUPP_VEC, SUPP, SUPP.1, FORMAT)) %>% 
+      mutate(across(c(SVTYPE, FILTER, CALLERS), as.factor))
+  },extensions=c("Responsive","Buttons"),
+    server = T,
+    editable = TRUE,
+    filter = list(position = 'top', clear = T),
+    options = list(dom = 'Bfrtip',buttons = c('copy','csv', 'excel')))
+  
   w <- waiter::Waiter$new(html = spin_3(), 
                           color = transparent(.5))
-  output$Select_table <- DT::renderDataTable({
-    values$selected_record
-  })
-  ## keep the selected record when click the btl_select
-  observeEvent(input$btl_select,{
-    rows_selected <- input$filter_sv_table_rows_selected
-    if(length(rows_selected)){
-      values$selected_record <- rbind(values$selected_record,values$pr_sv[rows_selected,])%>%
-        distinct(across(everything()))
-    }
-  })
+  
+  # output$Select_table <- DT::renderDataTable({
+  #   values$selected_record
+  # })
+  # ## keep the selected record when click the btl_select
+  # observeEvent(input$btl_select,{
+  #   rows_selected <- input$filter_sv_table_rows_selected
+  #   if(length(rows_selected)){
+  #     values$selected_record <- rbind(values$selected_record,values$pr_sv[rows_selected,])%>%
+  #       distinct(across(everything()))
+  #   }
+  # })
+  
+  
   observeEvent(input$btl_select2,{
     values$selected_record <- data.frame(stringsAsFactors = F)
   })
@@ -499,29 +504,50 @@ server <- function(input, output,session) {
     
   })
   
+  process_sv <- function(sv){
+    sv <- sv %>% 
+      filter(AVGLEN > 10000 & AVGLEN < 100000000)
+    sv <- sv %>% 
+      mutate(color = case_when(SVTYPE == "DEL" ~ "darkblue",
+                               SVTYPE == "DUP" ~ "#8b0000",
+                               SVTYPE == "INS" ~ "darkgreen", 
+                               SVTYPE == "INV" ~ "darkorange", 
+                               TRUE ~ "white")) %>% 
+      mutate(idx = sample.int(size = n(), n = 980, replace = T)/10000)
+    sv <- sv %>% 
+      mutate(start = POS, 
+             end = as.integer(END)) %>% 
+      relocate(CHROM, start, end) %>% 
+      dplyr::select(-c(POS, END, REF, ALT, AVGLEN, MAPQ, RE, CIEND, CIPOS))
+    return(sv)
+  }
+  
+  
+  
+  
+  
   ##Anno tracks
+  
+  ## swtich chr of sv table dynamically
+  observeEvent(input$chr,{
+    chr <- input$chr
+    if(nrow(values$pr_sv) == 0){
+      return(NULL)
+    }else{
+      values$pr_sv_fil <- values$pr_sv%>%filter(CHROM==chr)
+      return(values$pr_sv_fil)
+    }
+  })
+  
+  ## create
   observeEvent(input$btn_anno,{
     id <- showNotification("Pulling Data", type = "message", duration = NULL)
     chrn = input$chr
     path = "./data/"
-    if (nrow(values$pr_sv) != 0){
-      pr_sv <- values$pr_sv %>% 
-        filter(CHROM == chrn) %>% 
-        filter(AVGLEN > 10000 & AVGLEN < 100000000)
-      pr_sv <- pr_sv %>% 
-        mutate(color = case_when(SVTYPE == "DEL" ~ "darkblue",
-                                 SVTYPE == "DUP" ~ "#8b0000",
-                                 SVTYPE == "INS" ~ "darkgreen", 
-                                 SVTYPE == "INV" ~ "darkorange", 
-                                 TRUE ~ "white")) %>% 
-        mutate(idx = sample.int(size = n(), n = 980, replace = T)/10000)
+    
+    if (nrow(values$pr_sv_fil) != 0){
+      pr_sv <- process_sv(values$pr_sv_fil)
       
-      print(pr_sv$idx)
-      pr_sv <- pr_sv %>% 
-        mutate(start = POS, 
-               end = as.integer(END)) %>% 
-        relocate(CHROM, start, end) %>% 
-        dplyr::select(-c(POS, END, REF, ALT, AVGLEN, MAPQ, RE, CIEND, CIPOS))
       pr_sv_plot <- ggplot(pr_sv, aes(x = POS, y = idx)) +
         annotate("rect", xmin = pr_sv$start, xmax = pr_sv$end, ymin = pr_sv$idx, ymax = pr_sv$idx+0.0001, color = pr_sv$color)+
         style_anno+
