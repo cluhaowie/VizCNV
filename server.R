@@ -13,6 +13,9 @@ server <- function(input, output,session) {
   values$pr_sv <- data.frame(stringsAsFactors = F)
   values$m_sv <- data.frame(stringsAsFactors = F)
   values$f_sv <- data.frame(stringsAsFactors = F)
+  values$pr_sv_fil <- data.frame(stringsAsFactors = F)
+  values$m_sv_fil <- data.frame(stringsAsFactors = F)
+  values$f_sv_fil <- data.frame(stringsAsFactors = F)
   values$pr_rd <- data.frame(stringsAsFactors = F)
   values$m_rd <- data.frame(stringsAsFactors = F)
   values$f_rd <- data.frame(stringsAsFactors = F)
@@ -75,12 +78,12 @@ server <- function(input, output,session) {
   })
   output$ui_chkbox_SegDup <- renderUI({
     if(!is.null(values$p3_file)){
-      mod_checkbox_UI("SegDup",value = F)
+      mod_checkbox_UI("SegDup")
     }else{NULL}
   })
   output$ui_chkbox_OMIM <- renderUI({
     if(!is.null(values$p4_file)){
-      mod_checkbox_UI("OMIM",value = F)
+      mod_checkbox_UI("OMIM")
     }else{NULL}
   })
   output$ui_chkbox_gnomAD <- renderUI({
@@ -88,7 +91,6 @@ server <- function(input, output,session) {
       mod_checkbox_UI("gnomAD",value = F)
     }else{NULL}
   })
-
   output$ui_chkbox_RMSK <- renderUI({
     if(!is.null(values$p6_file)){
       mod_checkbox_UI("RMSK",value = F)
@@ -134,15 +136,7 @@ server <- function(input, output,session) {
   })
   
   # button to filter range---------
-  output$pr_sv_table <- DT::renderDataTable({ 
-    values$pr_sv_fil %>% 
-      dplyr::select(-c(REF, ALT, CIEND, CIPOS, MAPQ, RE, IMPRECISE, PRECISE, SVMETHOD, SUPP_VEC, SUPP, SUPP.1, FORMAT)) %>% 
-      mutate(across(c(SVTYPE, FILTER, CALLERS), as.factor))
-  },extensions=c("Responsive","Buttons"),
-    server = T,
-    editable = TRUE,
-    filter = list(position = 'top', clear = T),
-    options = list(dom = 'Bfrtip',buttons = c('copy','csv', 'excel')))
+ 
   
   w <- waiter::Waiter$new(html = spin_3(), 
                           color = transparent(.5))
@@ -529,7 +523,7 @@ server <- function(input, output,session) {
   ##Anno tracks
   
   ## swtich chr of sv table dynamically
-  observeEvent(input$chr,{
+  observeEvent(input$btn_filter,{
     chr <- input$chr
     if(nrow(values$pr_sv) == 0){
       return(NULL)
@@ -538,6 +532,55 @@ server <- function(input, output,session) {
       return(values$pr_sv_fil)
     }
   })
+  observeEvent(input$btn_filter,{
+    chr <- input$chr
+    if(nrow(values$m_sv) == 0){
+      return(NULL)
+    }else{
+      values$m_sv_fil <- values$m_sv%>%filter(CHROM==chr)
+      return(values$m_sv_fil)
+    }
+  })
+  observeEvent(input$btn_filter,{
+    chr <- input$chr
+    if(nrow(values$f_sv) == 0){
+      return(NULL)
+    }else{
+      values$f_sv_fil <- values$f_sv%>%filter(CHROM==chr)
+      return(values$f_sv_fil)
+    }
+  })
+  
+  ## display sv table
+  output$pr_sv_table <- DT::renderDataTable({ 
+    values$pr_sv_fil %>% 
+      dplyr::select(-c(REF, ALT, CIEND, CIPOS, MAPQ, RE, IMPRECISE, PRECISE, SVMETHOD, SUPP_VEC, SUPP, SUPP.1, FORMAT)) %>% 
+      mutate(across(c(SVTYPE, FILTER, CALLERS), as.factor))
+  },extensions=c("Responsive","Buttons"),
+  server = T,
+  editable = TRUE,
+  filter = list(position = 'top', clear = T),
+  options = list(dom = 'Bfrtip',buttons = c('copy','csv', 'excel')))
+  
+  output$m_sv_table <- DT::renderDataTable({ 
+    values$m_sv_fil %>% 
+      dplyr::select(-c(REF, ALT, CIEND, CIPOS, MAPQ, RE, IMPRECISE, PRECISE, SVMETHOD, SUPP_VEC, SUPP, SUPP.1, FORMAT)) %>% 
+      mutate(across(c(SVTYPE, FILTER, CALLERS), as.factor))
+  },extensions=c("Responsive","Buttons"),
+  server = T,
+  editable = TRUE,
+  filter = list(position = 'top', clear = T),
+  options = list(dom = 'Bfrtip',buttons = c('copy','csv', 'excel')))
+  
+  output$f_sv_table <- DT::renderDataTable({ 
+    values$f_sv_fil %>% 
+      dplyr::select(-c(REF, ALT, CIEND, CIPOS, MAPQ, RE, IMPRECISE, PRECISE, SVMETHOD, SUPP_VEC, SUPP, SUPP.1, FORMAT)) %>% 
+      mutate(across(c(SVTYPE, FILTER, CALLERS), as.factor))
+  },extensions=c("Responsive","Buttons"),
+  server = T,
+  editable = TRUE,
+  filter = list(position = 'top', clear = T),
+  options = list(dom = 'Bfrtip',buttons = c('copy','csv', 'excel')))
   
   ## create
   observeEvent(input$btn_anno,{
@@ -547,15 +590,36 @@ server <- function(input, output,session) {
     
     if (nrow(values$pr_sv_fil) != 0){
       pr_sv <- process_sv(values$pr_sv_fil)
-      
       pr_sv_plot <- ggplot(pr_sv, aes(x = POS, y = idx)) +
         annotate("rect", xmin = pr_sv$start, xmax = pr_sv$end, ymin = pr_sv$idx, ymax = pr_sv$idx+0.0001, color = pr_sv$color)+
         style_anno+
         scale_anno+
         ylab("pr_SV")
-      btnVal_prsv <- mod_checkbox_Server("pr_sv")
-      ranges <- mod_plot_switch_Server("pr_sv", btnVal_prsv$box_state, pr_sv_plot, ranges, dnCNV_table, hmzCNV_table)
+      btnVal_pr_sv <- mod_checkbox_Server("pr_sv")
+      ranges <- mod_plot_switch_Server("pr_sv", btnVal_pr_sv$box_state, pr_sv_plot, ranges, dnCNV_table, hmzCNV_table)
       anno_table_Server("pr_sv", pr_sv, ranges, chrn)
+    }
+    if (nrow(values$m_sv_fil) != 0){
+      m_sv <- process_sv(values$m_sv_fil)
+      m_sv_plot <- ggplot(m_sv, aes(x = POS, y = idx)) +
+        annotate("rect", xmin = m_sv$start, xmax = m_sv$end, ymin = m_sv$idx, ymax = m_sv$idx+0.0001, color = m_sv$color)+
+        style_anno+
+        scale_anno+
+        ylab("m_sv")
+      btnVal_m_sv <- mod_checkbox_Server("m_sv")
+      ranges <- mod_plot_switch_Server("m_sv", btnVal_m_sv$box_state, m_sv_plot, ranges, dnCNV_table, hmzCNV_table)
+      anno_table_Server("m_sv", m_sv, ranges, chrn)
+    }
+    if (nrow(values$f_sv_fil) != 0){
+      f_sv <- process_sv(values$f_sv_fil)
+      f_sv_plot <- ggplot(f_sv, aes(x = POS, y = idx)) +
+        annotate("rect", xmin = f_sv$start, xmax = f_sv$end, ymin = f_sv$idx, ymax = f_sv$idx+0.0001, color = f_sv$color)+
+        style_anno+
+        scale_anno+
+        ylab("f_sv")
+      btnVal_f_sv <- mod_checkbox_Server("f_sv")
+      ranges <- mod_plot_switch_Server("f_sv", btnVal_f_sv$box_state, f_sv_plot, ranges, dnCNV_table, hmzCNV_table)
+      anno_table_Server("f_sv", f_sv, ranges, chrn)
     }
     
     if(!is.null(values$p1_file)){

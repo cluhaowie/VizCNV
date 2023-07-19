@@ -138,7 +138,7 @@ ui <- dashboardPage(
                     fluidRow(
                       use_waiter(),
                       column(2, 
-                             p(HTML("<b>Chromosome</b>"),span(shiny::icon("info-circle"), id = "info_chr"),selectInput('chr', choice=c(paste0("chr", c(seq(1,22), "X","Y"))),label = NULL, multiple = F),
+                             p(HTML("<b>Chromosome</b>"),span(shiny::icon("info-circle"), id = "info_chr"),selectInput('chr', choice=c(paste0("chr", c(seq(1,22), "X","Y"))),label = NULL, multiple = F, selected = "chr1"),
                                tippy::tippy_this(elementId = "info_chr",tooltip = "Selected chromosome",placement = "right")
                              )),
                       column(2,
@@ -193,6 +193,8 @@ ui <- dashboardPage(
                                  mod_checkbox_UI("Baf-A_allele", value = F),
                                  HTML("<b>Annotation Track Options:</b>"),
                                  mod_checkbox_UI("pr_sv", value = F),
+                                 mod_checkbox_UI("m_sv", value = F),
+                                 mod_checkbox_UI("f_sv", value = F),
                                  uiOutput("ui_chkbox_RefSeq"),
                                  uiOutput("ui_chkbox_SegDup"),
                                  uiOutput("ui_chkbox_OMIM"),
@@ -216,6 +218,8 @@ ui <- dashboardPage(
                     mod_plot_switch_UI("Baf-A_allele", height = 200),
                     
                     mod_plot_switch_UI("pr_sv"),
+                    mod_plot_switch_UI("m_sv"),
+                    mod_plot_switch_UI("f_sv"),
                     mod_plot_switch_UI("RefSeq", height = 120),
                     mod_plot_switch_UI("Segdup"),
                     mod_plot_switch_UI("OMIM"),
@@ -238,19 +242,22 @@ ui <- dashboardPage(
                          box(title = "SV Table",width = 12,solidHeader = T, status = "success",collapsible = T,
                              tabsetPanel(
                                tabPanel("Proband", DT::dataTableOutput("pr_sv_table")),
-                               tabPanel("Mother", DT::dataTableOutput("mo_sv_table")),
-                               tabPanel("Father", DT::dataTableOutput("fa_sv_table"))
+                               tabPanel("Mother", DT::dataTableOutput("m_sv_table")),
+                               tabPanel("Father", DT::dataTableOutput("f_sv_table"))
                               )
                              ),
                          box(title = "Annotation Table",width = 12,solidHeader = T, status = "success",collapsible = T,
                              tabsetPanel(
-                               # tabPanel("pr_sv",anno_table_UI("pr_sv")),
                                tabPanel("RefSeq",anno_table_UI("RefSeq")),
                                tabPanel("IDR",anno_table_UI("IDR")),
                                tabPanel("SegDup",anno_table_UI("SegDup")),
                                tabPanel("OMIM",anno_table_UI("OMIM")),
                                tabPanel("gnomAD",anno_table_UI("gnomAD")),
-                               tabPanel("rmsk",anno_table_UI("rmsk"))
+                               tabPanel("rmsk",anno_table_UI("rmsk")),
+                               tabPanel("pr_sv",anno_table_UI("pr_sv")),
+                               tabPanel("m_sv",anno_table_UI("m_sv")),
+                               tabPanel("f_sv",anno_table_UI("f_sv"))
+                               
                                )
                              )
                          )
