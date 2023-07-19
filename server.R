@@ -53,7 +53,10 @@ server <- function(input, output,session) {
   mod_sv_upload_Server("m_sv",volumes=volumes,values) 
   mod_sv_upload_Server("f_sv",volumes=volumes,values) 
   mod_snp_upload_Server("snp_file",volumes=volumes,values)
-
+  
+  
+  ## dynamic UI -------------
+  
   output$blt_dnSNV_ui <- shiny::renderUI({
     if(length(values$snp_gvcf_file_path)!=0){
       shiny::tagList(
@@ -97,15 +100,7 @@ server <- function(input, output,session) {
     }else{NULL}
   })
 
-
-  
-  # observe file uploaded and save in SQLdatabase---------
-  
-  
-
-  
-
-  ## ref file depending on genome build  
+  ## ref file depending on genome build  ------
   observeEvent(input$ref,{
     if(input$ref=="hg38"){
       blacklist <- data.table::fread("GRCh38_unified_blacklist.bed.gz")%>%
@@ -137,27 +132,8 @@ server <- function(input, output,session) {
   
   # button to filter range---------
  
-  
   w <- waiter::Waiter$new(html = spin_3(), 
                           color = transparent(.5))
-  
-  # output$Select_table <- DT::renderDataTable({
-  #   values$selected_record
-  # })
-  # ## keep the selected record when click the btl_select
-  # observeEvent(input$btl_select,{
-  #   rows_selected <- input$filter_sv_table_rows_selected
-  #   if(length(rows_selected)){
-  #     values$selected_record <- rbind(values$selected_record,values$pr_sv[rows_selected,])%>%
-  #       distinct(across(everything()))
-  #   }
-  # })
-  
-  
-  observeEvent(input$btl_select2,{
-    values$selected_record <- data.frame(stringsAsFactors = F)
-  })
-  
   observeEvent(input$btn_filter,{
     seg_option <- input$seg_option
     norm_option <- input$norm_options
@@ -238,6 +214,7 @@ server <- function(input, output,session) {
       return(NULL)
     }else{
       w$show()
+      showNotification("Filtering GATK VCF file", duration = 5, type = "message")
       loc.start <- 0
       loc.end <- values$ref_info%>%
         filter(chrom==chr | chrom == paste0("chr", chr))%>%
@@ -261,12 +238,13 @@ server <- function(input, output,session) {
         plots$SNPcols["Notphased"] <- c("#999999")
       }
       w$hide()
+      
       anno_table_Server("gatk_table", plots$snp_chr, ranges, chr)
     }
   })
   
   
-  # Plots -----
+  # Basic Plots -----
   ### "Global" reactive values
   wg_ranges <- reactiveValues(x = NULL, pr = NULL, m = NULL, f = NULL)
   wg_dnCNV_table <- reactiveValues(t = data.frame(start_cum = c(0), end_cum = c(0), stringsAsFactors = F))
@@ -499,7 +477,7 @@ server <- function(input, output,session) {
     
   })
   
-  ##Anno tracks
+  ##Anno tracks-----
   
   ## swtich chr of sv table 
   observeEvent(input$btn_filter,{
@@ -730,7 +708,6 @@ server <- function(input, output,session) {
     removeNotification(id)
   })
   
-  
   # ## dnCNV table
   # observeEvent(input$btn_dnCNV, {
   #   req(nrow(values$pr_rd)!=0)
@@ -747,6 +724,9 @@ server <- function(input, output,session) {
   #   hmzCNV_table$t <- mod_hmzcnv_Server("hmzCNV",plots$pr_seg,plots$baf,plots$m_seg, plots$f_seg)
   # })
   # 
+  
+  
+  ## Misc functionalities----
   ## find CNV table
   observeEvent(input$btn_findCNV, {
     req(nrow(values$pr_rd)!=0)
@@ -857,61 +837,7 @@ server <- function(input, output,session) {
   observe({
     mod_UCSC_Server("UCSC", input$ref, input$chr, ranges)
   })
-  
-  
-  
-  # ## buttons 
-  # output$ui_dlbtn_tbl <- renderUI({
-  #   if(nrow(values$pr_sv) > 0){
-  #     tagList(shiny::actionButton("btl_select", "Select",icon("check")))
-  #   }
-  # })
-  # output$ui_dlbtn_plt <- renderUI({
-  #   if(length(plots$plot1) > 0){
-  #     downloadButton("dl_plt", "Download")
-  #   }
-  # })
-  # output$ui_clbtn_plt <- renderUI({
-  #   if(length(plots$plot1) > 0){
-  #     shiny::actionButton("cl_btn","Clear plot",icon("trash"))
-  #   }
-  # })
-  # output$ui_dlbtn_dnsnv <- renderUI({
-  #   if(length(plots$plot2) > 0){
-  #     shiny::downloadButton("dl_btn_dnsnv","Download dnSNV")
-  #   }
-  # })
-  # 
-  
-  # observeEvent(input$cl_btn,{
-  #   plots$snp_chr <- data.frame(stringsAsFactors = F)
-  #   plots$pr_rd <- data.frame(stringsAsFactors = F)
-  #   input$filter_sv_table_rows_selected <- NULL
-  # })
-  # 
-  # ## Download handler
-  # output$dl_plt <- downloadHandler(
-  #   filename = function(){
-  #     paste0(input$chr,".pdf")
-  #   },
-  #   content = function(file){
-  #     
-  #     mylist <- list(plots$plot1,plots$plot3_dl,plots$plot2)
-  #     mylist <- mylist[lengths(mylist)!= 0]
-  #     n <- length(mylist)
-  #     p <- cowplot::plot_grid(plotlist=mylist,ncol = 1,align = 'v',axis = 'lr')
-  #     ggplot2::ggsave(filename =file, plot = p,device = "pdf",width =12 ,height = n*4,units = "in")
-  #   }
-  # )
-  # output$dl_btn_dnsnv <- downloadHandler(
-  #   filename = function(){paste("dnSNV_",input$chr,".csv")},
-  #   content = function(file){
-  #     df <- plots$snp_chr%>%filter(likelyDN%in%c(input$include_dnSNV))
-  #     write.csv(df,file,row.names = F)
-  #   }
-  # )
-  # 
-  
+
 }
 
 
