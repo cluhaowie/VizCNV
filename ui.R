@@ -21,7 +21,7 @@ ui <- dashboardPage(
       menuItem(tabName = "input", text = "Input", icon = icon("upload")),
       menuItem(tabName = "wg_plot", text = "Genome-wide view", icon = icon("chart-column")),
       menuItem(tabName = "chr_plot", text = "Chromosomal view", icon = icon("search")),
-      menuItem(tabName = "table", text = "Table view", icon = icon("table")),
+      menuItem(tabName = "table", text = "Tables", icon = icon("table")),
       menuItem(tabName = "help", text = "Help", icon = icon("question-circle"))
       
     )
