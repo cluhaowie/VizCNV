@@ -1,6 +1,7 @@
 process_sv <- function(sv){
   sv <- sv %>% 
-    filter(AVGLEN > 10000 & AVGLEN < 100000000)
+    filter(AVGLEN > 10000 & AVGLEN < 100000000,
+           SVTYPE != "BND")
   sv <- sv %>% 
     mutate(color = case_when(SVTYPE == "DEL" ~ "darkblue",
                              SVTYPE == "DUP" ~ "#8b0000",

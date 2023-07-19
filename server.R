@@ -537,19 +537,26 @@ server <- function(input, output,session) {
     chrn = input$chr
     path = "./data/"
     
+    loc.end <- values$ref_info%>%
+      filter(chrom==chrn | chrom == paste0("chr", chrn))%>%
+      dplyr::select(seqlengths)%>%unlist
     if (nrow(values$pr_sv_fil) != 0){
       pr_sv <- process_sv(values$pr_sv_fil)
+      pr_sv <- pr_sv %>% 
+        add_row(CHROM = "dummy", start = 0, end = loc.end, color = "white")
       pr_sv_plot <- ggplot(pr_sv, aes(x = start, y = idx)) +
         annotate("rect", xmin = pr_sv$start, xmax = pr_sv$end, ymin = pr_sv$idx, ymax = pr_sv$idx+0.0001, color = pr_sv$color)+
         style_anno+
         scale_anno+
-        ylab("pr_SV")
+        ylab("pr_sv")
       btnVal_pr_sv <- mod_checkbox_Server("pr_sv")
       ranges <- mod_plot_switch_Server("pr_sv", btnVal_pr_sv$box_state, pr_sv_plot, ranges, dnCNV_table, hmzCNV_table)
       anno_table_Server("pr_sv", pr_sv, ranges, chrn)
     }
     if (nrow(values$m_sv_fil) != 0){
       m_sv <- process_sv(values$m_sv_fil)
+      m_sv <- m_sv %>% 
+        add_row(CHROM = "dummy", start = 0, end = loc.end, color = "white")
       m_sv_plot <- ggplot(m_sv, aes(x = POS, y = idx)) +
         annotate("rect", xmin = m_sv$start, xmax = m_sv$end, ymin = m_sv$idx, ymax = m_sv$idx+0.0001, color = m_sv$color)+
         style_anno+
@@ -561,6 +568,8 @@ server <- function(input, output,session) {
     }
     if (nrow(values$f_sv_fil) != 0){
       f_sv <- process_sv(values$f_sv_fil)
+      f_sv <- f_sv %>% 
+        add_row(CHROM = "dummy", start = 0, end = loc.end, color = "white")
       f_sv_plot <- ggplot(f_sv, aes(x = POS, y = idx)) +
         annotate("rect", xmin = f_sv$start, xmax = f_sv$end, ymin = f_sv$idx, ymax = f_sv$idx+0.0001, color = f_sv$color)+
         style_anno+
