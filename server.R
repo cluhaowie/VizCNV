@@ -114,6 +114,7 @@ server <- function(input, output,session) {
       values$p4_file <-  NULL
       values$p5_file <-  NULL
       values$p6_file <-  "hg38_rmsk.parquet"
+      values$SegDup_merge <- "SegDup_hg38_UCSC_sorted_merged_1k.bed"
     }else if(input$ref=="hg19"){
       blacklist <- data.table::fread("ENCFF001TDO.bed.gz")%>%
         regioneR::toGRanges()
