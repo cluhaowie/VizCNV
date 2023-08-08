@@ -22,7 +22,7 @@ getSeg = function(df, idx){
 
 getAllSeg <-function(df){
   out = list()
-  for (c in paste0("chr",c(1:2, "X"))){
+  for (c in paste0("chr",c(1:22, "X"))){
     tmp = getSeg(df,c)
     out = rbind(out, tmp)  
   }
