@@ -55,6 +55,8 @@ server <- function(input, output,session) {
   mod_snp_upload_Server("snp_file",volumes=volumes,values)
   
   
+  
+  
   ## dynamic UI -------------
   
   output$blt_dnSNV_ui <- shiny::renderUI({
@@ -743,7 +745,7 @@ server <- function(input, output,session) {
     #     uniqv <- unique(v)
     #     uniqv[which.max(tabulate(match(v, uniqv)))]
     #   }
-    #   RefSeq_data <- read_parquet(paste0(path,values$p1_file),as_data_frame = F)
+    #   RefSeq_data <- read_parquet(paste0(path,values$p1_file))
     #   RefSeq_gr <- RefSeq_data %>%
     #     group_by(gene_id) %>%
     #     dplyr::summarise(chr = getmode(seqname),
@@ -751,23 +753,24 @@ server <- function(input, output,session) {
     #               end = max(end)) %>%
     #     dplyr::select(2,3,4,1) %>%
     #     makeGRangesFromDataFrame(keep.extra.columns = T)
+      
     # }
-    # if(!is.null(values$p4_file)){
-    #   OMIM <- data.table::fread(paste0(path, values$p4_file))
-    #   OMIM <- OMIM %>%
-    #     mutate_at(vars(pheno_key), as.factor)
-    #   OMIM <- OMIM %>%
-    #     mutate(idx = sample(1:100, size = dim(OMIM)[1], replace = T)/1000) %>%
-    #     mutate(color = case_when(pheno_key == "0" ~ "grey",
-    #                              pheno_key == "1" ~ "lightgreen",
-    #                              pheno_key == "2" ~ "green3",
-    #                              pheno_key == "3" ~ "green4",
-    #                              pheno_key == "4" ~ "purple", ))
-    # 
-    #   OMIM_label <- OMIM %>%
-    #     filter(pheno_key  %in% c("3","4"))
-    # }
-    findCNV_table$t <- mod_findCNV_Server("findCNV",values$pr_rd, values$m_rd, values$f_rd, SegDup_merge)
+    if(!is.null(values$p4_file)){
+      OMIM <- data.table::fread(paste0(path, values$p4_file))
+      OMIM <- OMIM %>%
+        mutate_at(vars(pheno_key), as.factor)
+      OMIM <- OMIM %>%
+        mutate(idx = sample(1:100, size = dim(OMIM)[1], replace = T)/1000) %>%
+        mutate(color = case_when(pheno_key == "0" ~ "grey",
+                                 pheno_key == "1" ~ "lightgreen",
+                                 pheno_key == "2" ~ "green3",
+                                 pheno_key == "3" ~ "green4",
+                                 pheno_key == "4" ~ "purple", ))
+
+      OMIM_label <- OMIM %>%
+        filter(pheno_key  %in% c("3","4"))
+    }
+    findCNV_table$t <- mod_findCNV_Server("findCNV",values$pr_rd, values$m_rd, values$f_rd, SegDup_merge, RefSeq_gr, OMIM)
     updateTabItems(session, "tabs", "table")
   })
   

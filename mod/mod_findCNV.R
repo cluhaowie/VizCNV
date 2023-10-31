@@ -1,3 +1,11 @@
+library(GenomicRanges)
+
+
+getmode <- function(v) {
+  uniqv <- unique(v)
+  uniqv[which.max(tabulate(match(v, uniqv)))]
+}
+
 getSeg = function(df, idx){
   df = df %>% 
     filter(chr == idx)
@@ -22,7 +30,7 @@ getSeg = function(df, idx){
 
 getAllSeg <-function(df){
   out = list()
-  for (c in paste0("chr",c(1:22, "X"))){
+  for (c in paste0("chr",c(1:2, "X"))){
     tmp = getSeg(df,c)
     out = rbind(out, tmp)  
   }
@@ -86,16 +94,16 @@ get_cnv_all <- function(pr_seg, mo_seg, fa_seg){
   return(x)
 }
 
-get_overlap <- function(df, SegDup_merge){
+get_overlap <- function(df, SegDup_merge, RefSeq_gr, OMIM){
   
   # create empty lists to store the results
-  # cnt_rs <- vector("integer", length = nrow(df))
-  # str_rs <- vector("character", length = nrow(df))
+  cnt_rs <- vector("integer", length = nrow(df))
+  str_rs <- vector("character", length = nrow(df))
   # target_rs <- vector("character", length = nrow(df))
   # sl_rs <- vector("character", length = nrow(df))
   # ll_rs <- vector("character", length = nrow(df))
-  # cnt_omim <- vector("integer", length = nrow(df))
-  # str_omim <- vector("character", length = nrow(df))
+  cnt_omim <- vector("integer", length = nrow(df))
+  str_omim <- vector("character", length = nrow(df))
   cnt_sd <- vector("integer", length = nrow(df))
   
   # iterate over each row of the 'df' data frame
@@ -107,16 +115,16 @@ get_overlap <- function(df, SegDup_merge){
     # create a GRanges object for the genomic region of interest
     
     gr <- GRanges(df[i, 1], IRanges(df[i, 2], df[i, 3]))
-    
-    # subset reference genes that overlap with the genomic region
-    # ol <- subsetByOverlaps(RefSeq_gr %>% filter(seqnames == df[i, 1]), gr)
+    # print(RefSeq_gr %>% filter(seqnames == df[i, 1]))
+    # # subset reference genes that overlap with the genomic region
+    # ol <- IRanges::subsetByOverlaps(RefSeq_gr %>% filter(seqnames == toString(df[i, 1]), gr))
     # genes <- unique(mcols(ol)$gene_id)
     # # store the results in the corresponding list elements
     # cnt_rs[i] <- length(genes)
     # str_rs[i] <- paste(genes, collapse = ", ")
-    
+
     # # extract unique gene IDs
-    # 
+    #
     # if (length(which(genes %in%target, arr.ind = T)) == 0){
     #   target_rs[i] = "NA"
     # } else {
@@ -124,13 +132,13 @@ get_overlap <- function(df, SegDup_merge){
     # }
     # if (length(which(genes %in%short_list, arr.ind = T)) == 0){sl_rs[i] = "NA"} else {sl_rs[i] = paste0(short_list[which(short_list %in% genes)], collapse = ", ")}
     # if (length(which(genes %in%long_list, arr.ind = T)) == 0){ll_rs[i] = "NA"} else {ll_rs[i] = paste0(long_list[which(long_list %in% genes)], collapse = ", ")}
-    
-    # 
-    # # subset reference genes that overlap with the genomic region
-    # ol <- subsetByOverlaps(makeGRangesFromDataFrame(OMIM %>% filter(chrom == df[i, 1]), keep.extra.columns = T), gr)
-    # genes <- unique(mcols(ol)$gene_symbol)
-    # cnt_omim[i] <- length(genes)
-    # str_omim[i] <- paste(genes, collapse = ", ")
+
+    #
+    # subset reference genes that overlap with the genomic region
+    ol <- subsetByOverlaps(makeGRangesFromDataFrame(OMIM %>% filter(chrom == df[i, 1]), keep.extra.columns = T), gr)
+    genes <- unique(mcols(ol)$gene_symbol)
+    cnt_omim[i] <- length(genes)
+    str_omim[i] <- paste(genes, collapse = ", ")
     
     cnt_sd[i] <- countOverlaps(gr, makeGRangesFromDataFrame(SegDup_merge %>% filter(chrom == df[i, 1]), keep.extra.columns = T), type = "any", minoverlap = as.integer((df[i,3]-df[i,2])*0.98))
     
@@ -138,11 +146,12 @@ get_overlap <- function(df, SegDup_merge){
   
   
   
+  
   # combine the results with the 'df' data frame using mutate()
   out <- df %>%
     mutate(
       # refseqCount = cnt_rs, refseqID = str_rs,
-      # OMIMCount = cnt_omim, OMIMID = str_omim,
+      OMIMCount = cnt_omim, OMIMID = str_omim,
       SDOverlap = cnt_sd)
   return(out)
 }  
@@ -182,7 +191,7 @@ mod_findCNV_UI <- function(id) {
 #' mod_findCNV_Server("table", pr_seg, mo_seg, fa_seg)
 #'
 #' @export
-mod_findCNV_Server <- function(id, pr_rd, mo_rd, fa_rd, SegDup_merge) {
+mod_findCNV_Server <- function(id, pr_rd, mo_rd, fa_rd, SegDup_merge, RefSeq_gr, OMIM) {
   moduleServer(
     id,
     function(input, output, session) {
@@ -200,7 +209,9 @@ mod_findCNV_Server <- function(id, pr_rd, mo_rd, fa_rd, SegDup_merge) {
       mo_seg <- getAllSeg(mo_rd %>% as.data.frame())
       fa_seg <- getAllSeg(fa_rd %>% as.data.frame())
       cnv_all <- get_cnv_all(pr_seg, mo_seg, fa_seg) 
-      df <- get_overlap(cnv_all, SegDup_merge)
+      print(class(cnv_all))
+      print(cnv_all)
+      df <- get_overlap(cnv_all, SegDup_merge, RefSeq_gr, OMIM)
       removeNotification(id = id)
       df <- df %>% 
         mutate(pr_log = as.numeric(pr_log),
