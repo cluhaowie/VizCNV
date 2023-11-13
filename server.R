@@ -130,6 +130,14 @@ server <- function(input, output,session) {
       values$p5_file <-  "gnomAD_allSV_hg19_UCSC.bed"
       values$p6_file <-  "hg19_rmsk.parquet"
       values$SegDup_merge <- "SegDup_hg19_UCSC_no_PAR_merged_1k.bed"
+    }else if(input$ref=="T2T"){
+      values$ref_info <- data.table::fread("CHM13v2.0.info.txt")
+      values$p1_file <-  NULL
+      values$p2_file <-  NULL
+      values$p3_file <-  NULL
+      values$p4_file <-  NULL
+      values$p5_file <-  NULL
+      values$p6_file <-  NULL
     }
   })
   
