@@ -851,5 +851,15 @@ server <- function(input, output,session) {
   })
 
 }
-
+# 
+# 
+# ## Show cur input
+# observe({
+#   output$cur_loc <- renderText({
+#     if(nrow(values$pr_rd)==0){return(NULL)}
+#       else{
+#       paste0("Proband: ", )
+#       }
+#   })
+# })
 

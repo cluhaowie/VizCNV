@@ -123,6 +123,7 @@ ui <- dashboardPage(
                                 )
                    ),
                    box(title = "WG Plots",width = 12,solidHeader = T, status = "success",collapsible = T,
+                       verbatimTextOutput("cur_input"),
                        mod_plot_wg_UI("wg_pr_rd", height = 270),
                        mod_plot_wg_UI("wg_m_rd", height = 270),
                        mod_plot_wg_UI("wg_f_rd", height = 270))
@@ -203,7 +204,7 @@ ui <- dashboardPage(
                                  uiOutput("ui_chkbox_RMSK")
                                ),
                                fluidRow(
-                                 column(4,shiny::textInput("goto_reg",label = NULL,placeholder = "gene symbol, location/range (eg. 200000/200000-300000)")),
+                                 column(4,shiny::textInput("goto_reg",label = "Search: gene symbol, location/range (eg. 200000/200000-300000)")),
                                  column(1,shiny::actionButton("btn_go","go")),
                                  column(2,verbatimTextOutput("cur_loc")),
                                  column(4,verbatimTextOutput("cur_range"))
