@@ -140,7 +140,7 @@ mod_rd_upload_UI <- function(id) {
 #' mod_rd_upload_Server("proband", volumes, values)
 #'
 #' @export
-mod_rd_upload_Server <- function(id,volumes,values) {
+mod_rd_upload_Server <- function(id,volumes,values, names) {
   moduleServer(
     id,
     function(input, output, session) {
@@ -148,6 +148,7 @@ mod_rd_upload_Server <- function(id,volumes,values) {
       observeEvent(input$file, {
         values[[id]] <- data.table::fread(input$file$datapath,header = F) %>%
           mutate(V1=ifelse(!V1%like%"chr",paste0("chr",V1),V1))
+        names[[id]] <- basename(input$file$name)
         showModal(modalDialog(title = "File upload",
                               "The read depth file has been uploaded"))
       })
@@ -158,6 +159,7 @@ mod_rd_upload_Server <- function(id,volumes,values) {
           local_rd_file <- parseFilePaths(volumes, input$local_rd_file)
           values[[id]]<- data.table::fread(local_rd_file$datapath,header = F)%>%
             mutate(V1=ifelse(!V1%like%"chr",paste0("chr",V1),V1))
+          names[[id]] <- basename(input$file$name)
           showModal(modalDialog(title = "File upload",
                                 paste0("The ", id," read depth file has been uploaded")))
         }

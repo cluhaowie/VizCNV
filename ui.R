@@ -123,7 +123,10 @@ ui <- dashboardPage(
                                 )
                    ),
                    box(title = "WG Plots",width = 12,solidHeader = T, status = "success",collapsible = T,
-                       verbatimTextOutput("cur_input"),
+                       fluidRow(
+                       verbatimTextOutput("pr_name"),
+                       verbatimTextOutput("m_name"),
+                       verbatimTextOutput("f_name")),
                        mod_plot_wg_UI("wg_pr_rd", height = 270),
                        mod_plot_wg_UI("wg_m_rd", height = 270),
                        mod_plot_wg_UI("wg_f_rd", height = 270))
@@ -173,12 +176,17 @@ ui <- dashboardPage(
                                            value = T))
                       ),
                     fluidRow(
+                      p(HTML("<b>Step1:</b>")),
                       column(2, actionButton("btn_filter", "Filter")),
+                      p(HTML("<b>Step2:</b>")),
                       column(2, actionButton("btn_plot", "Plot")),
+                      p(HTML("<b>Step3:</b>")),
                       column(2, actionButton("btn_anno", "Annotate")),
                       # column(2, actionButton("btn_dnCNV", "Filter dnCNVs")),
                       # column(2, actionButton("btn_hmzCNV", "Filter hmzCNV")),
-                      column(2, actionButton("btn_findCNV", "Find CNVs"))
+                      p(HTML("<b>Optional:</b>")),
+                      column(2, actionButton("btn_findCNV", "Find CNVs")),
+                      
                       )
                     )
                   ),
@@ -212,6 +220,11 @@ ui <- dashboardPage(
                                fluidRow(
                                  column(6,mod_col_pick_UI("highlight")),
                                  column(6,mod_UCSC_UI("UCSC"))
+                               ),
+                               fluidRow(
+                                 verbatimTextOutput("pr_name2"),
+                                 verbatimTextOutput("m_name2"),
+                                 verbatimTextOutput("f_name2"),
                                ),
                     mod_plot_switch_UI("RD-static", height = 200),
                     mod_plot_switch_UI("RD-dynamic", height = 200),

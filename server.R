@@ -44,11 +44,16 @@ server <- function(input, output,session) {
   plots$xlabel <- character()
   plots$SNPcols <- vector(length = 3) ## placeholder for color in SNP plot
   
+  names <- reactiveValues()
+  names$pr_rd <- NULL
+  names$m_rd <- NULL
+  names$f_rd <- NULL
+  
   
   volumes <- c(Home="~/Downloads/","R installation" = R.home(),shinyFiles::getVolumes()())
-  mod_rd_upload_Server("pr_rd",volumes=volumes,values) 
-  mod_rd_upload_Server("m_rd",volumes=volumes,values) 
-  mod_rd_upload_Server("f_rd",volumes=volumes,values) 
+  mod_rd_upload_Server("pr_rd",volumes=volumes,values, names) 
+  mod_rd_upload_Server("m_rd",volumes=volumes,values, names) 
+  mod_rd_upload_Server("f_rd",volumes=volumes,values, names) 
   mod_sv_upload_Server("pr_sv",volumes=volumes,values) 
   mod_sv_upload_Server("m_sv",volumes=volumes,values) 
   mod_sv_upload_Server("f_sv",volumes=volumes,values) 
@@ -850,16 +855,45 @@ server <- function(input, output,session) {
     mod_UCSC_Server("UCSC", input$ref, input$chr, ranges)
   })
 
+
+
+  ## Show cur input
+  observe({
+    output$pr_name <- renderText({
+      req(!is.null(names$pr_rd))
+      fname <- unlist(strsplit(names$pr_rd, "\\."))[1]
+      paste0("Proband: ", fname)
+    })
+    output$pr_name2 <- renderText({
+      req(!is.null(names$pr_rd))
+      fname <- unlist(strsplit(names$pr_rd, "\\."))[1]
+      paste0("Proband: ", fname)
+    })
+  })
+  observe({
+    output$m_name <- renderText({
+      req(!is.null(names$m_rd))
+      fname <- unlist(strsplit(names$m_rd, "\\."))[1]
+      paste0("Mother: ", fname)
+    })
+    output$m_name2 <- renderText({
+      req(!is.null(names$m_rd))
+      fname <- unlist(strsplit(names$m_rd, "\\."))[1]
+      paste0("Mother: ", fname)
+    })
+  })
+  observe({
+    output$f_name <- renderText({
+      req(!is.null(names$f_rd))
+      fname <- unlist(strsplit(names$f_rd, "\\."))[1]
+      paste0("Father: ", fname)
+    })
+    output$f_name2 <- renderText({
+      req(!is.null(names$f_rd))
+      fname <- unlist(strsplit(names$f_rd, "\\."))[1]
+      paste0("Father: ", fname)
+    })
+  })
+  
 }
-# 
-# 
-# ## Show cur input
-# observe({
-#   output$cur_loc <- renderText({
-#     if(nrow(values$pr_rd)==0){return(NULL)}
-#       else{
-#       paste0("Proband: ", )
-#       }
-#   })
-# })
 
