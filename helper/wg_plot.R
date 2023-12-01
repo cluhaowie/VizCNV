@@ -144,7 +144,7 @@ wg_seg2plot <- function(seg_data,ref=NULL){
     mutate(start_cum = end_cum - num.mark*bin.size)
   axis_set <- seg_data %>% 
     group_by(chrom) %>% 
-    summarize(center = mean(end_cum)) %>% 
+    summarize(center = mean(end_cum),end=max(end_cum)) %>% 
     arrange((chrom))
   label_seg_gain <- seg_data %>% 
     filter(num.mark > min.num.mark) %>% 
@@ -153,13 +153,13 @@ wg_seg2plot <- function(seg_data,ref=NULL){
     filter(num.mark > min.num.mark) %>% 
     filter(dplyr::between(seg.mean,del.range[1],del.range[2]))
   wg <- seg_data %>% 
-    filter(num.mark > min.num.mark)%>%
     ggplot(.,aes(x = end_cum, y = seg.mean, color = chrom))+
-    geom_segment(aes(x = start_cum, y = seg.mean, xend = end_cum, yend = seg.mean+0.001), linewidth = 1.25)+
-    geom_segment(data = label_seg_gain, aes(x = start_cum, y = seg.mean, xend = end_cum, yend = seg.mean+0.001),linewidth = 2,color = "red")+
-    geom_segment(data = label_seg_gain, aes(x = (start_cum+end_cum)/2, y = 1.6, xend = (start_cum+end_cum)/2, yend = 1.6+0.1),linewidth = 1,color = "purple")+
-    geom_segment(data = label_seg_loss, aes(x = start_cum, y = seg.mean, xend = end_cum, yend = seg.mean+0.001),linewidth = 2,color = "green")+
-    geom_segment(data = label_seg_loss, aes(x = (start_cum+end_cum)/2, y = -2, xend = (start_cum+end_cum)/2, yend = -2+0.1),linewidth = 1,color = "orange")+
+    geom_segment(data= subset(seg_data, num.mark > min.num.mark),aes(x = start_cum, y = seg.mean, xend = end_cum, yend = seg.mean), linewidth = 1.25)+
+    geom_segment(data = label_seg_gain, aes(x = start_cum, y = seg.mean, xend = end_cum, yend = seg.mean),linewidth = 2,color = "red")+
+   # geom_segment(data = label_seg_gain, aes(x = (start_cum+end_cum)/2, y = 1.6, xend = (start_cum+end_cum)/2, yend = 1.6+0.1),linewidth = 1,color = "purple")+
+    geom_segment(data = label_seg_loss, aes(x = start_cum, y = seg.mean, xend = end_cum, yend = seg.mean),linewidth = 2,color = "green")+
+   # geom_segment(data = label_seg_loss, aes(x = (start_cum+end_cum)/2, y = -2, xend = (start_cum+end_cum)/2, yend = -2+0.1),linewidth = 1,color = "orange")+
+    geom_vline(xintercept=axis_set$end,lty=2,lwd=0.5,color="lightgrey")+
     theme_minimal() +
     theme( 
       legend.position = "none",
