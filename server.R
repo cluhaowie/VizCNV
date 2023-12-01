@@ -262,7 +262,7 @@ server <- function(input, output,session) {
   
   # Basic Plots -----
   ### "Global" reactive values
-  wg_ranges <- reactiveValues(x = NULL, pr = NULL, m = NULL, f = NULL)
+  wg_ranges <- reactiveValues(x = NULL, pr = NULL, m = NULL, f = NULL, pr_ploidy=NULL)
   wg_dnCNV_table <- reactiveValues(t = data.frame(start_cum = c(0), end_cum = c(0), stringsAsFactors = F))
   wg_hmzCNV_table <- reactiveValues(t = data.frame(start_cum = c(0), end_cum = c(0), stringsAsFactors = F))
   
@@ -296,7 +296,10 @@ server <- function(input, output,session) {
       })
       wg_ranges$pr <- rbindlist(tmplist)
     })
-    wg_pr <- wg_seg2plot(wg_ranges$pr)
+    wg_pr <- wg_seg2plot(wg_ranges$pr,input$ref)
+    wg_ranges$pr_ploidy <- wg_ranges$pr%>%
+      group_by(chrom)%>%
+      summarise(chromosome_counts=2*median(seg.mean))
     wg_ranges <- mod_plot_wg_Server("wg_pr_rd", wg_pr, wg_ranges, wg_dnCNV_table, wg_hmzCNV_table)
   })
   observeEvent(input$btn_wg_rd, {
@@ -322,7 +325,7 @@ server <- function(input, output,session) {
       })
       wg_ranges$m <- rbindlist(tmplist)
     })
-    wg_m <- wg_seg2plot(wg_ranges$m)
+    wg_m <- wg_seg2plot(wg_ranges$m,input$ref)
     wg_ranges <- mod_plot_wg_Server("wg_m_rd", wg_m, wg_ranges, wg_dnCNV_table,wg_hmzCNV_table)
   })
   observeEvent(input$btn_wg_rd, {
@@ -348,7 +351,7 @@ server <- function(input, output,session) {
       })
       wg_ranges$f <- rbindlist(tmplist)
     })
-    wg_f <- wg_seg2plot(wg_ranges$f)
+    wg_f <- wg_seg2plot(wg_ranges$f,input$ref)
     wg_ranges <- mod_plot_wg_Server("wg_f_rd", wg_f, wg_ranges, wg_dnCNV_table,wg_hmzCNV_table)
   })
 
@@ -894,6 +897,9 @@ server <- function(input, output,session) {
       paste0("Father: ", fname)
     })
   })
-  
+  onStop(function() {
+    rm(list=ls())
+    cat("Session stopped\n")
+    })
 }
 

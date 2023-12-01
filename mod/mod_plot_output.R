@@ -145,7 +145,8 @@ mod_plot_wg_UI <- function(id, height = 100) {
                                  resetOnNew = T,
                                  direction = "x"),
                dblclick = ns("dblclick"),
-               height = height)
+               height = height),
+    downloadButton(ns('downloadPlot'), 'Download Plot') 
   )
 }
 
@@ -178,8 +179,12 @@ mod_plot_wg_Server <- function(id, p, ranges, dnCNV_table, hmzCNV_table){
           annotate("rect", fill = "red", alpha =0.8, xmin = dnCNV_table$t$start_cum, xmax = dnCNV_table$t$end_cum, ymin = -Inf, ymax = Inf)+
           annotate("rect", fill = "black", alpha =0.5, xmin = hmzCNV_table$t$start_cum, xmax = hmzCNV_table$t$end_cum, ymin = -Inf, ymax = Inf)
         })
-      
-      
+      plotInput <- reactive({
+        p +
+          coord_cartesian(xlim= ranges$x, ylim = ranges$y, expand = F)+
+          annotate("rect", fill = "red", alpha =0.8, xmin = dnCNV_table$t$start_cum, xmax = dnCNV_table$t$end_cum, ymin = -Inf, ymax = Inf)+
+          annotate("rect", fill = "black", alpha =0.5, xmin = hmzCNV_table$t$start_cum, xmax = hmzCNV_table$t$end_cum, ymin = -Inf, ymax = Inf)
+      })
       observeEvent(input$dblclick, {
         brush <- input$brush
         if (!is.null(brush)) {
@@ -188,6 +193,12 @@ mod_plot_wg_Server <- function(id, p, ranges, dnCNV_table, hmzCNV_table){
           ranges$x <- NULL
         }
       })
+      output$downloadPlot<- downloadHandler(
+        filename = paste0(id,".pdf"),
+            content = function(file){
+              ggsave(file,plotInput(),width = 12,height = 4,device = "pdf")
+            })
+        
       return (ranges) 
     }
   )

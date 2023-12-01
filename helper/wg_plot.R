@@ -118,7 +118,14 @@ SegNormRD <- function(df, id, seg.method = "cbs") {
 
 
 
-wg_seg2plot <- function(seg_data){
+wg_seg2plot <- function(seg_data,ref=NULL){
+  min.num.mark=100
+  bin.size=1000 ## default 1000 bp bin size
+  del.log2width <- 0.1
+  dup.log2width <- 0.15
+  del.range <- c(log2(1*(1-del.log2width )/2),log2(1*(1+del.log2width )/2))
+  dup.range <- c(log2(3*(1-dup.log2width )/2),log2(3*(1+dup.log2width )/2))
+  
   seg_data <- seg_data %>% 
     mutate(seg.mean=ifelse(seg.mean < -2.5,-2,seg.mean))
   
@@ -134,32 +141,36 @@ wg_seg2plot <- function(seg_data){
     inner_join(temp, by = "chrom") %>% 
     mutate(end_cum = loc_add + loc.end) 
   seg_data <- seg_data %>% 
-    mutate(start_cum = end_cum- num.mark*1000)
+    mutate(start_cum = end_cum - num.mark*bin.size)
   axis_set <- seg_data %>% 
     group_by(chrom) %>% 
     summarize(center = mean(end_cum)) %>% 
     arrange((chrom))
   label_seg_gain <- seg_data %>% 
-    filter(num.mark > 100) %>% 
-    filter(seg.mean >0.4)
+    filter(num.mark > min.num.mark) %>% 
+    filter(seg.mean > dup.range[1])
   label_seg_loss <- seg_data %>% 
-    filter(num.mark > 100) %>% 
-    filter(dplyr::between(seg.mean,-1.5, -0.3))
+    filter(num.mark > min.num.mark) %>% 
+    filter(dplyr::between(seg.mean,del.range[1],del.range[2]))
   wg <- seg_data %>% 
-    ggplot(aes(x = end_cum, y = seg.mean, color = chrom))+
+    filter(num.mark > min.num.mark)%>%
+    ggplot(.,aes(x = end_cum, y = seg.mean, color = chrom))+
     geom_segment(aes(x = start_cum, y = seg.mean, xend = end_cum, yend = seg.mean+0.001), linewidth = 1.25)+
-    geom_point(data = label_seg_gain, shape= 8, color = "red")+
-    geom_point(data = label_seg_loss, shape= 8, color = "green")+
+    geom_segment(data = label_seg_gain, aes(x = start_cum, y = seg.mean, xend = end_cum, yend = seg.mean+0.001),linewidth = 2,color = "red")+
+    geom_segment(data = label_seg_gain, aes(x = (start_cum+end_cum)/2, y = 1.6, xend = (start_cum+end_cum)/2, yend = 1.6+0.1),linewidth = 1,color = "purple")+
+    geom_segment(data = label_seg_loss, aes(x = start_cum, y = seg.mean, xend = end_cum, yend = seg.mean+0.001),linewidth = 2,color = "green")+
+    geom_segment(data = label_seg_loss, aes(x = (start_cum+end_cum)/2, y = -2, xend = (start_cum+end_cum)/2, yend = -2+0.1),linewidth = 1,color = "orange")+
     theme_minimal() +
     theme( 
       legend.position = "none",
       panel.grid.major.x = element_blank(),
       panel.grid.minor.x = element_blank(),
-      axis.text.x = element_text(angle = 60, size = 8, vjust = 0.5)
+      axis.text.x = element_text(angle = 60, size = 12,vjust = 0.5,color = "black"),
+      axis.text.y = element_text(size = 10,color = "black")
     )+
     scale_rd+
     scale_size_continuous(range = c(0.5,3))+
-    labs(x = NULL)+
+    labs(x = ref)+
     scale_x_continuous(label = axis_set$chrom, breaks = axis_set$center)+
     coord_cartesian(expand = F)
   return(wg)
