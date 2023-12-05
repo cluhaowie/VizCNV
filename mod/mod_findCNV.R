@@ -30,7 +30,7 @@ getSeg = function(df, idx){
 
 getAllSeg <-function(df){
   out = list()
-  for (c in paste0("chr",c(1, "X"))){
+  for (c in paste0("chr",c(1:22, "X"))){
     tmp = getSeg(df,c)
     out = rbind(out, tmp)  
   }
@@ -144,7 +144,7 @@ get_overlap <- function(df, SegDup_merge, RefSeq_gr, OMIM){
     cnt_omim[i] <- length(genes)
     str_omim[i] <- paste(genes, collapse = ", ")
     pheno_omim[i] <- paste(pheno, collapse = ", ")
-    inh_omim[i] <- paste(pheno, collapse = ", ")
+    inh_omim[i] <- paste(inh, collapse = ", ")
     
     cnt_sd[i] <- countOverlaps(gr, makeGRangesFromDataFrame(SegDup_merge %>% filter(chrom == df[i, 1]), keep.extra.columns = T), type = "any", minoverlap = as.integer((df[i,3]-df[i,2])*0.98))
     
