@@ -6,7 +6,7 @@ source("./mod/mod_upload.R")
 source("./mod/mod_UCSC.R")
 source("./helper/wg_plot.R")
 source("./helper/misc.R")
-
+source("./mod/mod_allele_imbalance.R")
 server <- function(input, output,session) {
   # Reavtive Values --------------------------
   values <- reactiveValues()
@@ -245,8 +245,9 @@ server <- function(input, output,session) {
           range.gr <- unlist(GenomicRanges::subtract(range.gr, blacklist))
         }
       }
-      plots$snp_chr <- ReadGVCF(snp_gvcf_file_path,ref_genome=input$ref,param = range.gr)%>%
-        as.data.frame()
+      plots$snp_chr <- ReadGVCF(snp_gvcf_file_path,ref_genome=input$ref,param = range.gr,target_spacing=input$target_spacing)%>%
+        as.data.frame()%>%
+        filter(pr_count>7,p1_count>7,p2_count>7,width<2) ## set the minimum for the read coverage
       InhFrom <- unique(plots$snp_chr$B_InhFrom)
       if(length(InhFrom)==3){
         names(plots$SNPcols) <- InhFrom
@@ -444,6 +445,34 @@ server <- function(input, output,session) {
     
     noti_id <- showNotification("Plotting B-allele frequency plots", type = "message", duration = NULL)
     df <- plots$snp_chr%>%filter(likelyDN%in%c(input$include_dnSNV,"FALSE"))
+    matsnp.df <-  plots$snp_chr%>%filter(!is.na(P1_phased_BAF))
+    patsnp.df <- plots$snp_chr%>%filter(!is.na(P2_phased_BAF))
+    bafseg.obj <- DNAcopy::CNA(plots$snp_chr$pr_absBAF, plots$snp_chr$seqnames,plots$snp_chr$start, data.type = "binary",sampleid = "Index")%>%
+      DNAcopy::segment(verbose = 1)
+    matseg.obj = DNAcopy::CNA(matsnp.df$P1_phased_BAF, matsnp.df$seqnames,matsnp.df$start, data.type = "binary",sampleid = "Index")%>%
+      DNAcopy::segment(verbose = 1)
+    patseg.obj = DNAcopy::CNA(patsnp.df$P2_phased_BAF, patsnp.df$seqnames,patsnp.df$start, data.type = "binary",sampleid = "Index")%>%
+      DNAcopy::segment(verbose = 1)
+    snp_out <- as.data.table(bafseg.obj$output)%>%
+      mutate(len=round(as.numeric(loc.end)-as.numeric(loc.start),0),
+             loc.end=as.numeric(loc.end),
+             loc.start=as.numeric(loc.start),
+             seg.mean=seg.mean+0.5)%>%
+      filter(len>minseg,seg.mean>minsegmean)
+    
+    mat_out <- as.data.table(matseg.obj$output)%>%
+      mutate(len=round(as.numeric(loc.end)-as.numeric(loc.start),0),
+             loc.end=as.numeric(loc.end),
+             loc.start=as.numeric(loc.start))%>%
+      filter(len>minseg)%>%
+      pivot_longer(cols = c("loc.start","loc.end"),names_to = "source",values_to = "pos")
+    pat_out <- as.data.table(patseg.obj$output)%>%
+      mutate(len=round(as.numeric(loc.end)-as.numeric(loc.start),0),
+             loc.end=as.numeric(loc.end),
+             loc.start=as.numeric(loc.start))%>%
+      filter(len>minseg)%>%
+      pivot_longer(cols = c("loc.start","loc.end"),names_to = "source",values_to = "pos")
+    
     cols <- plots$SNPcols
     xlabel=unique(df$chrom)[1]
     
@@ -480,8 +509,13 @@ server <- function(input, output,session) {
     ranges <- mod_plot_switch_Server("Baf-A_allele", btnVala$box_state, snp_a, ranges, dnCNV_table,hmzCNV_table)
     
     snp_b <- ggplot(df, aes(x=start,y=pr_ALT_Freq,col=B_InhFrom))+
-      geom_point(shape=20, size = 1.5)+
+     # geom_point(shape=20, size = 1.5)+
+     # shape = . will significant improve the plot speed
+      geom_point(shape=".",alpha=1)+
       geom_point(data = subset(df, likelyDN %in%c("TRUE")),size = 2,shape=8,color="red")+
+      geom_line(data=pat_out,aes(x=pos,y=seg.mean),col="#39918C",size=1.5)+
+      geom_line(data=mat_out,aes(x=pos,y=seg.mean),col="#E69F00",size=1.5)+
+      geom_segment(data=snp_out,aes(x=loc.start,xend=loc.end,y=seg.mean,yend=seg.mean),col="purple",size=1.5)+
       scale_fill_manual("LikelyDN",limits=c("dnSNV"),values = "red")+
       xlab(xlabel)+
       scale_snp+

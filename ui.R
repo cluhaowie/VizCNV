@@ -198,6 +198,7 @@ ui <- dashboardPage(
                                  HTML("<b>Basic Plot Options: </b>"),
                                  mod_checkbox_UI("RD-static"),
                                  mod_checkbox_UI("RD-dynamic"),
+                                 numericInput("target_spacing", "Minimum distance(bp) between adjacent SNV(0-10kb):", 150, min = 0, max = 10000),
                                  mod_checkbox_UI("Baf-B_allele"),
                                  mod_checkbox_UI("Baf-A_allele", value = F),
                                  HTML("<b>Annotation Track Options:</b>"),
