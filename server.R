@@ -110,8 +110,9 @@ server <- function(input, output,session) {
   ## ref file depending on genome build  ------
   observeEvent(input$ref,{
     if(input$ref=="hg38"){
-      blacklist <- data.table::fread("GRCh38_unified_blacklist.bed.gz")%>%
-        regioneR::toGRanges()
+      # reserve the blacklist for now Mar1, 2024
+      #blacklist <- data.table::fread("GRCh38_unified_blacklist.bed.gz")%>%
+      #  regioneR::toGRanges()
       values$ref_info <- data.table::fread("hg38.info.txt")
       values$gaps <- data.table::fread("data/hg38_gaps.bed")%>%
         makeGRangesFromDataFrame(keep.extra.columns = TRUE)
@@ -123,8 +124,8 @@ server <- function(input, output,session) {
       values$p6_file <-  "hg38_rmsk.parquet"
       values$SegDup_merge <- "SegDup_hg38_UCSC_sorted_merged_1k.bed"
     }else if(input$ref=="hg19"){
-      blacklist <- data.table::fread("ENCFF001TDO.bed.gz")%>%
-        regioneR::toGRanges()
+     # blacklist <- data.table::fread("ENCFF001TDO.bed.gz")%>%
+     #   regioneR::toGRanges()
       values$ref_info <- data.table::fread("hg19.info.txt")
       values$gaps <- data.table::fread("data/hg19_gaps.bed")%>%
         makeGRangesFromDataFrame(keep.extra.columns = TRUE)
@@ -239,10 +240,10 @@ server <- function(input, output,session) {
       if (isTRUE(input$mask_option)){
         if (chr %in% c(1:22, "X", "Y")){
           range.gr <- GenomeInfoDb::renameSeqlevels(range.gr, paste0("chr", GenomeInfoDb::seqlevels(range.gr)))
-          range.gr <- unlist(GenomicRanges::subtract(range.gr, blacklist))
+          range.gr <- unlist(GenomicRanges::subtract(range.gr, values$gaps))
           range.gr <- GenomeInfoDb::renameSeqlevels(range.gr, gsub("chr", "", GenomeInfoDb::seqlevels(range.gr)))
         } else {
-          range.gr <- unlist(GenomicRanges::subtract(range.gr, blacklist))
+          range.gr <- unlist(GenomicRanges::subtract(range.gr, values$gaps))
         }
       }
       plots$snp_chr <- ReadGVCF(snp_gvcf_file_path,ref_genome=input$ref,param = range.gr)%>%
