@@ -623,7 +623,7 @@ server <- function(input, output,session) {
     if(!is.null(values$p3_file)){
       SegDup_data <- arrow::read_parquet(paste0(path, values$p3_file),as_data_frame = F)
       SegDup <- SegDup_data %>%
-        dplyr::select(segdups.keep.col)%>%
+        dplyr::select(all_of(segdups.keep.col))%>%
         filter(chrom ==chrn)%>%
         dplyr::rename("start" = "chromStart", "end" = "chromEnd") %>%
         collect()
@@ -692,8 +692,8 @@ server <- function(input, output,session) {
       rmsk_data <- read_parquet(paste0(path, values$p6_file),as_data_frame = F)
       rmsk <- rmsk_data %>% 
         filter(chrom ==  chrn) %>% 
-        collect()
-      names(rmsk) <- c("chrom", "start", "end", "strand", "repClass")
+        collect()%>%
+        dplyr::rename("start" = "chromStart", "end" = "chromEnd")
       
       rmsk <- rmsk %>% 
         mutate(idx = case_when(repClass == "SINE" ~ 0.014*7,
