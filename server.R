@@ -118,7 +118,7 @@ server <- function(input, output,session) {
       values$p1_file <-  "hg38_MANE.v1.0.refseq.parquet"
       values$p2_file <-  NULL
       values$p3_file <-  "hg38_ucsc_sugdups.parquet"
-      values$p4_file <-  NULL
+      values$p4_file <-  "OMIM_gene2_hg38_MANE_all.bed"
       values$p5_file <-  NULL
       values$p6_file <-  "hg38_rmsk.parquet"
       values$SegDup_merge <- "SegDup_hg38_UCSC_sorted_merged_1k.bed"
