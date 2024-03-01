@@ -104,6 +104,8 @@ get_overlap <- function(df, SegDup_merge, RefSeq_gr, OMIM){
   # ll_rs <- vector("character", length = nrow(df))
   cnt_omim <- vector("integer", length = nrow(df))
   str_omim <- vector("character", length = nrow(df))
+  pheno_omim <- vector("character", length = nrow(df))
+  inh_omim <- vector("character", length = nrow(df))
   cnt_sd <- vector("integer", length = nrow(df))
   
   # iterate over each row of the 'df' data frame
@@ -137,8 +139,12 @@ get_overlap <- function(df, SegDup_merge, RefSeq_gr, OMIM){
     # subset reference genes that overlap with the genomic region
     ol <- subsetByOverlaps(makeGRangesFromDataFrame(OMIM %>% filter(chrom == df[i, 1]), keep.extra.columns = T), gr)
     genes <- unique(mcols(ol)$gene_symbol)
+    pheno <- unique(mcols(ol)$pheno_name)
+    inh <- unique(mcols(ol)$pheno_inh)
     cnt_omim[i] <- length(genes)
     str_omim[i] <- paste(genes, collapse = ", ")
+    pheno_omim[i] <- paste(pheno, collapse = ", ")
+    inh_omim[i] <- paste(inh, collapse = ", ")
     
     cnt_sd[i] <- countOverlaps(gr, makeGRangesFromDataFrame(SegDup_merge %>% filter(chrom == df[i, 1]), keep.extra.columns = T), type = "any", minoverlap = as.integer((df[i,3]-df[i,2])*0.98))
     
@@ -151,7 +157,7 @@ get_overlap <- function(df, SegDup_merge, RefSeq_gr, OMIM){
   out <- df %>%
     mutate(
       # refseqCount = cnt_rs, refseqID = str_rs,
-      OMIMCount = cnt_omim, OMIMID = str_omim,
+      OMIMCount = cnt_omim, OMIMID = str_omim, OMIM_phenotype = pheno_omim, OMIM_inheritance = inh_omim,
       SDOverlap = cnt_sd)
   return(out)
 }  
@@ -209,8 +215,8 @@ mod_findCNV_Server <- function(id, pr_rd, mo_rd, fa_rd, SegDup_merge, RefSeq_gr,
       mo_seg <- getAllSeg(mo_rd %>% as.data.frame())
       fa_seg <- getAllSeg(fa_rd %>% as.data.frame())
       cnv_all <- get_cnv_all(pr_seg, mo_seg, fa_seg) 
-      print(class(cnv_all))
-      print(cnv_all)
+      # print(class(cnv_all))
+      # print(cnv_all)
       df <- get_overlap(cnv_all, SegDup_merge, RefSeq_gr, OMIM)
       removeNotification(id = id)
       df <- df %>% 

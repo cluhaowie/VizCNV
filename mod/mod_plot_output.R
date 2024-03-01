@@ -196,7 +196,7 @@ mod_plot_wg_Server <- function(id, p, ranges, dnCNV_table, hmzCNV_table){
       output$downloadPlot<- downloadHandler(
         filename = paste0(id,".pdf"),
             content = function(file){
-              ggsave(file,plotInput(),width = 12,height = 4,device = "pdf")
+              ggsave(file,plotInput(),width = 18,height = 3,device = "pdf")
             })
         
       return (ranges) 

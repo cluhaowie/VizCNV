@@ -693,16 +693,25 @@ server <- function(input, output,session) {
       rmsk <- rmsk_data %>% 
         filter(chrom ==  chrn) %>% 
         collect()
-      p6 <- rmsk %>% 
+      names(rmsk) <- c("chrom", "start", "end", "strand", "repClass")
+      
+      rmsk <- rmsk %>% 
         mutate(idx = case_when(repClass == "SINE" ~ 0.014*7,
                                repClass == "LINE" ~ 0.014*6,
                                repClass == "LTR" ~ 0.014*5,
                                repClass == "DNA" ~ 0.014*4,
                                repClass == "Simple_repeat" ~ 0.014*3,
                                repClass == "Low_complexity" ~ 0.014*2,
-                               TRUE ~ 0.014))%>%
-        ggplot(., aes(x = start, y = idx)) +
-        annotate("rect", xmin = rmsk$start, xmax = rmsk$end, ymin = rmsk$idx, ymax = rmsk$idx+0.0001, color = "black")+
+                               TRUE ~ 0.014))
+      rmsk_pos <- rmsk %>%
+        filter(strand == "+")
+      rmsk_neg <- rmsk %>%
+        filter(strand == "-")
+      print(rmsk_pos)
+      print(rmsk_neg)
+      p6 <- ggplot(rmsk, aes(x = start, y = idx)) + 
+        geom_segment(data = rmsk_pos, aes(x = start, y = idx, xend = end, yend = idx), arrow = arrow(length = unit(0.05, "inches")), color = "black")+
+        geom_segment(data = rmsk_neg, aes(x = end, y = idx, xend = start, yend = idx), arrow = arrow(length = unit(0.05, "inches")), color = "black")+
         style_anno+
         scale_anno+
         ylab("RMSK")
