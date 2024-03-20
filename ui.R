@@ -8,7 +8,7 @@ source("./mod/mod_UCSC.R")
 
 ui <- dashboardPage(
   
-  dashboardHeader(title = VizCNV,
+  dashboardHeader(title = "VizCNV",
                   tags$span(style = "width: 90%"),
                   tagList(
                     tags$a(href="https://github.com/cluhaowie/VizCNV",icon("github"))
