@@ -1,4 +1,9 @@
+
+
 library(GenomicRanges)
+library(config)
+
+config <- config::get()
 
 
 getmode <- function(v) {
@@ -224,26 +229,26 @@ mod_findCNV_Server <- function(id, pr_rd, mo_rd, fa_rd, SegDup_merge, RefSeq_gr,
                mo_log = as.numeric(mo_log),
                fa_log = as.numeric(fa_log),)
       df <- df %>% 
-        mutate(pr_lvl = case_when(pr_log <= -1.525 ~ "HOM_DEL", 
-                                  pr_log >= log2(1*0.9/2) & pr_log <= log2(1*1.1/2) ~ "HET_DEL",
-                                  pr_log >= log2(2*0.9/2) & pr_log <= log2(2*1.1/2) ~ "NML",
-                                  pr_log >= log2(3*0.9/2) & pr_log <= log2(3*1.1/2) ~ "DUP",
-                                  pr_log >= log2(4*0.9/2) & pr_log <= log2(4*1.1/2) ~ "TRP",
-                                  pr_log >= 1.175 ~ "MUL_GAIN",
+        mutate(pr_lvl = case_when(pr_log <= config$find_CNV_lower ~ "HOM_DEL", 
+                                  pr_log >= log2(1*(1-config$find_CNV_threshold)/2) & pr_log <= log2(1*(1+config$find_CNV_threshold)/2) ~ "HET_DEL",
+                                  pr_log >= log2(2*(1-config$find_CNV_threshold)/2) & pr_log <= log2(2*(1+config$find_CNV_threshold)/2) ~ "NML",
+                                  pr_log >= log2(3*(1-config$find_CNV_threshold)/2) & pr_log <= log2(3*(1+config$find_CNV_threshold)/2) ~ "DUP",
+                                  pr_log >= log2(4*(1-config$find_CNV_threshold)/2) & pr_log <= log2(4*(1+config$find_CNV_threshold)/2) ~ "TRP",
+                                  pr_log >= config$find_CNV_upper ~ "MUL_GAIN",
                                   TRUE ~ "UND"),
-               mo_lvl = case_when(mo_log <= -1.525 ~ "HOM_DEL", 
-                                  mo_log >= log2(1*0.9/2) & mo_log <= log2(1*1.1/2) ~ "HET_DEL",
-                                  mo_log >= log2(2*0.9/2) & mo_log <= log2(2*1.1/2) ~ "NML",
-                                  mo_log >= log2(3*0.9/2) & mo_log <= log2(3*1.1/2) ~ "DUP",
-                                  mo_log >= log2(4*0.9/2) & mo_log <= log2(4*1.1/2) ~ "TRP",
-                                  mo_log >= 1.175 ~ "MUL_GAIN",
+               mo_lvl = case_when(mo_log <= config$find_CNV_lower ~ "HOM_DEL", 
+                                  mo_log >= log2(1*(1-config$find_CNV_threshold)/2) & mo_log <= log2(1*(1+config$find_CNV_threshold)/2) ~ "HET_DEL",
+                                  mo_log >= log2(2*(1-config$find_CNV_threshold)/2) & mo_log <= log2(2*(1+config$find_CNV_threshold)/2) ~ "NML",
+                                  mo_log >= log2(3*(1-config$find_CNV_threshold)/2) & mo_log <= log2(3*(1+config$find_CNV_threshold)/2) ~ "DUP",
+                                  mo_log >= log2(4*(1-config$find_CNV_threshold)/2) & mo_log <= log2(4*(1+config$find_CNV_threshold)/2) ~ "TRP",
+                                  mo_log >= config$find_CNV_upper ~ "MUL_GAIN",
                                   TRUE ~ "UND"),
-               fa_lvl = case_when(fa_log <= -1.525 ~ "HOM_DEL", 
-                                  fa_log >= log2(1*0.9/2) & fa_log <= log2(1*1.1/2) ~ "HET_DEL",
-                                  fa_log >= log2(2*0.9/2) & fa_log <= log2(2*1.1/2) ~ "NML",
-                                  fa_log >= log2(3*0.9/2) & fa_log <= log2(3*1.1/2) ~ "DUP",
-                                  fa_log >= log2(4*0.9/2) & fa_log <= log2(4*1.1/2) ~ "TRP",
-                                  fa_log >= 1.175 ~ "MUL_GAIN",
+               fa_lvl = case_when(fa_log <= config$find_CNV_lower ~ "HOM_DEL", 
+                                  fa_log >= log2(1*(1-config$find_CNV_threshold)/2) & fa_log <= log2(1*(1+config$find_CNV_threshold)/2) ~ "HET_DEL",
+                                  fa_log >= log2(2*(1-config$find_CNV_threshold)/2) & fa_log <= log2(2*(1+config$find_CNV_threshold)/2) ~ "NML",
+                                  fa_log >= log2(3*(1-config$find_CNV_threshold)/2) & fa_log <= log2(3*(1+config$find_CNV_threshold)/2) ~ "DUP",
+                                  fa_log >= log2(4*(1-config$find_CNV_threshold)/2) & fa_log <= log2(4*(1+config$find_CNV_threshold)/2) ~ "TRP",
+                                  fa_log >= config$find_CNV_upper ~ "MUL_GAIN",
                                   TRUE ~ "UND"))
       
       

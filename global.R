@@ -76,6 +76,7 @@ library(shinyjs)
 library(ggtranscript)
 library(rclipboard)
 library(colourpicker)
+library(config)
 #library(colourpicker) ## required for picking annotation color
 # set up local database -------
 
