@@ -2,9 +2,9 @@
 .Rhistory
 .RData
 .Ruserdata
-data/
 docs/
 .gitignore
 rsconnect/
 test.R
 index.R
+mod/mod_findCNV.R

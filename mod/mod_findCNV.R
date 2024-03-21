@@ -1,5 +1,24 @@
 library(GenomicRanges)
-
+# configure parameters
+# SLM segmentation parameters
+slm.omega = 0.3
+slm.FW=0
+slm.eta=0.00001
+# chromsome list
+chromset <- paste0("chr",c(1:22, "X"))
+# gain and loss classification
+gain.seg.mean=c(0.4,3)
+loss.seg.mean=c(-0.8,-5)
+# segmentation length cutoff
+min.num.mark = 10
+# minimum size(bp) of overlap considering a same event
+min.overlap.size = 10000
+# log2 ratio cutoff 
+hetdel.range <- c(log2(1*0.9/2),log2(1*1.1/2))
+nml.range <- c(log2(2*0.9/2),log2(2*1.1/2))
+dup.range <- c(log2(3*0.9/2),log2(3*1.1/2))
+trp.range <- c(log2(4*0.9/2),log2(4*1.1/2))
+multigain=1.175
 
 getmode <- function(v) {
   uniqv <- unique(v)
@@ -11,9 +30,9 @@ getSeg = function(df, idx){
     filter(chr == idx)
   slm = SLMSeg::SLM(
     log2(df$ratio + 0.00001),
-    omega = 0.3,
-    FW = 0,
-    eta = 0.00001
+    omega = slm.omega,
+    FW = slm.FW,
+    eta = slm.eta
   )
   res <- rle(slm[1, ])
   idx <- sapply(seq_along(res$lengths),function(i){
@@ -30,7 +49,7 @@ getSeg = function(df, idx){
 
 getAllSeg <-function(df){
   out = list()
-  for (c in paste0("chr",c(1:22, "X"))){
+  for (c in chromset){
     tmp = getSeg(df,c)
     out = rbind(out, tmp)  
   }
@@ -46,20 +65,20 @@ normalization = function(rd){
 
 get_cnv_all <- function(pr_seg, mo_seg, fa_seg){
   pr_dup <- pr_seg %>% 
-    filter(seg.mean > 0.4 & seg.mean < 3) %>% 
-    filter(num.mark >=10) %>% 
+    filter(seg.mean >= gain.seg.mean[1] & seg.mean <= gain.seg.mean[2]) %>% 
+    filter(num.mark >=min.num.mark ) %>% 
     mutate(type = "gain")
   
   pr_del <- pr_seg %>% 
-    filter(seg.mean < -0.8 & seg.mean > -5) %>% 
-    filter(num.mark >=10) %>% 
+    filter(seg.mean <= loss.seg.mean[1] & seg.mean >= loss.seg.mean[2]) %>% 
+    filter(num.mark >=min.num.mark) %>% 
     mutate(type = "loss")
   
   x <- rbind(pr_dup, pr_del)
   type <- x$type
   x <- x %>% makeGRangesFromDataFrame(keep.extra.columns = T)
   
-  pr_idx <- findOverlaps(x, pr_seg %>% makeGRangesFromDataFrame(keep.extra.columns = T), minoverlap = 10000, select = "last")
+  pr_idx <- findOverlaps(x, pr_seg %>% makeGRangesFromDataFrame(keep.extra.columns = T), minoverlap = min.overlap.size, select = "last")
   pr_log <- pr_seg[pr_idx,]$seg.mean
   
   y <- mo_seg %>% makeGRangesFromDataFrame(keep.extra.columns = T)
@@ -225,25 +244,25 @@ mod_findCNV_Server <- function(id, pr_rd, mo_rd, fa_rd, SegDup_merge, RefSeq_gr,
                fa_log = as.numeric(fa_log),)
       df <- df %>% 
         mutate(pr_lvl = case_when(pr_log <= -1.525 ~ "HOM_DEL", 
-                                  pr_log >= log2(1*0.9/2) & pr_log <= log2(1*1.1/2) ~ "HET_DEL",
-                                  pr_log >= log2(2*0.9/2) & pr_log <= log2(2*1.1/2) ~ "NML",
-                                  pr_log >= log2(3*0.9/2) & pr_log <= log2(3*1.1/2) ~ "DUP",
-                                  pr_log >= log2(4*0.9/2) & pr_log <= log2(4*1.1/2) ~ "TRP",
-                                  pr_log >= 1.175 ~ "MUL_GAIN",
+                                  pr_log >= hetdel.range[1] & pr_log <= hetdel.range[2] ~ "HET_DEL",
+                                  pr_log >= nml.range[1] & pr_log <= nml.range[2] ~ "NML",
+                                  pr_log >= dup.range[1] & pr_log <= dup.range[2] ~ "DUP",
+                                  pr_log >= trp.range[1] & pr_log <= trp.range[2] ~ "TRP",
+                                  pr_log >= multigain ~ "MUL_GAIN",
                                   TRUE ~ "UND"),
                mo_lvl = case_when(mo_log <= -1.525 ~ "HOM_DEL", 
-                                  mo_log >= log2(1*0.9/2) & mo_log <= log2(1*1.1/2) ~ "HET_DEL",
-                                  mo_log >= log2(2*0.9/2) & mo_log <= log2(2*1.1/2) ~ "NML",
-                                  mo_log >= log2(3*0.9/2) & mo_log <= log2(3*1.1/2) ~ "DUP",
-                                  mo_log >= log2(4*0.9/2) & mo_log <= log2(4*1.1/2) ~ "TRP",
-                                  mo_log >= 1.175 ~ "MUL_GAIN",
+                                  mo_log >= hetdel.range[1] & mo_log <= hetdel.range[2] ~ "HET_DEL",
+                                  mo_log >=  nml.range[1] & mo_log <=  nml.range[2] ~ "NML",
+                                  mo_log >= dup.range[1] & mo_log <= dup.range[2] ~ "DUP",
+                                  mo_log >= trp.range[1] & mo_log <= trp.range[2] ~ "TRP",
+                                  mo_log >= multigain~ "MUL_GAIN",
                                   TRUE ~ "UND"),
                fa_lvl = case_when(fa_log <= -1.525 ~ "HOM_DEL", 
-                                  fa_log >= log2(1*0.9/2) & fa_log <= log2(1*1.1/2) ~ "HET_DEL",
-                                  fa_log >= log2(2*0.9/2) & fa_log <= log2(2*1.1/2) ~ "NML",
-                                  fa_log >= log2(3*0.9/2) & fa_log <= log2(3*1.1/2) ~ "DUP",
-                                  fa_log >= log2(4*0.9/2) & fa_log <= log2(4*1.1/2) ~ "TRP",
-                                  fa_log >= 1.175 ~ "MUL_GAIN",
+                                  fa_log >= hetdel.range[1] & fa_log <= hetdel.range[2] ~ "HET_DEL",
+                                  fa_log >= nml.range[1] & fa_log <= nml.range[2] ~ "NML",
+                                  fa_log >= dup.range[1] & fa_log <= dup.range[2] ~ "DUP",
+                                  fa_log >= trp.range[1] & fa_log <= trp.range[2] ~ "TRP",
+                                  fa_log >= multigain ~ "MUL_GAIN",
                                   TRUE ~ "UND"))
       
       
