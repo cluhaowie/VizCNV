@@ -484,34 +484,34 @@ server <- function(input, output,session) {
       names(snpb_cols)[i] <- infromb[i]
     }
     
-    infroma <- df$A_InhFrom %>% 
-      unique()
-    snpa_cols <- vector(length = length(infroma))
-    for (i in 1:length(snpa_cols)){
-      snpa_cols[i] <- df$A_col[which(df$A_InhFrom == infroma[i])[1]]
-      names(snpa_cols)[i] <- infroma[i]
-    }
+    #infroma <- df$A_InhFrom %>% 
+    #  unique()
+    #snpa_cols <- vector(length = length(infroma))
+    #for (i in 1:length(snpa_cols)){
+    #  snpa_cols[i] <- df$A_col[which(df$A_InhFrom == infroma[i])[1]]
+    #  names(snpa_cols)[i] <- infroma[i]
+    #}
     
         
-    snp_a <- ggplot(df, aes(x=start,y=pr_ALT_Freq,col=A_InhFrom))+
-      geom_point(shape=20, size = 1.5)+
-      #scattermore::geom_scattermore(shape=".",pixels=c(1024,1024))+
-      geom_point(data = subset(df, likelyDN %in%c("TRUE")),size = 2,shape=8,color="red")+
-      scale_fill_manual("LikelyDN",limits=c("dnSNV"),values = "red")+
-      xlab(xlabel)+
-      scale_snp+
-      style_snp+
-      scale_colour_manual(values = snpa_cols)+
-      guides(color = guide_legend(override.aes = list(size = 4)))+
-      scale_x_continuous(labels = scales::label_number())
-    
-    btnVala <- mod_checkbox_Server("Baf-A_allele")
-    ranges <- mod_plot_switch_Server("Baf-A_allele", btnVala$box_state, snp_a, ranges, dnCNV_table,hmzCNV_table)
-    
+    # snp_a <- ggplot(df, aes(x=start,y=pr_ALT_Freq,col=A_InhFrom))+
+    #   geom_point(shape=20, size = 1.5)+
+    #   #scattermore::geom_scattermore(shape=".",pixels=c(1024,1024))+
+    #   geom_point(data = subset(df, likelyDN %in%c("TRUE")),size = 2,shape=8,color="red")+
+    #   scale_fill_manual("LikelyDN",limits=c("dnSNV"),values = "red")+
+    #   xlab(xlabel)+
+    #   scale_snp+
+    #   style_snp+
+    #   scale_colour_manual(values = snpa_cols)+
+    #   guides(color = guide_legend(override.aes = list(size = 4)))+
+    #   scale_x_continuous(labels = scales::label_number())
+    # 
+    # btnVala <- mod_checkbox_Server("Baf-A_allele")
+    # ranges <- mod_plot_switch_Server("Baf-A_allele", btnVala$box_state, snp_a, ranges, dnCNV_table,hmzCNV_table)
+    # 
     snp_b <- ggplot(df, aes(x=start,y=pr_ALT_Freq,col=B_InhFrom))+
-     # geom_point(shape=20, size = 1.5)+
+      geom_point(shape=20, size = 1.5)+
      # shape = . will significant improve the plot speed
-      geom_point(shape=".",alpha=1)+
+      #geom_point(shape=".",alpha=1)+
       geom_point(data = subset(df, likelyDN %in%c("TRUE")),size = 2,shape=8,color="red")+
       geom_line(data=pat_out,aes(x=pos,y=seg.mean),col="#39918C",size=1.5)+
       geom_line(data=mat_out,aes(x=pos,y=seg.mean),col="#E69F00",size=1.5)+

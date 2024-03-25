@@ -108,7 +108,7 @@ ReadGVCF <- function(path_to_gVCF,ref_genome=ref_genome,param = param,target_spa
   GT <- as.data.table(GT)
   setnames(GT,colnames(GT),c("index","P1","P2"))
   GT.anno <- GT %>% 
-    mutate(B_InhFrom=case_when(index %in% G3 & P1 %in% G1 & P2 %in% G2 ~ 1, 
+    mutate(B_Index=case_when(index %in% G3 & P1 %in% G1 & P2 %in% G2 ~ 1, 
                                index %in% G3 & P1 %in% G1 & P2 %in% G3 ~ 2, 
                                index %in% G3 & P1 %in% G3 & P2 %in% G2 ~ 3,
                                index %in% G2 & P1 %in% G1 & P2 %in% G2 ~ 4,
@@ -129,11 +129,16 @@ ReadGVCF <- function(path_to_gVCF,ref_genome=ref_genome,param = param,target_spa
                                index %in% G3 & P1 %in% G1 & P2 %in% G1 ~ 19,
                                index %in% G3 & P1 %in% G2 & P2 %in% G2 ~ 20,
                                TRUE ~ 21)) %>% 
-    mutate(B_col = case_when(B_InhFrom %in% c(6:10) ~ "#E69F00",
-                             B_InhFrom %in% c(1:5) ~ "#39918C",
-                             B_InhFrom %in% c(19:20) ~ "red",
-                             B_InhFrom %in% c(12:18) ~ "black",
-                             TRUE ~ "#999999"))
+    mutate(B_col = case_when(B_Index %in% c(6:10) ~ "#E69F00",
+                             B_Index %in% c(1:5) ~ "#39918C",
+                             B_Index %in% c(19:20) ~ "red",
+                             B_Index %in% c(12:18) ~ "black",
+                             TRUE ~ "#999999"))%>%
+    mutate(B_InhFrom=case_when(B_Index %in% c(6:10) ~ P1_ID,
+                               B_Index %in% c(1:5) ~ P2_ID,
+                               B_Index %in% c(19:20) ~ "ME",
+                               B_Index %in% c(12:18) ~ "AOH_signal",
+                               TRUE ~ "Notphased"))
   
   AD <- as.data.table(AD)
   setnames(AD,colnames(AD),c("index","P1","P2"))
@@ -157,8 +162,8 @@ ReadGVCF <- function(path_to_gVCF,ref_genome=ref_genome,param = param,target_spa
   
   AD.anno <- AD.anno[,c("pr_count","p1_count","p2_count","pr_ALT_Freq","pr_absBAF","likelyDN")]
   merged <- cbind(GT.anno ,AD.anno)%>%
-    mutate(P1_phased_BAF=case_when(B_InhFrom %in% c(6:10) ~ pr_ALT_Freq),
-           P2_phased_BAF=case_when(B_InhFrom %in% c(1:5) ~ pr_ALT_Freq))
+    mutate(P1_phased_BAF=case_when(B_Index %in% c(6:10) ~ pr_ALT_Freq),
+           P2_phased_BAF=case_when(B_Index %in% c(1:5) ~ pr_ALT_Freq))
   
   setnames(merged,c("index","P1","P2"),c(PR_ID,P1_ID,P2_ID))
   mcols(vcf.gr) <- merged
