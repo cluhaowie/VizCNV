@@ -41,7 +41,7 @@ ui <- dashboardPage(
           fluidRow(
             column(width=8,
                    box(title="File(s) upload",status="primary",width = 12,solidHeader = T,collapsible = T,
-                       radioButtons(inputId = "ref",label = h4("Reference Genome Build"),choices = list("hg19"="hg19","hg38"="hg38","T2T"="T2T"),inline = T,selected = "hg19"),
+                       radioButtons(inputId = "ref",label = "Reference Genome Build",choices = list("hg19"="hg19","hg38"="hg38","T2T"="T2T"),inline = T,selected = "hg19"),
                        h5("Upload or select proband read depth file",dashboardBadge("required", color = "primary")),
                        mod_rd_upload_UI("pr_rd"),
                        h5("Upload or select mother read depth file",dashboardBadge("optional", color = "secondary")),
@@ -198,6 +198,7 @@ ui <- dashboardPage(
                                  HTML("<b>Basic Plot Options: </b>"),
                                  mod_checkbox_UI("RD-static"),
                                  mod_checkbox_UI("RD-dynamic"),
+                                 numericInput("target_spacing", "Minimum distance(bp) between adjacent SNV(0-10kb):", 150, min = 0, max = 10000),
                                  mod_checkbox_UI("Baf-B_allele"),
                                  mod_checkbox_UI("Baf-A_allele", value = F),
                                  HTML("<b>Annotation Track Options:</b>"),

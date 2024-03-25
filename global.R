@@ -22,7 +22,8 @@ options(shiny.autoreload=TRUE)
 list.of.packages <- c("dplyr", "data.table", "shiny", "shinydashboard", "shinyFeedback",
                       "tippy","DT","ggplot2","shinyWidgets","shinyFiles","waiter",
                       "cowplot","devtools","BiocManager","arrow","colourpicker", "shinyjs","rclipboard",
-                      "shinydashboardPlus","bs4Dash", "colourpicker") 
+                      "shinydashboardPlus","bs4Dash", "colourpicker","tidyr") 
+
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
 if(length(new.packages)) install.packages(new.packages)
 
@@ -76,18 +77,16 @@ library(shinyjs)
 library(ggtranscript)
 library(rclipboard)
 library(colourpicker)
+library(tidyr)
+
 #library(colourpicker) ## required for picking annotation color
 # set up local database -------
 
-#sqlitePath="data/database.sqlite"
-# genePath_hg38 <- "./data/MANE.GRCh38.v1.0.refseq.gz.parquet"
 maxSize_anno <- 20e6 # max size to show the transcripts
 maxtranscript <- 30 # max number of transcript to show
 geneExtend <- 1e5 # window size extend to 100kb
-
-# genebase <- arrow::read_parquet(genePath_hg38,as_data_frame = F)
-#rmskbase <- arrow::read_parquet(rmskPath_hg38,as_data_frame = F)
-
+minseg <- 50000 # min size to show allele specific Baf 50kb
+minsegmean <- 0.97 # 0.47+0.5
 
 saveData <- function(data,table) {
   # Connect to the database
@@ -147,17 +146,6 @@ scanTabixDataFrame <- function(tabix_file, param, format, ...){
   }, ...)
   return(df_list)
 }
-
-
-
-#ref_genome="GRCh38"
-
-#hg38.info <- seqinfo(BSgenome.Hsapiens.UCSC.hg38::Hsapiens)%>%as.data.frame()
-#hg38.info <- hg38.info %>% mutate(chrom=rownames(hg38.info))
-#hg38.info <- data.table::fread("hg38.info.txt")
-#write.table(hg38.info,file = "hg38.info.txt",quote = F,row.names = F,col.names = T)
-#hg19.info <- data.table::fread("hg19.info.txt")
-#hg19.info <- hg19.info %>% mutate(chrom=rownames(hg19.info))
 
 
 ReadGVCF <- function(path_to_gVCF,ref_genome=ref_genome,param = param){
