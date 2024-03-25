@@ -1,0 +1,4 @@
+default:
+  find_CNV_upper: 1.175
+  find_CNV_threshold: 0.1
+  find_CNV_lower: -1.525
