@@ -322,8 +322,8 @@ anno_table_Server <- function(id, df, ranges, chrn) {
       output$table <- renderDataTable({
         df_table()
       },extensions=c("Responsive","Buttons"),
-      server = T,
-      editable = TRUE,
+      server = F, # False to be able to download everything in the region
+      editable = F,
       filter = list(position = 'top', clear = T),
       options = list(dom = 'Bfrtip',buttons = c('copy','csv', 'excel')))
       
