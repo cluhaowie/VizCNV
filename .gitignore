@@ -2,6 +2,9 @@
 .Rhistory
 .RData
 .Ruserdata
+data/
+Analysis/
+anno.Rmd
 docs/
 .gitignore
 rsconnect/
