@@ -64,6 +64,12 @@ server <- function(input, output,session) {
   
   ## dynamic UI -------------
   
+  output$blt_baf_seg <- renderUI({
+    if (input$baf_seg)
+      numericInput("target_spacing", "Minimum distance between adjacent SNV(<10kbp):", 150, min = 0, max = 10000)
+  })
+  
+  
   output$blt_dnSNV_ui <- shiny::renderUI({
     if(length(values$snp_gvcf_file_path)!=0){
       shiny::tagList(
@@ -514,8 +520,8 @@ server <- function(input, output,session) {
      # shape = . will significant improve the plot speed
       #geom_point(shape=".",alpha=1)+
       geom_point(data = subset(df, likelyDN %in%c("TRUE")),size = 2,shape=8,color="red")+
-      geom_line(data=pat_out,aes(x=pos,y=seg.mean),col="#39918C",size=1.5)+
-      geom_line(data=mat_out,aes(x=pos,y=seg.mean),col="#E69F00",size=1.5)+
+      # geom_line(data=pat_out,aes(x=pos,y=seg.mean),col="#39918C",size=1.5)+
+      # geom_line(data=mat_out,aes(x=pos,y=seg.mean),col="#E69F00",size=1.5)+
       geom_segment(data=snp_out,aes(x=loc.start,xend=loc.end,y=seg.mean,yend=seg.mean),col="purple",size=1.5)+
       scale_fill_manual("LikelyDN",limits=c("dnSNV"),values = "red")+
       xlab(xlabel)+
@@ -524,6 +530,12 @@ server <- function(input, output,session) {
       scale_colour_manual(values = snpb_cols)+
       guides(color = guide_legend(override.aes = list(size = 4)))+
       scale_x_continuous(labels = scales::label_number())
+    
+    if (input$baf_seg){
+      snp_b <- snp_b +
+        geom_line(data=pat_out,aes(x=pos,y=seg.mean),col="#39918C",size=1.5)+
+        geom_line(data=mat_out,aes(x=pos,y=seg.mean),col="#E69F00",size=1.5)
+    }
     
     removeNotification(noti_id)
     btnValb <- mod_checkbox_Server("Baf-B_allele")

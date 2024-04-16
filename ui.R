@@ -170,10 +170,16 @@ ui <- dashboardPage(
                                tippy::tippy_this(elementId = "info_include",tooltip = "Choose to show segment from either or both parents",placement = "right")
                              ),
                              uiOutput("blt_dnSNV_ui")),
-                      column(2, p(HTML("<b>Mask options</b>")),
+                      column(2, p(HTML("<b>Other options</b>")),
                              checkboxInput(inputId = "mask_option",
                                            label = "remove gaps in ref genome",
-                                           value = T))
+                                           value = T),
+                             checkboxInput(inputId = "baf_seg",
+                                           label = "show Baf plot segments", 
+                                           value = T),
+                             uiOutput("blt_baf_seg")
+                             
+                      )
                       ),
                     fluidRow(
                       p(HTML("<b>Step1:</b>")),
@@ -198,7 +204,6 @@ ui <- dashboardPage(
                                  HTML("<b>Basic Plot Options: </b>"),
                                  mod_checkbox_UI("RD-static"),
                                  mod_checkbox_UI("RD-dynamic"),
-                                 numericInput("target_spacing", "Minimum distance(bp) between adjacent SNV(0-10kb):", 150, min = 0, max = 10000),
                                  mod_checkbox_UI("Baf-B_allele"),
                                  mod_checkbox_UI("Baf-A_allele", value = F),
                                  HTML("<b>Annotation Track Options:</b>"),
