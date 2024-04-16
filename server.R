@@ -522,7 +522,6 @@ server <- function(input, output,session) {
       geom_point(data = subset(df, likelyDN %in%c("TRUE")),size = 2,shape=8,color="red")+
       # geom_line(data=pat_out,aes(x=pos,y=seg.mean),col="#39918C",size=1.5)+
       # geom_line(data=mat_out,aes(x=pos,y=seg.mean),col="#E69F00",size=1.5)+
-      geom_segment(data=snp_out,aes(x=loc.start,xend=loc.end,y=seg.mean,yend=seg.mean),col="purple",size=1.5)+
       scale_fill_manual("LikelyDN",limits=c("dnSNV"),values = "red")+
       xlab(xlabel)+
       scale_snp+
@@ -533,6 +532,7 @@ server <- function(input, output,session) {
     
     if (input$baf_seg){
       snp_b <- snp_b +
+        geom_segment(data=snp_out,aes(x=loc.start,xend=loc.end,y=seg.mean,yend=seg.mean),col="purple",size=1.5)+
         geom_line(data=pat_out,aes(x=pos,y=seg.mean),col="#39918C",size=1.5)+
         geom_line(data=mat_out,aes(x=pos,y=seg.mean),col="#E69F00",size=1.5)
     }
