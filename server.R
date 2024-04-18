@@ -889,10 +889,10 @@ server <- function(input, output,session) {
           p1_file <- "NCBI_RefSeq_hg19_clean.bed.parquet"
         }
         RefSeq <- read_parquet(paste0(path,p1_file))
-        search <- as.character(str[[1]])
+        search <- toupper(as.character(str[[1]]))
         found <- RefSeq %>% 
           filter(seqname == input$chr) %>% 
-          filter(grepl(search, gene_id, ignore.case = T))
+          filter(gene_id == search)
         if (nrow(found) != 0){
           ranges$x <- c(as.numeric(min(found$start)-geneExtend),
                         as.numeric(max(found$end)+geneExtend))
