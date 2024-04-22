@@ -471,13 +471,11 @@ server <- function(input, output,session) {
       mutate(len=round(as.numeric(loc.end)-as.numeric(loc.start),0),
              loc.end=as.numeric(loc.end),
              loc.start=as.numeric(loc.start))%>%
-      filter(len>minseg)%>%
       pivot_longer(cols = c("loc.start","loc.end"),names_to = "source",values_to = "pos")
     pat_out <- as.data.table(patseg.obj$output)%>%
       mutate(len=round(as.numeric(loc.end)-as.numeric(loc.start),0),
              loc.end=as.numeric(loc.end),
              loc.start=as.numeric(loc.start))%>%
-      filter(len>minseg)%>%
       pivot_longer(cols = c("loc.start","loc.end"),names_to = "source",values_to = "pos")
     
     cols <- plots$SNPcols
