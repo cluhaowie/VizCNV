@@ -464,7 +464,7 @@ server <- function(input, output,session) {
       mutate(len=round(as.numeric(loc.end)-as.numeric(loc.start),0),
              loc.end=as.numeric(loc.end),
              loc.start=as.numeric(loc.start),
-             seg.mean=seg.mean+0.5)%>%
+             seg.mean=seg.mean+0.6)%>%
       filter(len>minseg,seg.mean>minsegmean)
     
     mat_out <- as.data.table(matseg.obj$output)%>%

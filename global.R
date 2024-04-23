@@ -84,7 +84,7 @@ maxSize_anno <- 20e6 # max size to show the transcripts
 maxtranscript <- 30 # max number of transcript to show
 geneExtend <- 1e5 # window size extend to 100kb
 minseg <- 50000 # min size to show allele specific Baf 50kb
-minsegmean <- 0.97 # 0.47+0.5
+minsegmean <- 1.07 # 0.47+0.6
 
 saveData <- function(data,table) {
   # Connect to the database
