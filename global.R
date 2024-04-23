@@ -84,7 +84,7 @@ maxSize_anno <- 20e6 # max size to show the transcripts
 maxtranscript <- 30 # max number of transcript to show
 geneExtend <- 1e5 # window size extend to 100kb
 minseg <- 50000 # min size to show allele specific Baf 50kb
-minsegmean <- 0.97 # 0.47+0.5
+minsegmean <- 1.02 # 0.47+0.55
 
 saveData <- function(data,table) {
   # Connect to the database
@@ -208,7 +208,7 @@ scale_rd <- scale_y_continuous(name="Log2 Ratio",
                                  round(log2(6/2),2)
                                ))
 scale_snp <- scale_y_continuous(name="B-allele frequency",
-                                limits = c(-0.05, 1.05),
+                                limits = c(-0.05, 1.1),
                                 breaks = c(0,
                                            round(1/2,2),
                                            round(1/3,2),
