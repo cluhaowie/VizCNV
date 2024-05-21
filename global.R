@@ -19,7 +19,7 @@ options(shiny.autoreload=TRUE)
 list.of.packages <- c("dplyr", "data.table", "shiny", "shinydashboard", "shinyFeedback",
                       "tippy","DT","ggplot2","shinyWidgets","shinyFiles","waiter",
                       "cowplot","devtools","BiocManager","arrow","colourpicker", "shinyjs","rclipboard",
-                      "shinydashboardPlus","bs4Dash", "colourpicker","tidyr") 
+                      "shinydashboardPlus","bs4Dash", "colourpicker","tidyr","config") 
 
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
 if(length(new.packages)) install.packages(new.packages)
