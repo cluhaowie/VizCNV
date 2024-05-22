@@ -75,16 +75,15 @@ library(ggtranscript)
 library(rclipboard)
 library(colourpicker)
 library(tidyr)
-library(config)
 
-#library(colourpicker) ## required for picking annotation color
+
 # set up local database -------
-
-maxSize_anno <- 20e6 # max size to show the transcripts
-maxtranscript <- 30 # max number of transcript to show
-geneExtend <- 1e5 # window size extend to 100kb
-minseg <- 50000 # min size to show allele specific Baf 50kb
-minsegmean <- 1.02 # 0.47+0.55
+config <- config::get()
+maxSize_anno <- config$maxSize_anno 
+maxtranscript <- config$maxtranscript 
+geneExtend <- config$geneExtend 
+minseg <- config$minseg 
+minsegmean <- config$minsegmean
 
 
 saveData <- function(data,table) {
