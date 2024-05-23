@@ -119,31 +119,31 @@ server <- function(input, output,session) {
       # reserve the blacklist for now Mar1, 2024
       #blacklist <- data.table::fread("GRCh38_unified_blacklist.bed.gz")%>%
       #  regioneR::toGRanges()
-      values$ref_info <- data.table::fread("hg38.info.txt")
+      values$ref_info <- data.table::fread("data/hg38.info.txt")
       values$gaps <- data.table::fread("data/hg38_gaps.bed")%>%
         makeGRangesFromDataFrame(keep.extra.columns = TRUE)
-      values$p1_file <-  "hg38_MANE.v1.0.refseq.parquet"
+      values$p1_file <-  "data/hg38_MANE.v1.0.refseq.parquet"
       values$p2_file <-  NULL
-      values$p3_file <-  "hg38_ucsc_sugdups.parquet"
-      values$p4_file <-  "OMIM_gene2_hg38_MANE_all.bed"
+      values$p3_file <-  "data/hg38_ucsc_sugdups.parquet"
+      values$p4_file <-  "data/OMIM_gene2_hg38_MANE_all.bed"
       values$p5_file <-  NULL
-      values$p6_file <-  "hg38_rmsk.parquet"
-      values$SegDup_merge <- "SegDup_hg38_UCSC_sorted_merged_1k.bed"
+      values$p6_file <-  "data/hg38_rmsk.parquet"
+      values$SegDup_merge <- "data/SegDup_hg38_UCSC_sorted_merged_1k.bed"
     }else if(input$ref=="hg19"){
      # blacklist <- data.table::fread("ENCFF001TDO.bed.gz")%>%
      #   regioneR::toGRanges()
-      values$ref_info <- data.table::fread("hg19.info.txt")
+      values$ref_info <- data.table::fread("data/hg19.info.txt")
       values$gaps <- data.table::fread("data/hg19_gaps.bed")%>%
         makeGRangesFromDataFrame(keep.extra.columns = TRUE)
-      values$p1_file <-  "NCBI_RefSeq_hg19_clean.bed.parquet"
-      values$p2_file <-  "Claudia_hg19_MergedInvDirRpts_sorted.bed"
-      values$p3_file <-  "hg19_ucsc_sugdups.parquet"
-      values$p4_file <-  "OMIM_gene2_hg19_UCSC_all.bed"
-      values$p5_file <-  "gnomAD_allSV_hg19_UCSC.bed"
-      values$p6_file <-  "hg19_rmsk.parquet"
-      values$SegDup_merge <- "SegDup_hg19_UCSC_no_PAR_merged_1k.bed"
+      values$p1_file <-  "data/NCBI_RefSeq_hg19_clean.bed.parquet"
+      values$p2_file <-  "data/Claudia_hg19_MergedInvDirRpts_sorted.bed"
+      values$p3_file <-  "data/hg19_ucsc_sugdups.parquet"
+      values$p4_file <-  "data/OMIM_gene2_hg19_UCSC_all.bed"
+      values$p5_file <-  "data/gnomAD_allSV_hg19_UCSC.bed"
+      values$p6_file <-  "data/hg19_rmsk.parquet"
+      values$SegDup_merge <- "data/SegDup_hg19_UCSC_no_PAR_merged_1k.bed"
     }else if(input$ref=="T2T"){
-      values$ref_info <- data.table::fread("CHM13v2.0.info.txt")
+      values$ref_info <- data.table::fread("data/CHM13v2.0.info.txt")
       values$p1_file <-  NULL
       values$p2_file <-  NULL
       values$p3_file <-  NULL
@@ -543,7 +543,7 @@ server <- function(input, output,session) {
   
   ##Anno tracks-----
   
-  ## swtich chr of sv table 
+  ## switch chr of sv table 
   observeEvent(input$btn_filter,{
     chr <- input$chr
     if(nrow(values$pr_sv) == 0){
@@ -623,7 +623,7 @@ server <- function(input, output,session) {
     }
     
     if(!is.null(values$p1_file)){
-      RefSeq_data <- read_parquet(paste0(path,values$p1_file),as_data_frame = F)
+      RefSeq_data <- read_parquet(values$p1_file,as_data_frame = F)
       RefSeq <- RefSeq_data %>% 
         filter(seqname ==  chrn,type=="exon") %>% 
         collect() %>%
@@ -648,7 +648,7 @@ server <- function(input, output,session) {
       anno_table_Server("RefSeq", RefSeq, ranges, chrn)
     }
     if(!is.null(values$p2_file)){
-      IDR<-data.table::fread(paste0(path, values$p2_file)) %>% 
+      IDR<-data.table::fread(values$p2_file) %>% 
         dplyr::select(V1,V2,V3,V4,V5,V6) %>% 
         dplyr::rename("chrom" = V1, "start" = V2, "end" = V3, "name" = V4, "score" = V5, "strand" = V6) %>%
         dplyr::filter(chrom == chrn)
@@ -666,7 +666,7 @@ server <- function(input, output,session) {
       anno_table_Server("IDR", IDR, ranges, chrn)
     }
     if(!is.null(values$p3_file)){
-      SegDup_data <- arrow::read_parquet(paste0(path, values$p3_file),as_data_frame = F)
+      SegDup_data <- arrow::read_parquet( values$p3_file,as_data_frame = F)
       SegDup <- SegDup_data %>%
         dplyr::select(all_of(segdups.keep.col))%>%
         filter(chrom ==chrn)%>%
@@ -691,7 +691,7 @@ server <- function(input, output,session) {
       anno_table_Server("SegDup", SegDup, ranges, chrn)
     }
     if(!is.null(values$p4_file)){
-      OMIM <- data.table::fread(paste0(path, values$p4_file))
+      OMIM <- data.table::fread(values$p4_file)
       OMIM <- OMIM %>%
         filter(chrom == chrn) %>%
         mutate_at(vars(pheno_key), as.factor)
@@ -714,7 +714,7 @@ server <- function(input, output,session) {
       anno_table_Server("OMIM", OMIM, ranges, chrn)
     }
     if(!is.null(values$p5_file)){
-      gnomAD <- data.table::fread(paste0(path, values$p5_file))
+      gnomAD <- data.table::fread(values$p5_file)
       gnomAD <- gnomAD %>%
         dplyr::rename("chrom" = "#chrom", "start" = "chromStart", "end" = "chromEnd") %>%
         filter(chrom == chrn)
@@ -734,7 +734,7 @@ server <- function(input, output,session) {
       
     }
     if(!is.null(values$p6_file)){
-      rmsk_data <- read_parquet(paste0(path, values$p6_file),as_data_frame = F)
+      rmsk_data <- read_parquet(values$p6_file,as_data_frame = F)
       rmsk <- rmsk_data %>% 
         filter(chrom ==  chrn) %>% 
         collect()%>%
@@ -781,24 +781,7 @@ server <- function(input, output,session) {
     removeNotification(id)
   })
   
-  # ## dnCNV table
-  # observeEvent(input$btn_dnCNV, {
-  #   req(nrow(values$pr_rd)!=0)
-  #   req(nrow(values$m_rd)!=0)
-  #   req(nrow(values$f_rd)!=0)
-  #   dnCNV_table$t <- mod_dnCNV_Server("dnCNV",plots$pr_seg, plots$m_seg, plots$f_seg)
-  # })
-  # 
-  # ## hmzCNV table
-  # observeEvent(input$btn_hmzCNV, {
-  #   req(nrow(values$pr_rd)!=0)
-  #   req(nrow(values$m_rd)!=0)
-  #   req(nrow(values$f_rd)!=0)
-  #   hmzCNV_table$t <- mod_hmzcnv_Server("hmzCNV",plots$pr_seg,plots$baf,plots$m_seg, plots$f_seg)
-  # })
-  # 
-  
-  
+
   ## Misc functionalities----
   ## find CNV table
   observeEvent(input$btn_findCNV, {
