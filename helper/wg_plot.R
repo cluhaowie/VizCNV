@@ -172,6 +172,7 @@ wg_seg2plot <- function(seg_data,ref=NULL){
     scale_size_continuous(range = c(0.5,3))+
     labs(x = ref)+
     scale_x_continuous(label = axis_set$chrom, breaks = axis_set$center)+
+    scale_color_manual(values = SKYCOLOR)+
     coord_cartesian(expand = F)
   return(wg)
 }

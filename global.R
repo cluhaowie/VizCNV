@@ -245,6 +245,14 @@ scale_genes <- scale_y_continuous(labels = scales::label_number(accuracy = 0.01)
 
 SNPCOLOR2 <- c("#39918C","#E69F00")
 CNVCOLOR6 <- c("#00468b","#00468b","#8b0000","#8b0000","#008b46","#008b46")
+
+SKYCOLOR <- c("chr1"="#fdfa01","chr2"="#a70106","chr3"="#beafc6","chr4"="#06fafb",
+              "chr5"="#d75000","chr6"="#d60e51","chr7"="#fca4a3","chr8"="#fa6104",
+              "chr9"="#A9A9A9","chr10"="#038201","chr11"="#05a5ff","chr12"="#fd01fe",
+              "chr13"="#fd0100","chr14"="#fe5579","chr15"="#87d4a7","chr16"="#fa9308",
+              "chr17"="#0154d1","chr18"="#e60052","chr19"="#52fc56","chr20"="#0325ff",
+              "chr21"="#fefda7","chr22"="#fd8afc","chrX"="#004800","chrY"="#01b600")
+
 names(CNVCOLOR6) <- c("<TRP>","TRP","<DUP>","DUP","<DEL>","DEL")
 scale_SVType <- scale_fill_manual(CNVCOLOR6)
 chrom_id <- c(1:22,"X","Y") ## incorporate chrY
