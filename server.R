@@ -823,8 +823,10 @@ server <- function(input, output,session) {
       OMIM_label <- OMIM %>%
         filter(pheno_key  %in% c("3","4"))
     }
+    w$show()
     findCNV_table$t <- mod_findCNV_Server("findCNV",values$pr_rd, values$m_rd, values$f_rd, SegDup_merge, RefSeq_gr, OMIM)
     updateTabItems(session, "tabs", "table")
+    w$hide()
   })
   
   ## Show current ranges
