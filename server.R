@@ -790,7 +790,7 @@ server <- function(input, output,session) {
     req(nrow(values$f_rd)!=0)
     path <- "./data/"
     if(!is.null(values$SegDup_merge)){
-      SegDup_merge <- data.table::fread(paste0(path, values$SegDup_merge))
+      SegDup_merge <- data.table::fread(values$SegDup_merge)
       names(SegDup_merge) <- c("chrom", "start", "end")
     }
     # if(!is.null(values$p1_file)){
@@ -809,7 +809,7 @@ server <- function(input, output,session) {
       
     # }
     if(!is.null(values$p4_file)){
-      OMIM <- data.table::fread(paste0(path, values$p4_file))
+      OMIM <- data.table::fread(values$p4_file)
       OMIM <- OMIM %>%
         mutate_at(vars(pheno_key), as.factor)
       OMIM <- OMIM %>%
