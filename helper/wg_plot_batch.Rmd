@@ -85,7 +85,6 @@ getAllSeg <-function(df){
 
 normalization = function(rd){
   out <- rd %>%
-    dplyr::group_by(chr) %>%
     dplyr::mutate(ratio=coverage/median(coverage+0.00001))
   return(out)
 }
