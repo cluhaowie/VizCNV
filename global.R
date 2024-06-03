@@ -146,18 +146,69 @@ scanTabixDataFrame <- function(tabix_file, param, format, ...){
 }
 
 
-normalization_method <- function(df, chr, norm_option = "chr_med"){
-  if (norm_option == "chr_med"){
-    df_chr <- df%>%filter(V1 == chr) ## this is needed for chrY normalization
-    tmp_median <- df_chr$V4[df_chr$V4!=0]
-    tmp <- df%>%
-      filter(V1 == chr)%>%
-      mutate(ratio=V4/median(tmp_median+0.00001))
-  } else if (norm_option == "wg_med"){
-    tmp <- df%>%
-      mutate(ratio=V4/median(V4+0.00001)) %>% 
+normalization_method <- function(df, chr, norm_option = "chr_med") {
+  # Validate inputs
+  if (!is.data.frame(df)) {
+    stop("Input 'df' must be a dataframe.")
+  }
+  
+  if (!is.character(chr) || length(chr) != 1) {
+    stop("Input 'chr' must be a single character string.")
+  }
+  
+  if (!norm_option %in% c("chr_med", "wg_med", "wes_best_ref")) {
+    stop("Invalid 'norm_option'. Choose from 'chr_med', 'wg_med', or 'wes_best_ref'.")
+  }
+  
+  # Check for necessary columns in the dataframe
+  required_columns <- c("V1", "V4")
+  if (!all(required_columns %in% names(df))) {
+    stop("Dataframe must contain columns 'V1' and 'V4'.")
+  }
+  
+  if (norm_option == "wes_best_ref" && !"V5" %in% names(df)) {
+    stop("Dataframe must contain column 'V5' for 'wes_best_ref' normalization option.")
+  }
+  
+  # Perform normalization based on the selected option
+  if (norm_option == "chr_med") {
+    # Filter the dataframe for the specified chromosome
+    df_chr <- df %>% filter(V1 == chr)
+    
+    # Handle case where there are no non-zero V4 values
+    if (sum(df_chr$V4 != 0) == 0) {
+      stop("No non-zero values in column 'V4' for the specified chromosome.")
+    }
+    
+    # Calculate the median of the non-zero V4 values
+    tmp_median <- df_chr$V4[df_chr$V4 != 0]
+    
+    # Apply normalization and filter for the specified chromosome
+    tmp <- df %>%
+      filter(V1 == chr) %>%
+      mutate(ratio = V4 / median(tmp_median + 0.00001))
+    
+  } else if (norm_option == "wg_med") {
+    # Handle case where there are no non-zero V4 values
+    if (sum(df$V4 != 0) == 0) {
+      stop("No non-zero values in column 'V4' in the dataframe.")
+    }
+    
+    # Apply whole genome median normalization and filter for the specified chromosome
+    tmp <- df %>%
+      mutate(ratio = V4 / median(V4 + 0.00001)) %>%
+      filter(V1 == chr)
+    
+  } else if (norm_option == "wes_best_ref") {
+    # Assuming the read depth file has been normalized with best reference approach
+    # e.g., output file from HMZDupfinder
+    # Use V5 as the normalization ratio and filter for the specified chromosome
+    tmp <- df %>%
+      mutate(ratio = V5) %>%
       filter(V1 == chr)
   }
+  
+  # Return the normalized dataframe
   return(tmp)
 }
 

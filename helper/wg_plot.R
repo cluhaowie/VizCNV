@@ -31,7 +31,7 @@
 ## replace getSeg with SegNormRD function which handles chrY segmentation
 SegNormRD <- function(df, id, seg.method = "cbs") {
   # make sure df only has one chr in V1
-  if(mad(df$ratio)==0){
+  if(mad(df$ratio,na.rm = TRUE)==0){
     res <- data.table(ID=id,chrom=unique(df$V1),
                       loc.start=min(df$V2),
                       loc.end=max(df$V3),
@@ -80,6 +80,40 @@ SegNormRD <- function(df, id, seg.method = "cbs") {
     return(res)
   }
   
+  if (seg.method == "slm_wes") {
+    print("segment with SLM for WES data")
+    logratio <- log2(df$ratio + 0.001)
+    logratio[is.na(logratio)] <- 0
+    slm <-
+      SLMSeg::HSLM(
+        logratio,
+        pos_data = (df$V2+df$V3)/2,
+        omega = 0.7,
+        FW = 0,
+        eta = 1e-5,
+        stepeta=1000 
+      )
+    res <- rle(slm[1, ])
+    idx <- sapply(seq_along(res$lengths),function(i){
+      if(i==1){return(1)}
+      start.idx=1+sum(res$lengths[1:(i-1)])
+      return(start.idx)
+    })
+    chr=df$V1[idx]
+    start=df$V2[idx]
+    end=c(df$V2[c(idx[-1],end(df$V2)[1])])
+    mean_ztpm <- sapply(seq_along(res$lengths),
+                        function(i){
+                          if(i==1){
+                            return(mean(df$V4[1:res$lengths[i]]))
+                          }
+                          z <- df$V4[(1+sum(res$lengths[1:(i-1)])):(sum(res$lengths[1:i]))]
+                          return(mean(z))
+                        })
+    res <- data.table(ID=id,chrom=chr,loc.start=start,loc.end=end,num.mark=res$lengths,seg.mean=res$values,ztpm.mean=mean_ztpm)
+    print("done")
+    return(res)
+  }
 }
 
 
@@ -118,9 +152,7 @@ SegNormRD <- function(df, id, seg.method = "cbs") {
 
 
 
-wg_seg2plot <- function(seg_data,ref=NULL){
-  min.num.mark=100
-  bin.size=1000 ## default 1000 bp bin size
+wg_seg2plot <- function(seg_data,ref=NULL,min.num.mark=100){
   del.log2width <- 0.1
   dup.log2width <- 0.15
   del.range <- c(log2(1*(1-del.log2width )/2),log2(1*(1+del.log2width )/2))
@@ -141,7 +173,7 @@ wg_seg2plot <- function(seg_data,ref=NULL){
     inner_join(temp, by = "chrom") %>% 
     mutate(end_cum = loc_add + loc.end) 
   seg_data <- seg_data %>% 
-    mutate(start_cum = end_cum - num.mark*bin.size)
+    mutate(start_cum = loc.start + loc_add)
   axis_set <- seg_data %>% 
     group_by(chrom) %>% 
     summarize(center = mean(end_cum),end=max(end_cum)) %>% 

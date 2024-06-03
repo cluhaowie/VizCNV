@@ -42,6 +42,7 @@ ui <- dashboardPage(
             column(width=8,
                    box(title="File(s) upload",status="primary",width = 12,solidHeader = T,collapsible = T,
                        radioButtons(inputId = "ref",label = "Reference Genome Build",choices = list("hg19"="hg19","hg38"="hg38","T2T"="T2T"),inline = T,selected = "hg19"),
+                       radioButtons(inputId = "program",label = "Experiment",choices = list("WES"="WES","sr-WGS"="WGS"),inline = T,selected = "WGS"),
                        h5("Upload or select proband read depth file",dashboardBadge("required", color = "primary")),
                        mod_rd_upload_UI("pr_rd"),
                        h5("Upload or select mother read depth file",dashboardBadge("optional", color = "secondary")),
@@ -115,8 +116,8 @@ ui <- dashboardPage(
                        fluidRow(column(3,
                                        radioButtons("wg_norm_options",
                                                     label = "Normalization options:", 
-                                                    choiceNames = list("chromosomal median", "whole genome median"),
-                                                    choiceValues = list("chr_med", "wg_med"),
+                                                    choiceNames = list("chromosomal median", "whole genome median","best reference (WES only)"),
+                                                    choiceValues = list("chr_med", "wg_med","wes_best_ref"),
                                                     selected = "wg_med"))),
                        fluidRow(column(3, actionButton("btn_wg_rd", "Plot"))
                                 # column(3, actionButton("btn_wg_dnCNV", "Filter dnCNVs"))

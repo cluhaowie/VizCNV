@@ -7,6 +7,7 @@ source("./mod/mod_UCSC.R")
 source("./helper/wg_plot.R")
 source("./helper/misc.R")
 source("./mod/mod_allele_imbalance.R")
+#source("./mod/mod_WES.R")
 server <- function(input, output,session) {
   # Reavtive Values --------------------------
   values <- reactiveValues()
@@ -31,6 +32,8 @@ server <- function(input, output,session) {
   
   values$ref_info <- data.frame(stringsAsFactors = F)
   values$anno_rect <- data.frame(stringsAsFactors = F)
+  values$default_seg_option <- vector()
+  values$wgplot_min_mark <- vector()
   
   plots <- reactiveValues()
   plots$pr_rd <- data.frame(stringsAsFactors = F)
@@ -75,7 +78,7 @@ server <- function(input, output,session) {
       return(NULL)
     }
   })
-  output$ui_chkbox_RefSeq <- renderUI({
+  output$ui_chkbox_RefSeq <- shiny::renderUI({
     if(!is.null(values$p1_file)){
       mod_checkbox_UI("RefSeq")
     }else{NULL}
@@ -146,7 +149,15 @@ server <- function(input, output,session) {
       values$p6_file <-  NULL
     }
   })
-  
+  observeEvent(input$program,{
+    if(input$program=="WES"){
+      values$default_seg_option <- "slm_wes"
+      values$wgplot_min_mark <- 0 # minimum two exon prob to plot
+    } else if (input$program=="WGS"){
+      values$default_seg_option <- "slm"
+      values$wgplot_min_mark <- 100 # minimum 100kb to plot
+    }
+  })
   # button to filter range---------
  
   w <- waiter::Waiter$new(html = spin_3(), 
@@ -282,23 +293,34 @@ server <- function(input, output,session) {
     withProgress(message = 'Making plot', value = 0, {
       n=length(chr_list)
       tmplist <- lapply(chr_list, function(chr){
-        pr_rd.gr <- normalization_method(values$pr_rd, chr, input$wg_norm_options)%>%
+        norm_pr <- normalization_method(values$pr_rd, chr, input$wg_norm_options)
+        if(nrow(norm_pr)==0) {
+          incProgress(1 / n, detail = paste("No data for chromosome", chr))
+          return(NULL)
+          }
+        pr_rd.gr <- norm_pr%>%
           setDT()%>%
           setnames(.,c("V1","V2","V3"),c("chrom","start","end"))%>%
           makeGRangesFromDataFrame(keep.extra.columns = T)
         # remove regions that mapped to gaps
         ov <- findOverlaps(pr_rd.gr,values$gaps)
-        pr_rd <- pr_rd.gr[-queryHits(ov)]%>%as.data.frame()%>%
+        # Check if ov has elements
+        if (length(queryHits(ov)) > 0) {
+          pr_rd <- pr_rd.gr[-queryHits(ov)]
+        } else {
+          pr_rd <- pr_rd.gr
+        }
+        pr_rd <-  pr_rd%>%as.data.frame()%>%
           dplyr::select(-c("width","strand"))%>%
           setDT()%>%
           setnames(.,c("seqnames","start","end"),c("V1","V2","V3"))
-        pr_seg <- SegNormRD(pr_rd,id="Proband",seg.method = "slm")
+        pr_seg <- SegNormRD(pr_rd,id="Proband",seg.method = values$default_seg_option)
         incProgress(1/n, detail = paste("Segment", chr))
         return(pr_seg)
       })
       wg_ranges$pr <- rbindlist(tmplist)
     })
-    wg_pr <- wg_seg2plot(wg_ranges$pr,input$ref)
+    wg_pr <- wg_seg2plot(wg_ranges$pr,input$ref,values$wgplot_min_mark)
     wg_ranges$pr_ploidy <- wg_ranges$pr%>%
       group_by(chrom)%>%
       summarise(chromosome_counts=2*median(seg.mean))
@@ -321,13 +343,13 @@ server <- function(input, output,session) {
           dplyr::select(-c("width","strand"))%>%
           setDT()%>%
           setnames(.,c("seqnames","start","end"),c("V1","V2","V3"))
-        m_seg <- SegNormRD(m_rd,id="Mother",seg.method = "slm")
+        m_seg <- SegNormRD(m_rd,id="Mother",seg.method = values$default_seg_option)
         incProgress(1/n, detail = paste("Segment", chr))
         return(m_seg)
       })
       wg_ranges$m <- rbindlist(tmplist)
     })
-    wg_m <- wg_seg2plot(wg_ranges$m,input$ref)
+    wg_m <- wg_seg2plot(wg_ranges$m,input$ref,values$wgplot_min_mark)
     wg_ranges <- mod_plot_wg_Server("wg_m_rd", wg_m, wg_ranges, wg_dnCNV_table,wg_hmzCNV_table)
   })
   observeEvent(input$btn_wg_rd, {
@@ -347,7 +369,7 @@ server <- function(input, output,session) {
           dplyr::select(-c("width","strand"))%>%
           setDT()%>%
           setnames(.,c("seqnames","start","end"),c("V1","V2","V3"))
-        f_seg <- SegNormRD(f_rd,id="Father",seg.method = "slm")
+        f_seg <- SegNormRD(f_rd,id="Father",seg.method = values$default_seg_option)
         incProgress(1/n, detail = paste("Segment", chr))
         return(f_seg)
       })
