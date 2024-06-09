@@ -13,6 +13,7 @@ mod_UCSC_Server <- function(id, gv, chr, ranges) {
   moduleServer(
     id,
     function(input, output, session) {
+      if (gv == "T2T"){gv = "hub_3671779_hs1"}
       if(!is.null(ranges$x)){
         # Generate the UCSC Genome Browser URL link
         output$ucsc_link <- renderUI({

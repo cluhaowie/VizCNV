@@ -40,7 +40,9 @@ mod_plot_output_UI <- function(id, height = 100) {
 #' @param p a ggplot object
 #' @param ranges, a reactive object to store current plot brush values
 #' @param dnCNV_table, a reactive table to highlight potential dnCNV
-#' @param zoom, a boolean to switch from static to dynamic plot output (default = T) If False, the plot will not zoom in when doubleclicked brush area.
+#' @param hmzCNV_table, a reactive table to highlight potential hmzCNV
+#' @param zoom, a boolean to switch from static to dynamic plot output (default = T) 
+#' If False, the plot will not zoom in when doubleclicked brush area.
 #' 
 #' 
 #'
@@ -50,7 +52,7 @@ mod_plot_output_UI <- function(id, height = 100) {
 #' mod_plot_output_Server("plot", p, ranges, dnCNV_table, zoom = F)
 #'
 #' @export
-mod_plot_output_Server <- function(id, p, ranges, dnCNV_table, zoom = T){
+mod_plot_output_Server <- function(id, p, ranges, dnCNV_table, hmzCNV_table, zoom = T){
   moduleServer(
     id,
     function(input, output, session) {
@@ -60,14 +62,18 @@ mod_plot_output_Server <- function(id, p, ranges, dnCNV_table, zoom = T){
             p +
               coord_cartesian(xlim= ranges$x, ylim = ranges$y, expand = F)+
               scale_x_continuous(n.breaks = 20)+
-              annotate("rect", fill = "orange", alpha =0.3, xmin = dnCNV_table$t$start, xmax = dnCNV_table$t$end, ymin = -Inf, ymax = Inf)+
-              annotate("rect", fill = dnCNV_table$hl_col, alpha = 0.3, xmin = dnCNV_table$hl$start, xmax = dnCNV_table$hl$end, ymin = -Inf, ymax = Inf)
+              annotate("rect", fill = "orange", alpha =0.4, xmin = dnCNV_table$t$start, xmax = dnCNV_table$t$end, ymin = -Inf, ymax = Inf)+
+              annotate("rect", fill = dnCNV_table$hl_col, alpha = 0.4, xmin = dnCNV_table$hl$start, xmax = dnCNV_table$hl$end, ymin = -Inf, ymax = Inf)+
+              annotate("rect", fill = "black", alpha =0.4, xmin = hmzCNV_table$t$start, xmax = hmzCNV_table$t$end, ymin = -Inf, ymax = Inf)+
+              annotate("rect", fill = hmzCNV_table$hl_col, alpha = 0.4, xmin = hmzCNV_table$hl$start, xmax = hmzCNV_table$hl$end, ymin = -Inf, ymax = Inf)
           } else {
             p +
               coord_cartesian(xlim= ranges$x, ylim = ranges$y, expand = F)+
               scale_x_continuous(n.breaks = 10)+
-              annotate("rect", fill = "orange", alpha =0.3, xmin = dnCNV_table$t$start, xmax = dnCNV_table$t$end, ymin = -Inf, ymax = Inf)+
-              annotate("rect", fill = dnCNV_table$hl_col, alpha = 0.3, xmin = dnCNV_table$hl$start, xmax = dnCNV_table$hl$end, ymin = -Inf, ymax = Inf)
+              annotate("rect", fill = "orange", alpha =0.4, xmin = dnCNV_table$t$start, xmax = dnCNV_table$t$end, ymin = -Inf, ymax = Inf)+
+              annotate("rect", fill = dnCNV_table$hl_col, alpha = 0.4, xmin = dnCNV_table$hl$start, xmax = dnCNV_table$hl$end, ymin = -Inf, ymax = Inf)+
+              annotate("rect", fill = "black", alpha =0.4, xmin = hmzCNV_table$t$start, xmax = hmzCNV_table$t$end, ymin = -Inf, ymax = Inf)+
+              annotate("rect", fill = hmzCNV_table$hl_col, alpha = 0.4, xmin = hmzCNV_table$hl$start, xmax = hmzCNV_table$hl$end, ymin = -Inf, ymax = Inf)
           }
         })
       } else {
@@ -139,7 +145,8 @@ mod_plot_wg_UI <- function(id, height = 100) {
                                  resetOnNew = T,
                                  direction = "x"),
                dblclick = ns("dblclick"),
-               height = height)
+               height = height),
+    downloadButton(ns('downloadPlot'), 'Download Plot') 
   )
 }
 
@@ -151,6 +158,7 @@ mod_plot_wg_UI <- function(id, height = 100) {
 #' @param p a ggplot object
 #' @param ranges, a reactive object to store current plot brush values
 #' @param dnCNV_table, a reactive table to highlight potential dnCNV
+#' @param hmzCNV_table, a reactive table to highlight potential hmzCNV
 #' @param zoom, a boolean to switch from static to dynamic plot output (default = T) If False, the plot will not zoom in when doubleclicked brush area.
 #' 
 #' 
@@ -158,20 +166,25 @@ mod_plot_wg_UI <- function(id, height = 100) {
 #' @return reactive ranges for other plots
 #'
 #' @examples
-#' mod_plot_output_Server("plot", p, ranges, dnCNV_table, zoom = F)
+#' mod_plot_output_Server("plot", p, ranges, dnCNV_table, hmzCNV_table, zoom = F)
 #'
 #' @export
-mod_plot_wg_Server <- function(id, p, ranges, dnCNV_table){
+mod_plot_wg_Server <- function(id, p, ranges, dnCNV_table, hmzCNV_table){
   moduleServer(
     id,
     function(input, output, session) {
       output$plot <- renderPlot({
           p +
-            coord_cartesian(xlim= ranges$x, ylim = ranges$y, expand = F)+
-            annotate("rect", fill = "red", alpha =0.4, xmin = dnCNV_table$t$start_cum, xmax = dnCNV_table$t$end_cum, ymin = -Inf, ymax = Inf)
+          coord_cartesian(xlim= ranges$x, ylim = ranges$y, expand = F)+
+          annotate("rect", fill = "red", alpha =0.8, xmin = dnCNV_table$t$start_cum, xmax = dnCNV_table$t$end_cum, ymin = -Inf, ymax = Inf)+
+          annotate("rect", fill = "black", alpha =0.5, xmin = hmzCNV_table$t$start_cum, xmax = hmzCNV_table$t$end_cum, ymin = -Inf, ymax = Inf)
         })
-      
-      
+      plotInput <- reactive({
+        p +
+          coord_cartesian(xlim= ranges$x, ylim = ranges$y, expand = F)+
+          annotate("rect", fill = "red", alpha =0.8, xmin = dnCNV_table$t$start_cum, xmax = dnCNV_table$t$end_cum, ymin = -Inf, ymax = Inf)+
+          annotate("rect", fill = "black", alpha =0.5, xmin = hmzCNV_table$t$start_cum, xmax = hmzCNV_table$t$end_cum, ymin = -Inf, ymax = Inf)
+      })
       observeEvent(input$dblclick, {
         brush <- input$brush
         if (!is.null(brush)) {
@@ -180,6 +193,12 @@ mod_plot_wg_Server <- function(id, p, ranges, dnCNV_table){
           ranges$x <- NULL
         }
       })
+      output$downloadPlot<- downloadHandler(
+        filename = paste0(id,".pdf"),
+            content = function(file){
+              ggsave(file,plotInput(),width = 18,height = 3,device = "pdf")
+            })
+        
       return (ranges) 
     }
   )
@@ -233,11 +252,11 @@ mod_plot_switch_UI <- function(id, height = 70) {
 #'
 #' @export
 
-mod_plot_switch_Server <- function(id, cbox, p, ranges, dnCNV_table, zoom = T) {
+mod_plot_switch_Server <- function(id, cbox, p, ranges, dnCNV_table, hmzCNV_table,zoom = T) {
   moduleServer(
     id,
     function(input, output, session) {
-      ranges <- mod_plot_output_Server("plot", p, ranges, dnCNV_table, zoom = zoom)
+      ranges <- mod_plot_output_Server("plot", p, ranges, dnCNV_table, hmzCNV_table,zoom = zoom)
       observe({
         if (isTRUE(cbox())) {
           shinyjs::show(id = "panel")
@@ -266,7 +285,7 @@ mod_plot_switch_Server <- function(id, cbox, p, ranges, dnCNV_table, zoom = T) {
 anno_table_UI <- function(id) {
   ns <- NS(id)
   tagList(
-    downloadButton(ns("download"), "Download (.tsv)"),
+    # downloadButton(ns("download"), "Download (.tsv)"),
     dataTableOutput(ns("table"))
   )
 }
@@ -302,16 +321,20 @@ anno_table_Server <- function(id, df, ranges, chrn) {
       
       output$table <- renderDataTable({
         df_table()
-      })
+      },extensions=c("Responsive","Buttons"),
+      server = F, # False to be able to download everything in the region
+      editable = F,
+      filter = list(position = 'top', clear = T),
+      options = list(dom = 'Bfrtip',buttons = c('copy','csv', 'excel')))
       
-      output$download <- downloadHandler(
-        filename = function() {
-          paste0(id,".tsv")
-        },
-        content = function(file) {
-          write.table(df, file, sep = "\t", row.names = F, quote = F)
-        }
-      )
+      # output$download <- downloadHandler(
+      #   filename = function() {
+      #     paste0(id,".tsv")
+      #   },
+      #   content = function(file) {
+      #     write.table(df, file, sep = "\t", row.names = F, quote = F)
+      #   }
+      # )
     }
   )
 }

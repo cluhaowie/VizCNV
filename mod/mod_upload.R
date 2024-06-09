@@ -45,7 +45,6 @@ mod_snp_upload_Server <- function(id,volumes,values) {
                                 paste0("The joint called SNP file has been indexed")))
         }
       },ignoreInit = T)
-
     }
   )
 }
@@ -141,28 +140,88 @@ mod_rd_upload_UI <- function(id) {
 #' mod_rd_upload_Server("proband", volumes, values)
 #'
 #' @export
-mod_rd_upload_Server <- function(id,volumes,values) {
+# mod_rd_upload_Server <- function(id,volumes,values, names) {
+#   moduleServer(
+#     id,
+#     function(input, output, session) {
+#       shinyFileChoose(input, "local_rd_file", roots = volumes, session=session)
+#       observeEvent(input$file, {
+#         values[[id]] <- data.table::fread(input$file$datapath,header = F) %>%
+#           mutate(V1=ifelse(!V1%like%"chr",paste0("chr",V1),V1))
+#         names[[id]] <- basename(input$file$name)
+#         showModal(modalDialog(title = "File upload",
+#                               "The read depth file has been uploaded"))
+#       })
+#       observeEvent(input$local_rd_file,{
+#         if(is.integer(input$local_rd_file)){
+#           cat("no file\n")
+#         }else{
+#           local_rd_file <- parseFilePaths(volumes, input$local_rd_file)
+#           values[[id]]<- data.table::fread(local_rd_file$datapath,header = F)%>%
+#             mutate(V1=ifelse(!V1%like%"chr",paste0("chr",V1),V1))
+#           names[[id]] <- basename(input$file$name)
+#           showModal(modalDialog(title = "File upload",
+#                                 paste0("The ", id," read depth file has been uploaded")))
+#         }
+#       },ignoreInit = T)
+#     }
+#   )
+# }
+mod_rd_upload_Server <- function(id, volumes, values, names) {
   moduleServer(
     id,
     function(input, output, session) {
-      shinyFileChoose(input, "local_rd_file", roots = volumes, session=session)
+      shinyFileChoose(input, "local_rd_file", roots = volumes, session = session)
+      
       observeEvent(input$file, {
-        values[[id]] <- data.table::fread(input$file$datapath,header = F) %>%
-          mutate(V1=ifelse(!V1%like%"chr",paste0("chr",V1),V1))
-        showModal(modalDialog(title = "File upload",
-                              "The read depth file has been uploaded"))
+        tryCatch({
+          print(paste("Uploading file:", input$file$name))
+          
+          # Check if input$file$name is a character vector
+          if (!is.character(input$file$name)) {
+            stop("input$file$name is not a character vector")
+          }
+          
+          df <- data.table::fread(input$file$datapath, header = FALSE)
+          df <- df %>% mutate(V1 = ifelse(!V1 %like% "chr", paste0("chr", V1), V1))
+          values[[id]] <- df
+          names[[id]] <- basename(input$file$name)
+          
+          showModal(modalDialog(title = "File upload", "The read depth file has been uploaded"))
+          print("File upload successful")
+        }, error = function(e) {
+          print(paste("Error uploading file:", e$message))
+        })
       })
-      observeEvent(input$local_rd_file,{
-        if(is.integer(input$local_rd_file)){
+      
+      observeEvent(input$local_rd_file, {
+        if (is.integer(input$local_rd_file)) {
           cat("no file\n")
-        }else{
-          local_rd_file <- parseFilePaths(volumes, input$local_rd_file)
-          values[[id]]<- data.table::fread(local_rd_file$datapath,header = F)%>%
-            mutate(V1=ifelse(!V1%like%"chr",paste0("chr",V1),V1))
-          showModal(modalDialog(title = "File upload",
-                                paste0("The ", id," read depth file has been uploaded")))
+        } else {
+          tryCatch({
+            local_rd_file <- parseFilePaths(volumes, input$local_rd_file)
+            print(paste("Local file chosen:", local_rd_file$datapath))
+            
+            # Check if local_rd_file$name is a character vector
+            if (!is.character(local_rd_file$name)) {
+              stop("local_rd_file$name is not a character vector")
+            }
+            
+            df <- data.table::fread(local_rd_file$datapath, header = FALSE)
+            df <- df %>% mutate(V1 = ifelse(!V1 %like% "chr", paste0("chr", V1), V1))
+            values[[id]] <- df
+            names[[id]] <- basename(local_rd_file$name)
+            
+            showModal(modalDialog(
+              title = "File upload",
+              paste0("The ", id, " read depth file has been uploaded")
+            ))
+            print("Local file upload successful")
+          }, error = function(e) {
+            print(paste("Error reading local file:", e$message))
+          })
         }
-      },ignoreInit = T)
+      }, ignoreInit = TRUE)
     }
   )
 }

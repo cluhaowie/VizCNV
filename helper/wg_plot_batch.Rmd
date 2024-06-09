@@ -1,0 +1,175 @@
+---
+title: "batch_wg_rd_plots"
+output: html_document
+date: "2024-05-28"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(ggplot2)
+library(dplyr)
+library(data.table)
+library(stringr)
+```
+
+```{r}
+
+SKYCOLOR <- c("chr1"="#fdfa01","chr2"="#a70106","chr3"="#beafc6","chr4"="#06fafb",
+              "chr5"="#d75000","chr6"="#d60e51","chr7"="#fca4a3","chr8"="#fa6104",
+              "chr9"="#A9A9A9","chr10"="#038201","chr11"="#05a5ff","chr12"="#fd01fe",
+              "chr13"="#fd0100","chr14"="#fe5579","chr15"="#87d4a7","chr16"="#fa9308",
+              "chr17"="#0154d1","chr18"="#e60052","chr19"="#52fc56","chr20"="#0325ff",
+              "chr21"="#fefda7","chr22"="#fd8afc","chrX"="#004800","chrY"="#01b600")
+style_rd <- theme_classic()+
+  theme(plot.title = element_text(face = "bold", size = 12),
+        legend.position = "top",
+        legend.title = element_text(colour="black", size=12),
+        legend.text = element_text(size = 12),
+        panel.border = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        panel.grid.minor.x = element_line(linetype = 4,colour = "grey85"),
+        panel.grid.major.y = element_line(linetype = 5,colour = "grey70"),
+        panel.grid.major.x = element_line(linetype = 5,colour = "grey50"),
+        panel.background = element_blank(),
+        axis.text.y = element_text(color = "black", size = 10),
+        axis.text.x = element_text(color = c("black", "white"), size = 10),
+        axis.title = element_text(color = "black", size = 12),
+        axis.ticks = element_line(color = "black"))
+scale_rd <- scale_y_continuous(name="Log2 Ratio",
+                               limits=c(-2.5, 2),
+                               breaks = c(-2,
+                                 round(log2(1/2),2),
+                                 round(log2(2/2),2),
+                                 round(log2(3/2),2),
+                                 round(log2(4/2),2),
+                                 round(log2(5/2),2),
+                                 round(log2(6/2),2)
+                               ))
+```
+
+```{r}
+getSeg = function(df, idx){
+  df = df %>% 
+    filter(chr == idx)
+  slm = SLMSeg::SLM(
+      log2(df$ratio + 0.00001),
+      omega = 0.3,
+      FW = 0,
+      eta = 0.00001
+    )
+res <- rle(slm[1, ])
+idx <- sapply(seq_along(res$lengths),function(i){
+  if(i==1){return(1)}
+  start.idx=1+sum(res$lengths[1:(i-1)])
+  return(start.idx)
+})
+chr=df$chr[idx]
+start=df$start[idx]
+end=c(df$start[c(idx[-1],end(df$start)[1])])
+res.dt <- data.table(chrom=chr,loc.start=start,loc.end=end,num.mark=res$lengths,seg.mean=res$values)
+return (res.dt)  
+}
+
+getAllSeg <-function(df){
+  out = list()
+  for (c in paste0("chr",c(1:22,"X"))){
+    tmp = getSeg(df,c)
+    out = rbind(out, tmp)  
+  }
+  return(out)
+}
+
+
+normalization = function(rd){
+  out <- rd %>%
+    dplyr::mutate(ratio=coverage/median(coverage+0.00001))
+  return(out)
+}
+```
+
+```{r}
+path  <-  "X:/Projects/GREGoR/processed/mosdepth/"
+
+fnames <- list.files(path, pattern = "*MAPQ30.regions.bed.gz$")
+```
+
+```{r}
+
+
+wg_seg2plot <- function(seg_data,id,out_path){
+  
+  min.num.mark=100
+  bin.size=1000 ## default 1000 bp bin size
+  del.log2width <- 0.1
+  dup.log2width <- 0.15
+  del.range <- c(log2(1*(1-del.log2width )/2),log2(1*(1+del.log2width )/2))
+  dup.range <- c(log2(3*(1-dup.log2width )/2),log2(3*(1+dup.log2width )/2))
+  
+  seg_data <- seg_data %>% 
+    mutate(seg.mean=ifelse(seg.mean < -2.5,-2,seg.mean))
+  
+  temp <- seg_data %>% 
+    group_by(chrom) %>% 
+    summarise(max_end = max(loc.end)) %>% 
+    mutate(across("chrom", str_replace, "chr", "")) %>% 
+    arrange(as.numeric(chrom)) %>% 
+    mutate(loc_add = lag(cumsum(as.numeric(max_end)), default = 0)) %>% 
+    mutate(chrom = paste0("chr", chrom))
+  
+  seg_data <- seg_data %>% 
+    inner_join(temp, by = "chrom") %>% 
+    mutate(end_cum = loc_add + loc.end) 
+  seg_data <- seg_data %>% 
+    mutate(start_cum = end_cum - num.mark*bin.size)
+  axis_set <- seg_data %>% 
+    group_by(chrom) %>% 
+    summarize(center = mean(end_cum),end=max(end_cum)) %>% 
+    arrange((chrom))
+  label_seg_gain <- seg_data %>% 
+    filter(num.mark > min.num.mark) %>% 
+    filter(seg.mean > dup.range[1])
+  label_seg_loss <- seg_data %>% 
+    filter(num.mark > min.num.mark) %>% 
+    filter(dplyr::between(seg.mean,del.range[1],del.range[2]))
+  wg <- seg_data %>% 
+    ggplot(.,aes(x = end_cum, y = seg.mean, color = chrom))+
+    geom_segment(data= subset(seg_data, num.mark > min.num.mark),aes(x = start_cum, y = seg.mean, xend = end_cum, yend = seg.mean), linewidth = 1.25)+
+    geom_segment(data = label_seg_gain, aes(x = start_cum, y = seg.mean, xend = end_cum, yend = seg.mean),linewidth = 2,color = "red")+
+   # geom_segment(data = label_seg_gain, aes(x = (start_cum+end_cum)/2, y = 1.6, xend = (start_cum+end_cum)/2, yend = 1.6+0.1),linewidth = 1,color = "purple")+
+    geom_segment(data = label_seg_loss, aes(x = start_cum, y = seg.mean, xend = end_cum, yend = seg.mean),linewidth = 2,color = "green")+
+   # geom_segment(data = label_seg_loss, aes(x = (start_cum+end_cum)/2, y = -2, xend = (start_cum+end_cum)/2, yend = -2+0.1),linewidth = 1,color = "orange")+
+    geom_vline(xintercept=axis_set$end,lty=2,lwd=0.5,color="lightgrey")+
+    theme_minimal() +
+    theme( 
+      legend.position = "none",
+      panel.grid.major.x = element_blank(),
+      panel.grid.minor.x = element_blank(),
+      axis.text.x = element_text(angle = 60, size = 12,vjust = 0.5,color = "black"),
+      axis.text.y = element_text(size = 10,color = "black")
+    )+
+    scale_rd+
+    scale_size_continuous(range = c(0.5,3))+
+    labs(x = id)+
+    scale_x_continuous(label = axis_set$chrom, breaks = axis_set$center)+
+    scale_color_manual(values = SKYCOLOR)+
+    coord_cartesian(expand = F)
+  ggsave(paste0(out_path,id,"_wgs_rd.png"), wg, width = 30, height = 10, dpi= 100, bg="white")
+}
+
+```
+
+```{r}
+for (f in fnames){
+  df <- data.table::fread(paste0(path, f))
+  names(df) <- c("chr", "start", "end", "coverage")
+  df <- normalization(df)
+  df_seg <- getAllSeg(df)
+  id <- unlist(strsplit(f, "_MAPQ30"))[1]
+  out_path <- "X:/Projects/GREGoR/processed/wgs_rd_plots/"
+  wg_seg2plot(df_seg, id, out_path)
+}
+```
+

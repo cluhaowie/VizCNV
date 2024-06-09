@@ -1,6 +1,3 @@
-
-
-
 #  ------------------------------------------------------------------------
 #
 # Title : App - VizCNV
@@ -22,7 +19,8 @@ options(shiny.autoreload=TRUE)
 list.of.packages <- c("dplyr", "data.table", "shiny", "shinydashboard", "shinyFeedback",
                       "tippy","DT","ggplot2","shinyWidgets","shinyFiles","waiter",
                       "cowplot","devtools","BiocManager","arrow","colourpicker", "shinyjs","rclipboard",
-                      "shinydashboardPlus","bs4Dash", "colourpicker") 
+                      "shinydashboardPlus","bs4Dash", "colourpicker","tidyr","config") 
+
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
 if(length(new.packages)) install.packages(new.packages)
 
@@ -76,17 +74,16 @@ library(shinyjs)
 library(ggtranscript)
 library(rclipboard)
 library(colourpicker)
-#library(colourpicker) ## required for picking annotation color
+library(tidyr)
+
+
 # set up local database -------
-
-#sqlitePath="data/database.sqlite"
-# genePath_hg38 <- "./data/MANE.GRCh38.v1.0.refseq.gz.parquet"
-maxSize_anno <- 20e6 # max size to show the transcripts
-maxtranscript <- 30 # max number of transcript to show
-geneExtend <- 1e5 # window size extend to 100kb
-
-# genebase <- arrow::read_parquet(genePath_hg38,as_data_frame = F)
-#rmskbase <- arrow::read_parquet(rmskPath_hg38,as_data_frame = F)
+config <- config::get()
+maxSize_anno <- config$maxSize_anno 
+maxtranscript <- config$maxtranscript 
+geneExtend <- config$geneExtend 
+minseg <- config$minseg 
+minsegmean <- config$minsegmean
 
 
 saveData <- function(data,table) {
@@ -149,121 +146,13 @@ scanTabixDataFrame <- function(tabix_file, param, format, ...){
 }
 
 
-SegNormRD <- function(df, id, seg.method = "cbs") {
-  #SegNormRD.file <- paste0(id, ".seg.rds")
-  if (seg.method == "cbs") {
-    print("segment with CBS")
-    CNA.obj <-
-      DNAcopy::CNA(
-        log2(df$ratio + 0.001),
-        df$V1,
-        df$V2,
-        data.type = "logratio",
-        sampleid = id
-      )
-    seg <- DNAcopy::segment(CNA.obj)
-    seg.output <- seg$output
-    seg.output$ID <- id
-    print("done")
-    return(seg.output)
-  }
-  ##EDIT: include SLM segmentation
-  if (seg.method == "slm") {
-    print("segment with SLM")
-    df.ls <- base::split(df, f="V1")
-    res <- lapply(df.ls, function(df) {
-      slm <-
-        SLMSeg::SLM(
-          log2(df$ratio + 0.001),
-          omega = 0.3,
-          FW = 0,
-          eta = 1e-5
-        )
-      res <- rle(slm[1, ])
-      idx <- sapply(seq_along(res$lengths),function(i){
-        if(i==1){return(1)}
-        start.idx=1+sum(res$lengths[1:(i-1)])
-        return(start.idx)
-      })
-      chr=df$V1[idx]
-      start=df$V2[idx]
-      end=c(df$V2[c(idx[-1],end(df$V2)[1])])
-      res.dt <- data.table(ID=id,chrom=chr,loc.start=start,loc.end=end,num.mark=res$lengths,seg.mean=res$values)
-    })
-    print("done")
-    
-    res <- data.table::rbindlist(res)
-    return(res)
-  }
-  
-}
-#ref_genome="GRCh38"
-
-#hg38.info <- seqinfo(BSgenome.Hsapiens.UCSC.hg38::Hsapiens)%>%as.data.frame()
-#hg38.info <- hg38.info %>% mutate(chrom=rownames(hg38.info))
-hg38.info <- data.table::fread("hg38.info.txt")
-#write.table(hg38.info,file = "hg38.info.txt",quote = F,row.names = F,col.names = T)
-hg19.info <- data.table::fread("hg19.info.txt")
-#hg19.info <- hg19.info %>% mutate(chrom=rownames(hg19.info))
-#write.table(hg19.info,file = "hg19.info.txt",quote = F,row.names = F,col.names = T)
-blacklist <- data.table::fread("GRCh38_unified_blacklist.bed.gz")%>%
-  regioneR::toGRanges()
-
-ReadGVCF <- function(path_to_gVCF,ref_genome=ref_genome,param = param){
-  print("Grabbing regions")
-  vcf<- VariantAnnotation::readVcf(file = path_to_gVCF,genome = ref_genome,param = param)
-  vcf.gr <- vcf@rowRanges
-  GT <- VariantAnnotation::geno(vcf)$GT
-  AD <- VariantAnnotation::geno(vcf)$AD
-  DP <- VariantAnnotation::geno(vcf)$DP
-  PR_ID=colnames(GT)[1]
-  P1_ID=colnames(GT)[2]
-  P2_ID=colnames(GT)[3]
-  G1=c('0/0',"0|0")
-  G2=c('1/1',"1|1")
-  G3=c('0/1',"0|1")
-  GT <- as.data.table(GT)
-  setnames(GT,colnames(GT),c("index","P1","P2"))
-  GT.anno <- GT %>% 
-    mutate(B_InhFrom=case_when(index %in% G3 & P1 %in% G1 & P2  %in% c(G2,G3) ~ P2_ID, #cases 11,12
-                               index %in% G3 & P1 %in% G3 & P2  %in% G1 ~ P1_ID, #case 13
-                               index %in% G3 & P1 %in% G2 & P2  %in% G1 ~ P1_ID, #case 16
-                               index %in% G2 & P1 %in% G1 & P2  %in% c(G2,G3) ~ P2_ID, #cases 20,21
-                               index %in% G2 & P1 %in% G3 & P2  %in% G1 ~ P2_ID, #case 22
-                               index %in% G2 & P1 %in% G2 & P2  %in% G1 ~ P2_ID, #case 25
-                               TRUE ~ "Notphased")) %>% 
-    mutate(A_InhFrom=case_when(index %in% G1 & P1 %in% c(G1,G3) & P2  %in% G2 ~ P1_ID, #cases 3,6
-                               index %in% G1 & P1 %in% G2 & P2  %in% c(G1,G3) ~ P2_ID, #cases 7,8
-                               index %in% G2 & P1 %in% c(G1,G3) & P2  %in% G2 ~ P1_ID, #cases 12,15
-                               index %in% G2 & P1 %in% G2 & P2  %in% c(G1,G3) ~ P2_ID, #cases 16,17
-                               TRUE ~ "Notphased")) 
-  AD <- as.data.table(AD)
-  setnames(AD,colnames(AD),c("index","P1","P2"))
-  AD.anno <- AD%>%
-    mutate(index_ale_count=stringr::str_count(as.character(index),",|:"),
-           p1_ale_count=stringr::str_count(as.character(P1),",|:"),
-           p2_ale_count=stringr::str_count(as.character(P2),",|:"))%>%
-    mutate(index_REF_RD=sapply(index,"[[",1),
-           index_ALT_RD=sapply(index,"[[",2),
-           p1_REF_RD=sapply(P1,"[[",1),
-           p1_ALT_RD=sapply(P1,"[[",2),
-           p2_REF_RD=sapply(P2,"[[",1),
-           p2_ALT_RD=sapply(P2,"[[",2),
-           pr_count=index_ALT_RD+index_REF_RD,
-           pr_ALT_Freq=index_ALT_RD/(index_ALT_RD+index_REF_RD))%>%
-    mutate(likelyDN=ifelse(p1_ALT_RD<2&p2_ALT_RD<2&index_ALT_RD>5&p1_REF_RD>10&p2_REF_RD>10&pr_count>10&pr_ALT_Freq>0.2,"TRUE","FALSE"))
-  AD.anno <- AD.anno[,c("pr_count","pr_ALT_Freq","likelyDN")]
-  merged <- cbind(GT.anno ,AD.anno)
-  setnames(merged,c("index","P1","P2"),c(PR_ID,P1_ID,P2_ID))
-  mcols(vcf.gr) <- merged
-  return(vcf.gr)
-}
-
 normalization_method <- function(df, chr, norm_option = "chr_med"){
   if (norm_option == "chr_med"){
+    df_chr <- df%>%filter(V1 == chr) ## this is needed for chrY normalization
+    tmp_median <- df_chr$V4[df_chr$V4!=0]
     tmp <- df%>%
       filter(V1 == chr)%>%
-      mutate(ratio=V4/median(V4+0.00001))
+      mutate(ratio=V4/median(tmp_median+0.00001))
   } else if (norm_option == "wg_med"){
     tmp <- df%>%
       mutate(ratio=V4/median(V4+0.00001)) %>% 
@@ -319,7 +208,7 @@ scale_rd <- scale_y_continuous(name="Log2 Ratio",
                                  round(log2(6/2),2)
                                ))
 scale_snp <- scale_y_continuous(name="B-allele frequency",
-                                limits = c(-0.0005, 1.0005),
+                                limits = c(-0.05, 1.1),
                                 breaks = c(0,
                                            round(1/2,2),
                                            round(1/3,2),
@@ -335,7 +224,8 @@ scale_snp <- scale_y_continuous(name="B-allele frequency",
 
 
 style_anno <- theme_classic()+
-  theme(axis.text.x=element_blank(), 
+  theme(
+        axis.text.x=element_blank(),
         axis.ticks.x=element_blank(), #remove x axis ticks
         axis.title.x = element_blank(),
         panel.grid.major.x = element_line(linetype = 5,colour = "grey50"),
@@ -355,9 +245,17 @@ scale_genes <- scale_y_continuous(labels = scales::label_number(accuracy = 0.01)
 
 SNPCOLOR2 <- c("#39918C","#E69F00")
 CNVCOLOR6 <- c("#00468b","#00468b","#8b0000","#8b0000","#008b46","#008b46")
+
+SKYCOLOR <- c("chr1"="#fdfa01","chr2"="#a70106","chr3"="#beafc6","chr4"="#06fafb",
+              "chr5"="#d75000","chr6"="#d60e51","chr7"="#fca4a3","chr8"="#fa6104",
+              "chr9"="#A9A9A9","chr10"="#038201","chr11"="#05a5ff","chr12"="#fd01fe",
+              "chr13"="#fd0100","chr14"="#fe5579","chr15"="#87d4a7","chr16"="#fa9308",
+              "chr17"="#0154d1","chr18"="#e60052","chr19"="#52fc56","chr20"="#0325ff",
+              "chr21"="#fefda7","chr22"="#fd8afc","chrX"="#004800","chrY"="#01b600")
+
 names(CNVCOLOR6) <- c("<TRP>","TRP","<DUP>","DUP","<DEL>","DEL")
 scale_SVType <- scale_fill_manual(CNVCOLOR6)
-chrom_id <- c(1:22,"X")
+chrom_id <- c(1:22,"X","Y") ## incorporate chrY
 names(chrom_id) <- paste0("chr",chrom_id)
 
 ## keep column from ucsc track

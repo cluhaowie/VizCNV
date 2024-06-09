@@ -3,8 +3,11 @@
 .RData
 .Ruserdata
 data/
+Analysis/
+anno.Rmd
 docs/
 .gitignore
 rsconnect/
 test.R
 index.R
+mod/mod_findCNV.R
