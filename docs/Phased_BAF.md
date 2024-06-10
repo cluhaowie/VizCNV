@@ -109,4 +109,4 @@ F1_snps <- snp_stats%>%
 F1_snps 
 ```
 
-![](batch_run_baf_files/figure-gfm/unnamed-chunk-1-1.png)<!-- -->
+![](Phased_BAF_files/figure-gfm/unnamed-chunk-1-1.png)<!-- -->
