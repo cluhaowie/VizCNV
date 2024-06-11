@@ -66,47 +66,18 @@ fam1-3_HG00403  68863   397205  0.173368915295628   chr1
 
 ## Visualization of Biallelic SNV Phasing and Categorization Metrics for Trio Samples: HG00405 (Child), HG00404 (Mother), HG00403 (Father) on Autosomes
 
-``` r
-library(ggplot2)
-library(dplyr)
-snp_stats <- data.table::fread("fam1.phased_snp_summary.tsv")
-style_rd <- theme_classic()+
-  theme(plot.title = element_text(face = "bold", size = 12),
-        legend.position = "top",
-        legend.title = element_text(colour="black", size=12),
-        legend.text = element_text(size = 12),
-        panel.border = element_blank(),
-        panel.grid.minor.y = element_blank(),
-        panel.grid.minor.x = element_line(linetype = 4,colour = "grey85"),
-        panel.grid.major.y = element_line(linetype = 5,colour = "grey70"),
-        panel.grid.major.x = element_line(linetype = 5,colour = "grey50"),
-        panel.background = element_blank(),
-        axis.text.y = element_text(color = "black", size = 10),
-        axis.text.x = element_text(color = c("black"), size = 10),
-        axis.title = element_text(color = "black", size = 12),
-        axis.ticks = element_line(color = "black"))
-nchr <- length(unique(snp_stats$chrom))
-colored_cat <- unique(snp_stats$B_InhFrom)
-names(colored_cat) <- c("black","red", "#999999", "#E69F00","#39918C")
-F1_snps <- snp_stats%>%
-  group_by(B_InhFrom)%>%
-  summarise(aver_freq=round(mean(freq),2),
-            sd_ratio=sd(freq),
-            total=sum(count))%>%
-  mutate(se=sd_ratio/sqrt(nchr),
-         lower_ci=aver_freq-qt(0.975,df=100-1)*se,
-         upper_ci=aver_freq+qt(0.975,df=100-1)*se)%>%
-  ggplot(.,aes(x=B_InhFrom,y=aver_freq,fill=B_InhFrom))+
-  geom_col()+
-  geom_errorbar(aes(ymin=lower_ci,ymax=upper_ci,width=.5))+
-  geom_text(aes(label=aver_freq),vjust = -0.8)+
-  ylim(0,1)+
-  style_rd+
-  theme(axis.text.x = element_text(angle = 45, vjust = 1,hjust = 1),
-        axis.title.x = element_blank())+
-  scale_fill_manual(breaks = colored_cat, 
-                    values=names(colored_cat))
-F1_snps 
-```
+<figure>
+<img src="Phased_BAF_files/figure-gfm/unnamed-chunk-1-1.png"
+alt="HG00405_metrics" />
+<figcaption aria-hidden="true">HG00405_metrics</figcaption>
+</figure>
 
-![](Phased_BAF_files/figure-gfm/unnamed-chunk-1-1.png)<!-- -->
+## Visualization of Biallelic SNV Phasing and Categorization Metrics for Trio Samples with genomewide parental UPD: BG1383 (Child), BG1384 (Mother), BG1385 (Father) on Autosomes
+
+<figure>
+<img src="Phased_BAF_files/figure-gfm/unnamed-chunk-2-1.png"
+alt="UPD_case" />
+<figcaption aria-hidden="true">UPD_case</figcaption>
+</figure>
+
+<img src="UPD_case.png" width="724" />
