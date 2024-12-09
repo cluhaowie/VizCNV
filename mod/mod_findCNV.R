@@ -267,17 +267,20 @@ mod_findCNV_Server <- function(id, pr_rd, mo_rd, fa_rd, SegDup_merge, RefSeq_gr,
       
       
       df <- df %>% 
-        mutate(class = case_when(!pr_lvl %in% c("UND", "NML")  & mo_lvl == "NML" & fa_lvl == "NML" ~ "de_novo",
-                                 pr_lvl != "UND" & pr_lvl ==  mo_lvl & fa_lvl == "NML" ~ "inh", #inh from M
+        mutate(class = case_when(pr_lvl != "UND" & pr_lvl ==  mo_lvl & fa_lvl == "NML" ~ "inh", #inh from M
                                  pr_lvl != "UND" & pr_lvl == fa_lvl & mo_lvl == "NML" ~ "inh", #ihn from F
                                  pr_lvl == "TRP" & mo_lvl %in% c("DUP", "TRP") & fa_lvl %in% c("DUP", "TRP")  ~ "inh",
                                  pr_lvl %in% c("HET_DEL", "HOM_DEL") & mo_lvl %in% c("HET_DEL", "HOM_DEL") & fa_lvl %in% c("HET_DEL", "HOM_DEL") ~ "inh",
                                  TRUE ~ "UND"))
       
       df <- df %>% 
-        mutate(inh = case_when(class == "inh" & pr_lvl != "TRP" & pr_lvl == mo_lvl & mo_lvl != fa_lvl ~ "mo",
-                               class == "inh" & pr_lvl != "TRP" & pr_lvl == fa_lvl & mo_lvl != fa_lvl~ "fa",
-                               class == "inh" & pr_lvl == "TRP" & mo_lvl == "DUP" & mo_lvl == fa_lvl~ "both",
+        mutate(inh = case_when(pr_lvl == "DUP" & mo_lvl== "DUP" & fa_lvl == "NML" ~ "mo",
+                               pr_lvl == "DUP" & fa_lvl=="DUP" & mo_lvl == "NML" ~ "fa",
+                               pr_lvl == "TRP" & mo_lvl == "DUP" & fa_lvl=="DUP" ~ "both",
+                               pr_lvl == "HET_DEL" & mo_lvl== "HET_DEL" & fa_lvl == "NML" ~ "mo",
+                               pr_lvl == "HET_DEL" & fa_lvl=="HET_DEL" & mo_lvl == "NML" ~ "fa",
+                               pr_lvl == "HOM_DEL" & mo_lvl == "HET_DEL" & fa_lvl=="HET_DEL" ~ "both",
+                               !pr_lvl %in% c("UND", "NML")  & mo_lvl == "NML" & fa_lvl == "NML" ~ "de_novo",
                                TRUE ~ "UND"))
       df <- df %>% 
         mutate(across(c(pr_log, mo_log, fa_log), round, 2)) %>% 

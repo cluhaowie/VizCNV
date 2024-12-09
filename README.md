@@ -1,47 +1,42 @@
-# VizCNV
+README
+================
 
-This is a shiny app for chromosomal copy number variant analysis. It can parse the vcf file with SV calls, visualize CNV and B-allele frequency and genetic phasing information interactively.
+<img src="docs/VizCNV_logo.svg" width="150" height="150" />
+
+# VizCNV - An integrated platform for concurrent phased BAF and CNV analysis
+
+------------------------------------------------------------------------
+
+This is a shiny app for chromosomal copy number variant analysis. It can
+parse the vcf file with SV calls, visualize CNV and B-allele frequency
+and genetic phasing information interactively. The VizCNV is still under
+active development, suggestions is appreciated.
+
+[Download current
+version](https://github.com/cluhaowie/VizCNV/releases/tag/v4.2.3)
+
+[Pull docker image](https://hub.docker.com/r/duclare123/vizcnv_dev)
+
+[Q&A](https://github.com/cluhaowie/VizCNV/issues)
 
 ## Prerequisites
 
-R version \>= 4.2 Following R libraries are required:
+R version \>= 4.2 Following R libraries are required: Shifting level
+models based segmentation is performed using
+[SLMSuite](https://bmcbioinformatics.biomedcentral.com/articles/10.1186/s12859-017-1734-5).
 
-Shifting level models based segmentation is performed using [SLMSuite](https://bmcbioinformatics.biomedcentral.com/articles/10.1186/s12859-017-1734-5).
+## Citation
 
-Launch app on local with the main branch:
+------------------------------------------------------------------------
 
-``` r
-shiny::runGitHub(repo = "BCM-Lupskilab/VizCNV")
-```
+Please cite the following article if you use VizCNV in your research:
 
-or Launch app on local with the dev branch:
+- Du, H., Jolly, A., Grochowski, C. M., Yuan, B., Dawood, M.,
+  Jhangiani, S. N., Li, H., Muzny, D., Fatih, J. M., Coban-Akdemir, Z.,
+  Carlin, M. E., Scheuerle, A. E., Witzl, K., Posey, J. E., Pendleton,
+  M., Harrington, E., Juul, S., Hastings, P. J., Bi, W., … Liu, P.
+  (2022). The multiple *de novo* copy number variant (M*dn*CNV)
+  phenomenon presents with peri-zygotic DNA mutational signatures and
+  multilocus pathogenic variation. *Genome Medicine*, *14*(1), 122.
 
-``` r
-shiny::runGitHub(repo = "cluhaowie/VizCNV",ref="dev")
-```
-
-A docker image is public available and can be pulled from docker hub
-
-```{bash}
-docker pull duclare123/vizcnv_dev
-```
-
-and run docker image with
-
-```{bash}
-docker run -d -p 3838:3838 -v /path/to/local:/root/input/ duclare123/vizcnv_dev
-```
-
-then accessing the app with <http://localhost:3838/>
-
-Upload the required file from local file systerm: ![gif1](docs/uploadFile.gif)
-
-If launch the app on cloud or on server, input file need to be upload due to access restriction.
-
-Visualize the CNV calls in table format, read depth plot and B-allele frequency together: ![gif1](docs/view.gif)
-
-The app require read depth file as the input: A output from [mosedepth](https://github.com/brentp/mosdepth) can be used example of generate the read depth file for 1Kb window size would be:
-
-```{bash}
-mosdepth -n --fast-mode --by 1000 sample.wgs $sample.wgs.cram
-```
+The manuscript of VizCNV is WIP!

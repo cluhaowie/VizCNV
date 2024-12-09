@@ -4,10 +4,11 @@
 .Ruserdata
 data/
 Analysis/
+VizCNV.wiki/
 anno.Rmd
-docs/
 .gitignore
 rsconnect/
 test.R
 index.R
 mod/mod_findCNV.R
+doc/

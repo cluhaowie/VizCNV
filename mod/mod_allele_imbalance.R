@@ -92,9 +92,16 @@ prune_snvs <- function(gr, target_spacing=0) {
 # }
 
 ReadGVCF <- function(path_to_gVCF,ref_genome=ref_genome,param = param,target_spacing){
-  print("Grabbing regions")
+  # Safe read of VCF file with error handling
+  tryCatch({
+    vcf <- suppressWarnings({
+      VariantAnnotation::readVcf(file = path_to_gVCF, genome = ref_genome, param = param)
+    })
+  }, error = function(e) {
+    stop("Failed to read VCF file: ", e$message)
+  })
   expBAF=0.5 # expected BAF for diploid genome
-  vcf<- VariantAnnotation::readVcf(file = path_to_gVCF,genome = ref_genome,param = param)
+  
   vcf.gr <- vcf@rowRanges
   GT <- VariantAnnotation::geno(vcf)$GT
   AD <- VariantAnnotation::geno(vcf)$AD
