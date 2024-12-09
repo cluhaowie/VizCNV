@@ -521,14 +521,20 @@ server <- function(input, output,session) {
       # geom_line(data=pat_out,aes(x=pos,y=seg.mean),col="#39918C",size=1.5)+
       # geom_line(data=mat_out,aes(x=pos,y=seg.mean),col="#E69F00",size=1.5)+
       scale_fill_manual("LikelyDN",limits=c("dnSNV"),values = "red")+
+      guides(color = guide_legend(override.aes = list(size = 4)))+
       xlab(xlabel)+
       scale_snp+
       style_snp+
       scale_colour_manual(values = snpb_cols)+
-      guides(color = guide_legend(override.aes = list(size = 4)))+
       scale_x_continuous(labels = scales::label_number())
     
-    if (input$baf_seg){
+    if (!input$is_trio){
+      snp_b <- snp_b+
+        scale_color_manual(values = c("#999999", "#999999", "#999999","#999999", "#999999"))+
+        theme(legend.position = "none")
+    }
+    
+    if (input$baf_seg && input$is_trio){
       snp_b <- snp_b +
         geom_segment(data=snp_out,aes(x=loc.start,xend=loc.end,y=seg.mean,yend=seg.mean),col="purple",size=1.5)+
         geom_line(data=pat_out,aes(x=pos,y=seg.mean),col="#39918C",size=1.5)+
