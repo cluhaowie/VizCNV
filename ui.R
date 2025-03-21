@@ -103,7 +103,7 @@ ui <- dashboardPage(
                        mod_sv_upload_UI("m_sv"),
                        h5("Upload or select father SV vcf",dashboardBadge("optional", color = "secondary")),
                        mod_sv_upload_UI("f_sv"),
-                       h5("Upload or select joint snp vcf (maximun file size 3Gb)",dashboardBadge("optional", color = "secondary")),
+                       h5("Upload or select joint snp vcf (maximum file size 3Gb)",dashboardBadge("optional", color = "secondary")),
                        mod_snp_upload_UI("snp_file")
                        )
                    )
