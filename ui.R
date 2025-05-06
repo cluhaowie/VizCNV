@@ -103,7 +103,7 @@ ui <- dashboardPage(
                        mod_sv_upload_UI("m_sv"),
                        h5("Upload or select father SV vcf",dashboardBadge("optional", color = "secondary")),
                        mod_sv_upload_UI("f_sv"),
-                       h5("Upload or select joint snp vcf (maximun file size 3Gb)",dashboardBadge("optional", color = "secondary")),
+                       h5("Upload or select joint snp vcf (maximum file size 3Gb)",dashboardBadge("optional", color = "secondary")),
                        mod_snp_upload_UI("snp_file")
                        )
                    )
@@ -159,7 +159,9 @@ ui <- dashboardPage(
                              radioButtons("norm_options",
                                           label = "Normalization options", 
                                           choiceNames = list("chromosomal median", "whole genome median"),
-                                          choiceValues = list("chr_med", "wg_med"))),
+                                          choiceValues = list("chr_med", "wg_med")),
+                             p(HTML("<b>Is this a trio?</b>")),
+                             checkboxInput("is_trio", "Yes", value = TRUE)),
                       column(2, 
                              p(HTML("<b>Segments to be included</b>"),span(shiny::icon("info-circle"), id = "info_include"),
                                checkboxGroupInput(inputId="include_seg",

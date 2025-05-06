@@ -521,14 +521,20 @@ server <- function(input, output,session) {
       # geom_line(data=pat_out,aes(x=pos,y=seg.mean),col="#39918C",size=1.5)+
       # geom_line(data=mat_out,aes(x=pos,y=seg.mean),col="#E69F00",size=1.5)+
       scale_fill_manual("LikelyDN",limits=c("dnSNV"),values = "red")+
+      guides(color = guide_legend(override.aes = list(size = 4)))+
       xlab(xlabel)+
       scale_snp+
       style_snp+
       scale_colour_manual(values = snpb_cols)+
-      guides(color = guide_legend(override.aes = list(size = 4)))+
       scale_x_continuous(labels = scales::label_number())
     
-    if (input$baf_seg){
+    if (!input$is_trio){
+      snp_b <- snp_b+
+        scale_color_manual(values = c("#999999", "#999999", "#999999","#999999", "#999999"))+
+        theme(legend.position = "none")
+    }
+    
+    if (input$baf_seg && input$is_trio){
       snp_b <- snp_b +
         geom_segment(data=snp_out,aes(x=loc.start,xend=loc.end,y=seg.mean,yend=seg.mean),col="purple",size=1.5)+
         geom_line(data=pat_out,aes(x=pos,y=seg.mean),col="#39918C",size=1.5)+
@@ -871,14 +877,21 @@ server <- function(input, output,session) {
         } else if (input$ref == "hg19"){
           p1_file <- "NCBI_RefSeq_hg19_clean.bed.parquet"
         }
+        
         RefSeq <- read_parquet(paste0(path,p1_file))
         search <- as.character(str[[1]])
         found <- RefSeq %>% 
           filter(seqname == input$chr) %>% 
           filter(grepl(search, gene_id, ignore.case = T))
         if (nrow(found) != 0){
-          ranges$x <- c(as.numeric(min(found$start)-geneExtend),
-                        as.numeric(max(found$end)+geneExtend))
+          print(ranges$x)
+          from <- min(found$start)-500000
+          if (from < 0){
+            from <- 0
+          }
+          to <- max(found$end)+500000
+          ranges$x <- c(as.numeric(from),
+                        as.numeric(to))
         }else{
           showNotification("Gene not found", type = "error")
         }
